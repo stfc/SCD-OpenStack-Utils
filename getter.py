@@ -20,9 +20,9 @@ def ldap_flatusers(members, ld):
 				if result_type == ldap.RES_SEARCH_ENTRY:
 					if 'member' in result_data[0][1]:
 						mems = result_data[0][1]['member']
-						ms = ms + ldap_flatusers(mems)
+						ms = ms + ldap_flatusers(mems, ld)
 					else: # is a user
-						ms.append(m)
+						ms.append(result_data[0][1]['cn'][0])
 	return ms				
 		
 		
