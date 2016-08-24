@@ -2,6 +2,15 @@
 import ldap
 import json
 import sys
+import os
+from subprocess import Popen, PIPE
+
+env = os.environ.copy()
+
+def cl(c):
+	p = Popen(c, shell=True, stdout=PIPE, env=env)
+	print c
+	return p.communicate()[0]
 
 def ldap_flatusers(members, ld):
 	ms = []
@@ -63,6 +72,33 @@ def getter(groups):
 	ld.unbind_s()
 	return result_set
 
+def putter(groups):
+	
+	gcmd = "openstack project list -f json --noindent"
+	gcj = cl(gcmd)
+	gc = json.loads(gcj)
+	gs = [c["Name"] for c in gc]
+
+	for g in groups:
+		mems = g["mems"]
+		name = g["name"]
+		desc = g["desc"]
+		
+		if name not in gs:
+			gacmd = "openstack project create --domain default --description '{0}' '{1}'".format(desc, name)
+			cl(gacmd)
+
+		mcmd = "openstack user list --project '{0}' -f json --noindent".format(name)
+		mcj = cl(mcmd)
+		
+		mc = json.loads(mcj)
+		ms = [c["Name"] for c in mc]
+		for m in mems:
+			if m not in ms:
+				macmd = "openstack role add --user '{0}' --user-domain stfc --project '{1}' --project-domain default user".format(m,name)
+				cl(macmd)	
+	
+
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		print "Usage: {0} <groups-file>".format(sys.argv[0])
@@ -71,4 +107,4 @@ if __name__ == "__main__":
 		with open(sys.argv[1]) as f:
 			fl = f.read().split("\n")[:-1]
 			groupdata = getter(fl)
-			print groupdata
+			putter(groupdata)
