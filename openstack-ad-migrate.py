@@ -39,8 +39,8 @@ def ldap_flatusers(members, ld):
 def getter(groups):
 	ld = ldap.open("fed.cclrc.ac.uk")
 	ld.protocol_version = ldap.VERSION3
-	user = "CN=huq39111,OU=FBU,DC=fed,DC=cclrc,DC=ac,DC=uk"
-	pwd = "mq<2xb>aw8"
+	user = "CN=<username>,OU=FBU,DC=fed,DC=cclrc,DC=ac,DC=uk"
+	pwd = "<password>"
 	try:
 		ld.simple_bind_s(user,pwd)
 	except ldap.LDAPError, e:
