@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ldap
+import ldap.sasl
 import json
 import sys
 import os
@@ -37,15 +38,17 @@ def ldap_flatusers(members, ld):
 
 
 def getter(groups):
-	ld = ldap.open("fed.cclrc.ac.uk")
-	ld.protocol_version = ldap.VERSION3
-	user = "CN=<username>,OU=FBU,DC=fed,DC=cclrc,DC=ac,DC=uk"
-	pwd = "<password>"
-	try:
-		ld.simple_bind_s(user,pwd)
-	except ldap.LDAPError, e:
-		print e
-
+	# ld = ldap.open("fed.cclrc.ac.uk")
+	# ld.protocol_version = ldap.VERSION3
+	# user = "CN=<username>,OU=FBU,DC=fed,DC=cclrc,DC=ac,DC=uk"
+	# pwd = "<password>"
+	# try:
+	# 	ld.simple_bind_s(user,pwd)
+	# except ldap.LDAPError, e:
+	# 	print e
+    ld = ldap.initialise("ldap://fed.cclrc.ac.uk")
+	auth = ldap.sasl.gssapi("")
+	ld.sasl_interactive_bind_s("",auth)
 
 	basedn = "OU=Manual,OU=Distribution Lists,DC=fed,DC=cclrc,DC=ac,DC=uk"
 
@@ -70,6 +73,7 @@ def getter(groups):
 					d["desc"] = result_data[0][1]['description'][0]
 				result_set.append(d)
 	ld.unbind_s()
+	print result_set
 	return result_set
 
 def putter(groups):
@@ -97,7 +101,7 @@ def putter(groups):
 			if m not in ms:
 				macmd = "openstack role add --user '{0}' --user-domain stfc --project '{1}' --project-domain default user".format(m,name)
 				cl(macmd)
-				
+
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
@@ -106,5 +110,5 @@ if __name__ == "__main__":
 	else:
 		with open(sys.argv[1]) as f:
 			fl = f.read().split("\n")[:-1]
-			groupdata = getter(fl)
-			putter(groupdata)
+			# groupdata = getter(fl)
+			# putter(groupdata)
