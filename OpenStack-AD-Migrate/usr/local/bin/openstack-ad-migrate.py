@@ -5,6 +5,20 @@ import json
 import sys
 import os
 from subprocess import Popen, PIPE
+from ConfigParser import SafeConfigParser
+
+configparser = SafeConfigParser()
+try:
+	configparser.read('/etc/openstack-utils/config.ini')
+	user = configparser.get('ad','userdn')
+	pwd = configparser.get('ad','password')
+	host = configparser.get('ad','host')
+	basedn = configparser.get('ad','basedn')
+	domain = configparser.get('openstack','domain')
+except:
+	print 'Unable to read from config file'
+	sys.exit(1)
+
 
 env = os.environ.copy()
 
@@ -38,24 +52,17 @@ def ldap_flatusers(members, ld):
 
 
 def getter(groups):
-	# ld = ldap.open("fed.cclrc.ac.uk")
-	# ld.protocol_version = ldap.VERSION3
-	# user = "CN=<username>,OU=FBU,DC=fed,DC=cclrc,DC=ac,DC=uk"
-	# pwd = "<password>"
-	# try:
-	# 	ld.simple_bind_s(user,pwd)
-	# except ldap.LDAPError, e:
-	# 	print e
-    ld = ldap.initialise("ldap://fed.cclrc.ac.uk")
-	auth = ldap.sasl.gssapi("")
-	ld.sasl_interactive_bind_s("",auth)
-
-	basedn = "OU=Manual,OU=Distribution Lists,DC=fed,DC=cclrc,DC=ac,DC=uk"
+	ld = ldap.open(host)
+	ld.protocol_version = ldap.VERSION3
+	try:
+		ld.simple_bind_s(user,pwd)
+	except ldap.LDAPError, e:
+	    print e
 
 	qurl = ["(|"] + ["(cn="+g+")" for g in groups] + [")"]
 	filt = "".join(qurl)
 	atrs = ["cn","displayName","member","descripion"]
-
+	print basedn
 	results = ld.search(basedn, ldap.SCOPE_SUBTREE, filt, atrs)
 
 	result_set = []
@@ -89,7 +96,7 @@ def putter(groups):
 		desc = g["desc"]
 
 		if name not in gs:
-			gacmd = "openstack project create --domain default --description '{0}' '{1}'".format(desc, name)
+			gacmd = "openstack project create --domain '{0}'' --description '{1}' '{2}'".format(domain,desc, name)
 			cl(gacmd)
 
 		mcmd = "openstack user list --project '{0}' -f json --noindent".format(name)
@@ -110,5 +117,5 @@ if __name__ == "__main__":
 	else:
 		with open(sys.argv[1]) as f:
 			fl = f.read().split("\n")[:-1]
-			# groupdata = getter(fl)
-			# putter(groupdata)
+			groupdata = getter(fl)
+			putter(groupdata)
