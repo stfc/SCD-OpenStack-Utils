@@ -15,17 +15,21 @@ try:
 	host = configparser.get('ad','host')
 	basedn = configparser.get('ad','basedn')
 	domain = configparser.get('openstack','domain')
+	credentialsfile = configparser.get('openstack','credentialsfile')
 except:
 	print 'Unable to read from config file'
 	sys.exit(1)
-
-
-env = os.environ.copy()
 
 def cl(c):
 	p = Popen(c, shell=True, stdout=PIPE, env=env)
 	print c
 	return p.communicate()[0]
+
+sourcecmd = "source '{0}'".format(credentialsfile)
+cl(sourcecmd)
+env = os.environ.copy()
+
+
 
 def ldap_flatusers(members, ld):
 	ms = []
@@ -126,6 +130,7 @@ def putter(groups):
 
 
 if __name__ == "__main__":
+
 	if len(sys.argv) < 2:
 		print "Usage: {0} <groups-file>".format(sys.argv[0])
 		sys.exit(1)
