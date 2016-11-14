@@ -14,6 +14,7 @@ try:
 	configparser.read('/etc/openstack-utils/config.ini')
 	domain = configparser.get('openstack','domain')
 	credentialsfile = configparser.get('openstack','credentialsfile')
+	excludedprojects = configparser.get('openstack','excludedprojects').split(",")
 except:
 	print 'Unable to read from config file'
 	sys.exit(1)
@@ -86,18 +87,19 @@ def load_required_security_groups():
 
 def remove_security_group_rules(security_groups):
 	for security_group in security_groups.keys():
-		print security_group
-		#print security_groups[security_group]["rules"]
-		for rule in security_groups[security_group]["rules"]:
-			print rule
-			exists = False
-			for required_rule in required_security_groups[security_group]["rules"]:
-				#print required_rule
-				if required_rule["direction"] == rule["direction"] and required_rule.get("port_range_min") == rule.get("port_range_min") and required_rule.get("port_range_max") == rule.get("port_range_max") and required_rule["ethertype"] == rule["ethertype"] and required_rule["protocol"] == rule["protocol"] and required_rule["remote_ip_prefix"] == rule["remote_ip_prefix"]:
-					exists = True
-			if not exists:
-				remove_rule_cmd = "neutron security-group-rule-delete '{0}'".format(rule["id"])
-				cl(remove_rule_cmd)
+		if security_group in required_security_groups.keys():
+			print security_group
+			#print security_groups[security_group]["rules"]
+			for rule in security_groups[security_group]["rules"]:
+				print rule
+				exists = False
+				for required_rule in required_security_groups[security_group]["rules"]:
+					#print required_rule
+					if required_rule["direction"] == rule["direction"] and required_rule.get("port_range_min") == rule.get("port_range_min") and required_rule.get("port_range_max") == rule.get("port_range_max") and required_rule["ethertype"] == rule["ethertype"] and required_rule["protocol"] == rule["protocol"] and required_rule["remote_ip_prefix"] == rule["remote_ip_prefix"]:
+						exists = True
+				if not exists:
+					remove_rule_cmd = "neutron security-group-rule-delete '{0}'".format(rule["id"])
+					cl(remove_rule_cmd)
 
 
 
@@ -140,12 +142,23 @@ def add_security_group_rules(security_groups,project):
 			add_rule(rule,security_group_id,project)
 
 if __name__ == "__main__":
+	projects = []
+	env = source_credentials().copy()
 	if len(sys.argv) < 2:
-		print "Usage: {0} <groups-file>".format(sys.argv[0])
-		sys.exit(1)
+		#print "Usage: {0} <groups-file>".format(sys.argv[0])
+		#sys.exit(1)
+		projectsjson = json.loads(cl("openstack project list -f json"))
+		for projectdict in projectsjson:
+			if projectdict["Name"] not in excludedprojects:
+				print projectdict["Name"]
+				projects.append(projectdict["Name"])
+		#print projectsjson
 	else:
-		env = source_credentials().copy()
-		project_name = sys.argv[1]
+		projects.append(sys.argv[1])
+
+	for project_name in projects:
+
+		#project_name = sys.argv[1]
 		required_security_groups = load_required_security_groups()
 		project_id = get_project_id(project_name)
 		security_groups = get_security_groups()
