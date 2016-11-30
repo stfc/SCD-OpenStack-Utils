@@ -15,17 +15,21 @@ try:
 	host = configparser.get('ad','host')
 	basedn = configparser.get('ad','basedn')
 	domain = configparser.get('openstack','domain')
+	credentialsfile = configparser.get('openstack','credentialsfile')
 except:
 	print 'Unable to read from config file'
 	sys.exit(1)
-
-
-env = os.environ.copy()
 
 def cl(c):
 	p = Popen(c, shell=True, stdout=PIPE, env=env)
 	print c
 	return p.communicate()[0]
+
+sourcecmd = "source '{0}'".format(credentialsfile)
+cl(sourcecmd)
+env = os.environ.copy()
+
+
 
 def ldap_flatusers(members, ld):
 	ms = []
@@ -59,63 +63,81 @@ def getter(groups):
 	except ldap.LDAPError, e:
 	    print e
 
-	qurl = ["(|"] + ["(cn="+g+")" for g in groups] + [")"]
+	qurl = ["(|"] + ["(cn="+g.replace("_20"," ")+")" for g in groups] + [")"]
 	filt = "".join(qurl)
 	atrs = ["cn","displayName","member","descripion"]
-	print basedn
+
 	results = ld.search(basedn, ldap.SCOPE_SUBTREE, filt, atrs)
 
-	result_set = []
+	result_set = {}
 	while 1:
 		result_type, result_data = ld.result(results, 0)
 		if(result_data == []):
 			break
 		else:
 			if result_type == ldap.RES_SEARCH_ENTRY:
+				name = result_data[0][1]['displayName'][0]
+				key = result_data[0][1]['displayName'][0].replace(" ","_20")
+				print name
 				d = {}
-				d["mems"] = ldap_flatusers(result_data[0][1]['member'], ld)
-				d["name"] = result_data[0][1]['displayName'][0]
-				d["desc"] = d["name"]
+				d["members"] = ldap_flatusers(result_data[0][1]['member'], ld)
+				d["description"] = name
+				d["role"] = groups[key]["role"]
+				if "project" in groups[key].keys():
+					d["project"] = groups[key]["project"]
 				if "description" in result_data:
-					d["desc"] = result_data[0][1]['description'][0]
-				result_set.append(d)
+					d["description"] = result_data[0][1]['description'][0]
+				result_set[name]=d
+				#result_set.append(d)
 	ld.unbind_s()
+
 	print result_set
+	# for group in groups.keys():
+	# 	print group
+	# 	groups[group]["members"] = result_set[group]["mems"]
+	# print groups
 	return result_set
 
 def putter(groups):
 
-	gcmd = "openstack project list -f json --noindent"
-	gcj = cl(gcmd)
-	gc = json.loads(gcj)
-	gs = [c["Name"] for c in gc]
+	projectcmd = "openstack project list -f json --noindent"
+	projectcj = cl(projectcmd)
+	projectc = json.loads(projectcj)
+	projectstring = [c["Name"] for c in projectc]
 
-	for g in groups:
-		mems = g["mems"]
-		name = g["name"]
-		desc = g["desc"]
+	for g in groups.keys():
+		members = groups[g]["members"]
+		name = g
+		project = name
+		if "project" in groups[name].keys():
+			project = groups[g]["project"]
+		role = groups[g]["role"]
+		description = groups[g]["description"]
 
-		if name not in gs:
-			gacmd = "openstack project create --domain '{0}'' --description '{1}' '{2}'".format(domain,desc, name)
-			cl(gacmd)
+		if project not in projectstring:
+			projectcreatecmd = "openstack project create --domain '{0}' --description '{1}' '{2}'".format(domain,description, project)
+			cl(projectcreatecmd)
 
-		mcmd = "openstack user list --project '{0}' -f json --noindent".format(name)
-		mcj = cl(mcmd)
+		projectmembercmd = "openstack user list --project '{0}' -f json --noindent".format(project)
+		projectmemberjson = cl(projectmembercmd)
 
-		mc = json.loads(mcj)
-		ms = [c["Name"] for c in mc]
-		for m in mems:
-			if m not in ms:
-				macmd = "openstack role add --user '{0}' --user-domain stfc --project '{1}' --project-domain default user".format(m,name)
+		projectmemberc = json.loads(projectmemberjson)
+		projectmemberstring = [c["Name"] for c in projectmemberc]
+		for member in members:
+			if member not in members:
+				macmd = "openstack role add --user '{0}' --user-domain stfc --project '{1}' --project-domain '{2}' '{3}'".format(member,project,domain,role)
 				cl(macmd)
 
 
 if __name__ == "__main__":
+
 	if len(sys.argv) < 2:
 		print "Usage: {0} <groups-file>".format(sys.argv[0])
 		sys.exit(1)
 	else:
 		with open(sys.argv[1]) as f:
-			fl = f.read().split("\n")[:-1]
-			groupdata = getter(fl)
+			#fl = f.read().split("\n")[:-1]
+			groupdata = json.load(f)
+			print groupdata
+			groupdata = getter(groupdata)
 			putter(groupdata)

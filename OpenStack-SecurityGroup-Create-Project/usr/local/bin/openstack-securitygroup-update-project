@@ -1,0 +1,167 @@
+#!/usr/bin/python
+import ldap
+import ldap.sasl
+import json
+import sys
+import os
+from pprint import pprint
+from subprocess import Popen, PIPE
+from ConfigParser import SafeConfigParser
+
+configparser = SafeConfigParser()
+
+try:
+	configparser.read('/etc/openstack-utils/config.ini')
+	domain = configparser.get('openstack','domain')
+	credentialsfile = configparser.get('openstack','credentialsfile')
+	excludedprojects = configparser.get('openstack','excludedprojects').split(",")
+except:
+	print 'Unable to read from config file'
+	sys.exit(1)
+
+def cl(c):
+	p = Popen(c, shell=True, stdout=PIPE, env=env)
+	print c
+	return p.communicate()[0]
+
+def source_credentials():
+	sourcecmd = "source '{0}' && env".format(credentialsfile)
+	envset = Popen(sourcecmd, shell=True, stdout=PIPE)
+	for line in envset.stdout:
+  		(key, _, value) = line.partition("=")
+  		os.environ[key] = value.replace("\n","")
+	envset.communicate()
+	#pprint(dict(os.environ))
+	return os.environ
+
+
+def fix_json (bad):
+	good = []
+	for i in bad:
+		item = list(i.values())
+		good.append(item)
+	good = dict(good)
+	return good
+
+def get_project_id (project_name):
+	get_project_id_cmd = "openstack project show --domain '{0}' -f json '{1}'".format(domain,project_name)
+	projectjson = json.loads(cl(get_project_id_cmd))
+	projectjson = fix_json(projectjson)
+	project_id = projectjson["id"]
+	#print projectjson
+	#print project_id
+	return project_id
+
+def get_security_group_rules(security_group):
+	get_security_group_rules_cmd = "neutron security-group-show -f json '{0}'".format(security_group)
+	security_group_rules = json.loads(cl(get_security_group_rules_cmd))
+	security_group_rules = fix_json(security_group_rules).get("security_group_rules")
+	security_group_rules_tmp = "["+security_group_rules.replace("}","},")+"]"
+	print security_group_rules_tmp
+	security_group_rules = json.loads(security_group_rules_tmp.replace("},]","}]"))
+
+	return security_group_rules
+
+def get_security_groups ():
+	get_security_group_cmd = "openstack security group list -f json"
+	security_groups = json.loads(cl(get_security_group_cmd))
+	project_security_groups = {}
+	for security_group in security_groups:
+		#print security_group
+		if security_group["Project"] == project_id:
+			project_security_groups[security_group["Name"]] = {}
+			project_security_groups[security_group["Name"]]["id"] = security_group["ID"]
+			project_security_groups[security_group["Name"]]["description"] = security_group["Description"]
+			project_security_groups[security_group["Name"]]["rules"] = get_security_group_rules(security_group["ID"])
+	#print project_security_groups
+	return project_security_groups
+
+def load_required_security_groups():
+	with open("/etc/openstack-utils/security-rules.json") as f:
+		securitygroupdata = json.load(f)
+		for securitygroup in securitygroupdata.keys():
+			if securitygroup != "default":
+				securitygroupdata[securitygroup]["rules"] += securitygroupdata["default"]["rules"]
+		#print securitygroupdata
+		return securitygroupdata
+
+def remove_security_group_rules(security_groups):
+	for security_group in security_groups.keys():
+		if security_group in required_security_groups.keys():
+			print security_group
+			#print security_groups[security_group]["rules"]
+			for rule in security_groups[security_group]["rules"]:
+				print rule
+				exists = False
+				for required_rule in required_security_groups[security_group]["rules"]:
+					#print required_rule
+					if required_rule["direction"] == rule["direction"] and required_rule.get("port_range_min") == rule.get("port_range_min") and required_rule.get("port_range_max") == rule.get("port_range_max") and required_rule["ethertype"] == rule["ethertype"] and required_rule["protocol"] == rule["protocol"] and required_rule["remote_ip_prefix"] == rule["remote_ip_prefix"]:
+						exists = True
+				if not exists:
+					remove_rule_cmd = "neutron security-group-rule-delete '{0}'".format(rule["id"])
+					cl(remove_rule_cmd)
+
+
+
+def add_security_groups (security_groups,project):
+	for required_security_group in required_security_groups.keys():
+		if required_security_group not in security_groups.keys():
+			description = required_security_groups[required_security_group]["description"]
+			name = required_security_group
+			security_group_create_cmd = "neutron security-group-create --tenant-id '{0}' --description '{1}' '{2}'".format(project,description,name)
+			cl(security_group_create_cmd)
+	security_groups = get_security_groups()
+	return security_groups
+
+
+
+def add_rule(rule,security_group,project):
+	print rule
+	direction = rule["direction"]
+	protocol = rule["protocol"]
+	description = rule["description"]
+	remote_ip_prefix = rule["remote_ip_prefix"]
+	port_range_min = rule.get("port_range_min")
+	port_range_max = rule.get("port_range_max")
+	ethertype = rule["ethertype"]
+	if port_range_min != None and port_range_max != None:
+		port_rule_cmd = "--port-range-min '{0}' --port-range-max '{1}'".format(port_range_min,port_range_max)
+	else:
+		port_rule_cmd = ""
+	rule_create_cmd = "neutron security-group-rule-create --direction '{0}' --ethertype '{1}'  --protocol '{2}' {3} --remote-ip-prefix '{4}'  --tenant-id '{5}'  '{6}'  "
+	rule_create_cmd = rule_create_cmd.format(direction,ethertype,protocol,port_rule_cmd,remote_ip_prefix,project,security_group)
+	cl(rule_create_cmd)
+	#print rule
+
+def add_security_group_rules(security_groups,project):
+	print security_groups
+	for required_security_group in required_security_groups.keys():
+		#print required_security_group
+		for rule in required_security_groups[required_security_group]["rules"]:
+			security_group_id = security_groups[required_security_group]["id"]
+			add_rule(rule,security_group_id,project)
+
+if __name__ == "__main__":
+	projects = []
+	env = source_credentials().copy()
+	if len(sys.argv) < 2:
+		#print "Usage: {0} <groups-file>".format(sys.argv[0])
+		#sys.exit(1)
+		projectsjson = json.loads(cl("openstack project list -f json"))
+		for projectdict in projectsjson:
+			if projectdict["Name"] not in excludedprojects:
+				print projectdict["Name"]
+				projects.append(projectdict["Name"])
+		#print projectsjson
+	else:
+		projects.append(sys.argv[1])
+
+	for project_name in projects:
+
+		#project_name = sys.argv[1]
+		required_security_groups = load_required_security_groups()
+		project_id = get_project_id(project_name)
+		security_groups = get_security_groups()
+		remove_security_group_rules(security_groups)
+		security_groups = add_security_groups(security_groups,project_id)
+		security_groups = add_security_group_rules(security_groups,project_id)
