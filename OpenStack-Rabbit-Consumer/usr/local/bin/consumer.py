@@ -3,7 +3,7 @@ from ConfigParser import SafeConfigParser
 
 try:
     config = SafeConfigParser()
-    config.read("consumer.ini")
+    config.read("/etc/openstack-utils/consumer.ini")
     host = config.get("consumer", "host")
     login_user = config.get("consumer", "login_user")
     login_pass = config.get("consumer", "login_pass")
