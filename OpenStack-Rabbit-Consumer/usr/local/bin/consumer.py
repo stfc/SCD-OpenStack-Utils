@@ -5,6 +5,7 @@ try:
     config = SafeConfigParser()
     config.read("/etc/openstack-utils/consumer.ini")
     host = config.get("consumer", "host")
+    port = config.getint("consumer", "port")
     login_user = config.get("consumer", "login_user")
     login_pass = config.get("consumer", "login_pass")
     exchanges = config.get("consumer", "host")
@@ -29,7 +30,7 @@ def on_message(channel, method, header, raw_body):
 
 credentials = pika.PlainCredentials(login_user,login_pass)
 parameters = pika.ConnectionParameters(host,
-                                       5672,
+                                       port,
                                        "/",
                                        credentials,
                                        connection_attempts=10,
