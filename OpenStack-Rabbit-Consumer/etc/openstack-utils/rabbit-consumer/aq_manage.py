@@ -1,4 +1,5 @@
-import subprocess, requests, json
+#!/usr/bin/python
+import subprocess, requests, json, sys
 from requests_kerberos import HTTPKerberosAuth
 
 #used for finding hostnames based on ip
@@ -17,20 +18,21 @@ def fix_json(fake_json):
     """Used after getting json from openstack which returns a list of dictionaries with field, value pairs"""
     if isinstance(fake_json, str): fake_json = json.loads(fake_json)
     out = {}
-    for i in fake_json: out[i["Field"]] = i["Value"]
+    for i in fake_json:
+        out[i["Field"]] = i["Value"]
     return out
 
 def attempt_url(url, retry=5):
     """Will attempt a aquilon url command a default of 5 times. Prints instead of returning"""
     auth = HTTPKerberosAuth()
     out = req_ses.post(url, auth=auth).text
-    #kerberos authentication goes here
-    #if out != "No data" and out != "":
-        #subprocess.call(["kinit","-k"])
-        #auth = HTTPKerberosAuth()
-    print(out)
+    #kerberos authentication
+    if out != "No data\n" or out != "":
+        subprocess.call(["kinit","-k"])
+        auth = HTTPKerberosAuth()
+    print("---",out,"---")
     count = 0
-    while out != "No data" and out != "" and count < retry:
+    while out != "No data\n" and out != "" and count < retry:
         out = req_ses.post(url, auth=auth).text
         print(out)
         count += 1
@@ -42,11 +44,9 @@ def get_address_dict(addresses):
     if not "=" in addresses: return {}
     addresses = addresses.replace(" ","")
     addresses = addresses.split(";")
-    d = {}
-    for i in addresses:
-        i = i.split("=")
-        d[i[0]] = i[1].split(",")
-    return d
+    addresses = dict([i.split("=") for i in addresses])
+    addresses = {i:addresses[i].split(",") for i in addresses}
+    return addresses
 
 def get_hostname(payload):
     """Returns a "hostname" based on payload information"""
@@ -64,7 +64,9 @@ def get_hostname(payload):
         vm_info = subprocess.Popen(["openstack","server","show",iid,"-fjson"], stdout=subprocess.PIPE).communicate()[0]
         if vm_info == "":
             return None
-        vm_info = fix_json(vm_info)
+        print(vm_info)
+        #vm_info = fix_json(vm_info)
+        vm_info = json.loads(vm_info)
         addresses = get_address_dict(vm_info["addresses"])
         if addresses.get("public"):
             ip = addresses["public"][0]
@@ -122,3 +124,11 @@ def vm_create(payload):
             attempt_url(aq_url)
     else:
         print("No metadata, skipping")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "attempt":
+            if len(sys.argv) > 2:
+                attempt_url(sys.argv[2])
+            else:
+                print("Provide a URL to attempt")

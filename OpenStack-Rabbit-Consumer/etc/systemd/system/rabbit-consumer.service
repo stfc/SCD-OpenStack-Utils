@@ -1,0 +1,9 @@
+[Unit]
+Description=Rabbit MQ consumer - Runs aquilon commands based on rabbitmq messages
+
+[Service]
+ExecStart=/bin/bash -c "source /etc/openstack-utils/rabbit-consumer/scd-openrc.sh && /etc/openstack-utils/rabbit-consumer/consumer.py"
+StandardOutput=syslog
+StandardError=syslog
+WorkingDirectory=/etc/openstack-utils/
+
