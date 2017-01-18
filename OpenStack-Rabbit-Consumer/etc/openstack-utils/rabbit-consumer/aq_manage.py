@@ -14,6 +14,18 @@ make_reset = "?personality=nubesvms&osversion=6x-x86_64&archetype=ral-tier1&osna
 req_ses = requests.Session()
 req_ses.verify = "/etc/grid-security/certificates/"
 
+try:
+    config = SafeConfigParser()
+    config.read("/etc/openstack-utils/rabbit-consumer/consumer.ini")
+    kinit_suffix = config.get("kerberos", "suffix")
+    if kinit_suffix != "":
+        kinit_call = ["kinit","-k",kinit_suffix]
+    else:
+        kinit_call = ["kinit","-k"]
+except:
+    print("Could not load config file.")
+    sys.exit()
+
 def fix_json(fake_json):
     """Used after getting json from openstack which returns a list of dictionaries with field, value pairs"""
     if isinstance(fake_json, str): fake_json = json.loads(fake_json)
@@ -28,7 +40,7 @@ def attempt_url(url, retry=5):
     out = req_ses.post(url, auth=auth).text
     #kerberos authentication
     if out != "No data\n" or out != "":
-        subprocess.call(["kinit","-k"])
+        subprocess.call(kinit_call)
         auth = HTTPKerberosAuth()
     print("---",out,"---")
     count = 0
