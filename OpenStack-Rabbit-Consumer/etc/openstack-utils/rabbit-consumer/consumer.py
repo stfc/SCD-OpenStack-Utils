@@ -1,16 +1,24 @@
 #!/usr/bin/python
-import pika, json, aq_manage, sys
+import pika, json, aq_manage, sys, os
 from ConfigParser import SafeConfigParser
 
 try:
     config = SafeConfigParser()
-    config.read("consumer.ini")
-    host = config.get("consumer", "host")
-    port = config.getint("consumer", "port")
-    login_user = config.get("consumer", "login_user")
-    login_pass = config.get("consumer", "login_pass")
-    exchanges = config.get("consumer", "exchanges")
+    config.read("/etc/openstack-utils/rabbit-consumer/consumer.ini")
+    host = config.get("rabbit", "host")
+    port = config.getint("rabbit", "port")
+    login_user = config.get("rabbit", "login_user")
+    login_pass = config.get("rabbit", "login_pass")
+    exchanges = config.get("rabbit", "exchanges")
     exchanges = exchanges.split("\n")
+
+    os.environ["OS_AUTH_URL"]=config.get("openstack","auth_url")
+    os.environ["OS_PROJECT_ID"]=config.get("openstack","project_id")
+    os.environ["OS_PROJECT_NAME"]=config.get("openstack","project_name")
+    os.environ["OS_USER_DOMAIN_NAME"]=config.get("openstack","user_domain")
+    os.environ["OS_USERNAME"]=config.get("openstack","username")
+    os.environ["OS_PASSWORD"]=config.get("openstack","password")
+    os.environ["OS_CACERT"]=config.get("openstack","cacert")
 except:
     print("Could not load config file.")
     sys.exit()
@@ -30,8 +38,6 @@ def on_message(channel, method, header, raw_body):
         aq_manage.vm_delete(payload)
     channel.basic_ack(delivery_tag=method.delivery_tag)
 
-"http://rabbit1.nubes.rl.ac.uk:15672/api/queues/%2F/ral.info"
-
 credentials = pika.PlainCredentials(login_user,login_pass)
 parameters = pika.ConnectionParameters(host,
                                        port,
@@ -43,8 +49,8 @@ connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 channel.queue_declare("ral.info")
 print(exchanges)
+#consider making queue exclusive
 for exchange in exchanges:
-    print(exchange)
     channel.queue_bind("ral.info",
                        exchange,
                        "ral.info")
