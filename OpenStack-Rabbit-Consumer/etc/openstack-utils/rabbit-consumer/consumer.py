@@ -19,8 +19,9 @@ try:
     os.environ["OS_USERNAME"]=config.get("openstack","username")
     os.environ["OS_PASSWORD"]=config.get("openstack","password")
     os.environ["OS_CACERT"]=config.get("openstack","cacert")
-except:
+except Exception as e:
     print("Could not load config file.")
+    print(e)
     sys.exit()
 
 def on_message(channel, method, header, raw_body):
