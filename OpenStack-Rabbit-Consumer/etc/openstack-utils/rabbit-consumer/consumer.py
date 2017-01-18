@@ -1,15 +1,24 @@
-import pika, json, aq_manage, sys
+#!/usr/bin/python
+import pika, json, aq_manage, sys, os
 from ConfigParser import SafeConfigParser
 
 try:
     config = SafeConfigParser()
-    config.read("/etc/openstack-utils/consumer.ini")
-    host = config.get("consumer", "host")
-    port = config.getint("consumer", "port")
-    login_user = config.get("consumer", "login_user")
-    login_pass = config.get("consumer", "login_pass")
-    exchanges = config.get("consumer", "host")
+    config.read("/etc/openstack-utils/rabbit-consumer/consumer.ini")
+    host = config.get("rabbit", "host")
+    port = config.getint("rabbit", "port")
+    login_user = config.get("rabbit", "login_user")
+    login_pass = config.get("rabbit", "login_pass")
+    exchanges = config.get("rabbit", "exchanges")
     exchanges = exchanges.split("\n")
+
+    os.environ["OS_AUTH_URL"]=config.get("openstack","auth_url")
+    os.environ["OS_PROJECT_ID"]=config.get("openstack","project_id")
+    os.environ["OS_PROJECT_NAME"]=config.get("openstack","project_name")
+    os.environ["OS_USER_DOMAIN_NAME"]=config.get("openstack","user_domain")
+    os.environ["OS_USERNAME"]=config.get("openstack","username")
+    os.environ["OS_PASSWORD"]=config.get("openstack","password")
+    os.environ["OS_CACERT"]=config.get("openstack","cacert")
 except:
     print("Could not load config file.")
     sys.exit()
@@ -19,11 +28,12 @@ def on_message(channel, method, header, raw_body):
     message = json.loads(json.loads(body)["oslo.message"])
     event = message.get("event_type")
     if event != "compute.metrics.update" and event != "compute.instance.exists":
+        print(message.get("_context_user_name"))
         print(event)
     if event == "compute.instance.create.end":
         payload = message["payload"]
         aq_manage.vm_create(payload)
-    elif event == "compute.instance.soft_delete.end":
+    elif event == "compute.instance.soft_delete.start":
         payload = message["payload"]
         aq_manage.vm_delete(payload)
     channel.basic_ack(delivery_tag=method.delivery_tag)
@@ -38,6 +48,8 @@ parameters = pika.ConnectionParameters(host,
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 channel.queue_declare("ral.info")
+print(exchanges)
+#consider making queue exclusive
 for exchange in exchanges:
     channel.queue_bind("ral.info",
                        exchange,
