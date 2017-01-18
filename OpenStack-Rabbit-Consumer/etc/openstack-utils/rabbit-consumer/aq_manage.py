@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import subprocess, requests, json, sys
 from requests_kerberos import HTTPKerberosAuth
+from ConfigParser import SafeConfigParser
 
 #used for finding hostnames based on ip
 hostname_url = "http://aquilon.gridpp.rl.ac.uk:6901/find/host?ip={0}"
@@ -22,8 +23,9 @@ try:
         kinit_call = ["kinit","-k",kinit_suffix]
     else:
         kinit_call = ["kinit","-k"]
-except:
+except Exception as e:
     print("Could not load config file.")
+    print(e)
     sys.exit()
 
 def fix_json(fake_json):
