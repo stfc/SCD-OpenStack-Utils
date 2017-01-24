@@ -17,7 +17,7 @@ req_ses.verify = "/etc/grid-security/certificates/"
 
 try:
     config = SafeConfigParser()
-    config.read("/etc/openstack-utils/rabbit-consumer/consumer.ini")
+    config.read("/usr/local/bin/openstack-message-consumer.ini")
     kinit_suffix = config.get("kerberos", "suffix")
     if kinit_suffix != "":
         kinit_call = ["kinit","-k",kinit_suffix]

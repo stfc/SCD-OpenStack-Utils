@@ -4,7 +4,7 @@ from ConfigParser import SafeConfigParser
 
 try:
     config = SafeConfigParser()
-    config.read("/etc/openstack-utils/rabbit-consumer/consumer.ini")
+    config.read("/etc/openstack-utils/consumer.ini")
     host = config.get("rabbit", "host")
     port = config.getint("rabbit", "port")
     login_user = config.get("rabbit", "login_user")

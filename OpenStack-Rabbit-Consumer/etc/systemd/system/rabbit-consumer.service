@@ -2,7 +2,7 @@
 Description=Rabbit MQ consumer - Runs aquilon commands based on rabbitmq messages
 
 [Service]
-ExecStart=/etc/openstack-utils/rabbit-consumer/consumer.py
+ExecStart=/usr/local/bin/openstack-message-consumer.py
 StandardOutput=syslog
 StandardError=syslog
-WorkingDirectory=/etc/openstack-utils/
+WorkingDirectory=/usr/local/bin/
