@@ -81,7 +81,11 @@ def get_hostname(payload):
         print(vm_info)
         #vm_info = fix_json(vm_info)
         vm_info = json.loads(vm_info)
-        addresses = get_address_dict(vm_info["addresses"])
+        for section in vm_info:
+            if section["Field"] == "addresses":
+                addresses = get_address_dict(section["Value"])
+        if addresses == "":
+            return None
         if addresses.get("public"):
             ip = addresses["public"][0]
             hostname = req_ses.get(hostname_url.format(ip)).text
