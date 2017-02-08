@@ -34,7 +34,7 @@ def on_message(channel, method, header, raw_body):
     if event == "compute.instance.create.end":
         payload = message["payload"]
         aq_manage.vm_create(payload)
-    elif event == "compute.instance.soft_delete.start":
+    elif event == "compute.instance.soft_delete.start" or event == "compute.instance.delete.start":
         payload = message["payload"]
         aq_manage.vm_delete(payload)
     channel.basic_ack(delivery_tag=method.delivery_tag)
