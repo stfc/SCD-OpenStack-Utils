@@ -1,0 +1,16 @@
+#!/bin/bash
+
+rally_test=$1
+
+rally_results_path="/tmp/6902c0c1-0869-4af2-9a74-6132a968eb33"
+rally_results_cmd=`rally task start $rally_test | grep "rally task results"`
+echo "$rally_results_cmd"
+rally_task_id=`echo $rally_results_cmd | sed 's/rally task results//g' | sed 's/ //g'`
+
+echo "$rally_task_id"
+rally_results_path="/tmp/results/$rally_task_id"
+echo $rally_results_path
+rally_results_cmd > $rally_results_path
+rally_extract_command="rally-extract-results $rally_results_path"
+echo $rally_extract_command
+$rally_extract_command
