@@ -31,62 +31,62 @@ print nowtime.tm_hour
 #print starttime
 #print endtime
 
-if nowtime.tm_hour >= 9 and nowtime.tm_hour <=17:
+if nowtime.tm_hour >= 9 and nowtime.tm_hour <=16:
     workhours = True
 else:
     workhours = False
 
 
 
-    with open(sys.argv[1]) as data_file:
-        data = json.load(data_file)
+with open(sys.argv[1]) as data_file:
+  data = json.load(data_file)
 
-    datastring = ''
-    metrics = []
+datastring = ''
+metrics = []
 
-    for test in data:
-        #rint test['key']['name'
-        for result in test['result']:
-            metric = {}
-            metric['fields'] = {}
-            metric['measurement'] = test['key']['name']
+for test in data:
+  print test['key']['name']
+  for result in test['result']:
+      metric = {}
+      metric['fields'] = {}
+      metric['measurement'] = test['key']['name']
 
-            metric['fields']['success'] = 1
-            for sla in test['sla']:
-       #         print sla
-      #          print sla['success']
-                if sla['success'] == False:
-                   metric['fields']['success'] = 0
+      metric['fields']['success'] = 1
+      for sla in test['sla']:
+          print sla
+          print sla['success']
+          if sla['success'] == False:
+             metric['fields']['success'] = 0
 
-     #       print result['duration']
-            metric['fields']['duration'] = result['duration']
-    #        metrics.append(metric)
-            #rint result['timestamp']
-            for atomic_action in result['atomic_actions']:
-                metric['fields'][atomic_action] = result['atomic_actions'][atomic_action]
-            metrics.append(metric)
-                #rint atomic_action + ' = ' + str(result['atomic_actions'][atomic_action])
-
-
-    #print metrics
-
-    json_metrics = []
-    for metric in metrics:
-        #print metric
-        metric['tags'] = { 'instance': instance }
-        json_metrics.append(metric)
-        for field in metric['fields']:
-            datastring += metric['measurement'].replace('.','-')+',instance='+metric['tags']['instance']+',workhours='+str(workhours)
-            datastring +=' '+field.replace('.','-')+'=' + str(metric['fields'][field])
-            datastring += "\n"
-
-    datastring = datastring
-
-    #print json_metrics
-
-    print datastring
+             print result['duration']
+             metric['fields']['duration'] = result['duration']
+             #metrics.append(metric)
+             #rint result['timestamp']
+             for atomic_action in result['atomic_actions']:
+                 metric['fields'][atomic_action] = result['atomic_actions'][atomic_action]
+             metrics.append(metric)
+                     #rint atomic_action + ' = ' + str(result['atomic_actions'][atomic_action])
 
 
-    r = requests.post(url,data=datastring,auth=(username,password))
-    print r.text
-    print r
+print metrics
+
+json_metrics = []
+for metric in metrics:
+       #print metric
+   metric['tags'] = { 'instance': instance }
+   json_metrics.append(metric)
+   for field in metric['fields']:
+       datastring += metric['measurement'].replace('.','-')+',instance='+metric['tags']['instance']+',workhours='+str(workhours)
+       datastring +=' '+field.replace('.','-')+'=' + str(metric['fields'][field])
+       datastring += "\n"
+
+datastring = datastring
+
+print json_metrics
+
+print datastring
+
+
+r = requests.post(url,data=datastring,auth=(username,password))
+print r.text
+print r
