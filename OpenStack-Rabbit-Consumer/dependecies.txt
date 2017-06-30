@@ -3,5 +3,5 @@ dependencies
 python-pika
 python-requests
 python-requests-kerberos
+krb5-workstation
 
-python-openstackclient
