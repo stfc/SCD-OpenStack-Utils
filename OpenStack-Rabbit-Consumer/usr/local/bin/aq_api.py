@@ -21,8 +21,8 @@ def verify_kerberos_ticket():
         logger.warn("No ticket found / expired. Obtaining new one")
         kinit_cmd = ['kinit', '-k']
 
-        if config.get("kerberos", "suffix") != "":
-            kinit_cmd.append(config.get("kerberos", "suffix"))
+        if common.config.get("kerberos", "suffix") != "":
+            kinit_cmd.append(common.config.get("kerberos", "suffix"))
 
         subprocess.call(kinit_cmd)
 
