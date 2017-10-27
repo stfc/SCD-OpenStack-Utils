@@ -17,17 +17,43 @@ def is_aq_message(message):
     is for an Aquilon VM.
     """
     metadata = message.get("payload").get("metadata")
+    print(metadata)
     if metadata:
         if set(metadata.keys()).intersection(['AQ_DOMAIN', 'AQ_SANDBOX', 'AQ_OSVERSION', 'AQ_PERSONALITY', 'AQ_ARCHETYPE', 'AQ_OS']):
             return True
+    if metadata:
+        if set(metadata.keys()).intersection(['aq_domain', 'aq_sandbox', 'aq_osversion', 'aq_personality', 'aq_archetype', 'aq_os']):
+            return True
+    metadata = message.get("payload").get("image_meta")
+    print(metadata)
+    if metadata:
+        if set(metadata.keys()).intersection(['AQ_DOMAIN', 'AQ_SANDBOX', 'AQ_OSVERSION', 'AQ_PERSONALITY', 'AQ_ARCHETYPE', 'AQ_OS']):
+            return True
+    if metadata:
+        if set(metadata.keys()).intersection(['aq_domain', 'aq_sandbox', 'aq_osversion', 'aq_personality', 'aq_archetype', 'aq_os']):
+            return True
+   
     return False
+
+def get_AQ_value(message,key):
+    returnstring = None
+    returnstring = message.get("payload").get("metadata").get(key)
+    if (returnstring == None):
+        returnstring = message.get("payload").get("image_meta").get(key)
+        if (returnstring == None):
+            returnstring = message.get("payload").get("metadata").get(key.lower())
+            if (returnstring == None):
+                returnstring = message.get("payload").get("image_meta").get(key.lower())
+    return returnstring
 
 
 def consume(message):
     event = message.get("event_type")
-
+    print (event)
     if event == "compute.instance.create.end":
+        print (message)
         if is_aq_message(message):
+            print("=== Received Aquilon VM create message ===")
             logger.info("=== Received Aquilon VM create message ===")
 
             project_name = message.get("_context_project_name")
@@ -61,12 +87,22 @@ def consume(message):
                 logger.error("Failed to update metadata: " + str(e))
                 raise Exception("Failed to update metadata")
 
-            domain = message.get("payload").get("metadata").get("AQ_DOMAIN")
-            sandbox = message.get("payload").get("metadata").get("AQ_SANDBOX")
-            personality = message.get("payload").get("metadata").get("AQ_PERSONALITY")
-            osversion = message.get("payload").get("metadata").get("AQ_OSVERSION")
-            archetype = message.get("payload").get("metadata").get("AQ_ARCHETYPE")
-            osname = message.get("payload").get("metadata").get("AQ_OSNAME")
+            print (message.get("payload"))
+            domain = get_AQ_value(message,"AQ_DOMAIN")
+            sandbox =   get_AQ_value(message,"AQ_SANDBOX")
+            personality =  get_AQ_value(message,"AQ_PERSONALITY")
+            osversion =  get_AQ_value(message,"AQ_OSVERSION")
+            archetype =  get_AQ_value(message,"AQ_ARCHETYPE")
+            osname =  get_AQ_value(message,"AQ_OSNAME")
+ 
+
+
+            print("Domain: %s" % domain)
+            print("Sandbox: %s" % sandbox)
+            print("Personality: %s" % personality)
+            print("OS Version: %s" % osversion)
+            print("Archetype: %s" % archetype)
+            print("OS Name: %s" % osname)
 
             logger.info("Domain: %s" % domain)
             logger.info("Sandbox: %s" % sandbox)
@@ -92,6 +128,7 @@ def consume(message):
 
 
     if event == "compute.instance.delete.start":
+        print (message)
         if is_aq_message(message):
             logger.info("=== Received Aquilon VM delete message ===")
 
