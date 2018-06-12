@@ -2,12 +2,14 @@
 
 rally_test=$1
 
-rally_results_cmd=`rally task start $rally_test | grep "rally task result"`
+echo "This may take some time..."
+rally_results_cmd=`rally task start $rally_test | grep -m 1 "rally task result"`
 echo "$rally_results_cmd"
 if [[ $rally_results_cmd == *'rally task results'* ]]
 then
     rally_task_id=`echo $rally_results_cmd | sed 's/rally task results//g' | sed 's/ //g'`
     echo "$rally_task_id"
+    mkdir -p /tmp/results
     rally_results_path="/tmp/results/$rally_task_id"
     echo $rally_results_path
     $rally_results_cmd > $rally_results_path;
