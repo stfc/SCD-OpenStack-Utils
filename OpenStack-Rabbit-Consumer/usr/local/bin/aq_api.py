@@ -12,10 +12,19 @@ MAKE_SUFFIX = "/host/{0}/command/make"
 MANAGE_SUFFIX = "/host/{0}/command/manage?hostname={0}&{1}={2}&force=true"
 HOST_CHECK_SUFFIX = "/host/{0}"
 CREATE_MACHINE_SUFFIX = "/next_machine/{0}?model={1}&serial={2}&vmhost={3}&cpucount={4}&memory={5}"
+
 ADD_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?mac={2}"
+
+
+
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
-ADD_INTERFACE_ADDRESS_SUFFIX = "/machine/{0}/interface/{1}/address?ip={2}&fqdn={3}"
-ADD_HOST_SUFFIX="/host/{0}?machine={1}&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
+
+ADD_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
+DEL_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&fqdn={2}"
+
+ADD_HOST_SUFFIX="/host/{0}?machine={1}&ip={3}&archetype={4}{5}&personality={6}&osname={7}&osversion={8}"
+#ADD_HOST_SUFFIX="/host/{0}?machine={1}&sandbox=sap86629/daaas-main&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
+
 DELETE_HOST_SUFFIX="/host/{0}"
 DELETE_MACHINE_SUFFIX="/machine/{0}"
 
@@ -63,6 +72,7 @@ def setup_requests(url, method, desc):
     logger.info("%s: Success ", desc)
     return response.text
 
+
 def aq_make(hostname, personality=None, osversion=None,
         archetype=None, osname=None):
     logger.info("Attempting to make templates for %s", hostname)
@@ -75,7 +85,7 @@ def aq_make(hostname, personality=None, osversion=None,
 
     url = common.config.get("aquilon", "url") + MAKE_SUFFIX.format(hostname) + "?" + "&".join(params)
 
-    response = setup_requests(url,"put","Make Template: ")
+    response = setup_requests(url,"post","Make Template: ")
 
 
 
@@ -90,6 +100,9 @@ def aq_manage(hostname, env_type, env_name):
 
 
 
+
+
+
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
 
@@ -98,6 +111,10 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
 
     response = setup_requests(url, "put", "Create Machine")
     return response
+
+
+
+
 
 def delete_machine(machinename):
     logger.info("Attempting to delete machine for %s", machinename)
@@ -109,14 +126,54 @@ def delete_machine(machinename):
 
 
 
-def create_host(hostname, machinename, firstip, archetype,
+
+
+
+def create_host(hostname, machinename, sandbox, firstip, archetype,
         domain, personality, osname, osversion):
     logger.info("Attempting to create host for %s ", hostname)
 
-    url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(hostname,
-        machinename, firstip, archetype, domain, personality, osname, osversion)
+    try:
+        osname = "sl"
+        
+    
+#        if domain == None:
+#            domain = "&sandbox=" + sandbox
+#        elif sandbox == None:
+#            domain = ""
+#        else
+#            domain = "&domain=" + domain
 
-    response = setup_requests(url, "put", "Host Create")
+        if domain != None:
+            domain = "&domain=" + domain
+        elif sandbox != None:
+            domain = "&sandbox=" + sandbox
+        else:
+            domain = ""
+        
+    
+        url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(hostname,
+            machinename, sandbox, firstip, archetype, domain, personality, osname, osversion)
+    
+        logger.info(url)
+
+        # reset personality etc ...
+        try:
+            response = setup_requests(url, "put", "Host Create")
+        except Exception as e:
+            logger.warn("Aquilon create host failed")
+    except Exception as e:
+        logger.warn("=========================")
+        logger.warn(e)
+
+
+    
+
+
+
+
+
+
 
 
 def delete_host(hostname):
@@ -131,12 +188,17 @@ def delete_host(hostname):
 
 def add_machine_interface(machinename, ipaddr, macaddr, label,
         interfacename, hostname):
-    logger.info("Attempting to add ip %s to machine %s ", ipaddr,machinename)
+    logger.info("Attempting to add interface %s to machine %s ", interfacename, machinename)
 
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_SUFFIX.format(
         machinename, interfacename, macaddr)
 
     response = setup_requests(url, "put", "Add Machine Interface")
+
+
+
+
+
 
 def add_machine_interface_address(machinename, ipaddr, macaddr,
         label, interfacename, hostname):
@@ -146,7 +208,27 @@ def add_machine_interface_address(machinename, ipaddr, macaddr,
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname)
 
-    response = setup_requests(url, "put", "Add Machine Interface Address")
+    try:
+        response = setup_requests(url, "put", "Add Machine Interface Address")
+    except Exception as e:
+        logger.warn(e)
+
+
+def del_machine_interface_address(hostname, interfacename,machinename): 
+    logger.info("Attempting to delete address from machine %s ", machinename)
+
+    url = common.config.get("aquilon", "url") + DEL_INTERFACE_ADDRESS_SUFFIX.format(
+        machinename, interfacename, hostname)
+
+    try:
+        response = setup_requests(url, "delete", "Del Machine Interface Address")
+    except Exception as e:
+        logger.warn(e)
+
+
+
+
+
 
 
 def update_machine_interface(machinename, interfacename):
