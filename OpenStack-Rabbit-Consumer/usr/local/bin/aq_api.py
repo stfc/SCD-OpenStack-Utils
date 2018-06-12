@@ -7,7 +7,7 @@ from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 
-model="vm-openstack"
+MODEL="vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
 MANAGE_SUFFIX = "/host/{0}/command/manage?hostname={0}&{1}={2}&force=true"
 HOST_CHECK_SUFFIX = "/host/{0}"
@@ -107,7 +107,7 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
 
     url = common.config.get("aquilon", "url") + CREATE_MACHINE_SUFFIX.format(
-        prefix, model, uuid, vmhost, vcpus, memory)
+        prefix, MODEL, uuid, vmhost, vcpus, memory)
 
     response = setup_requests(url, "put", "Create Machine")
     return response
@@ -135,8 +135,8 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
 
     try:
         osname = "sl"
-        
-    
+
+
 #        if domain == None:
 #            domain = "&sandbox=" + sandbox
 #        elif sandbox == None:
@@ -150,11 +150,11 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
             domain = "&sandbox=" + sandbox
         else:
             domain = ""
-        
-    
+
+
         url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(hostname,
             machinename, sandbox, firstip, archetype, domain, personality, osname, osversion)
-    
+
         logger.info(url)
 
         # reset personality etc ...
@@ -167,7 +167,7 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
         logger.warn(e)
 
 
-    
+
 
 
 
@@ -214,7 +214,7 @@ def add_machine_interface_address(machinename, ipaddr, macaddr,
         logger.warn(e)
 
 
-def del_machine_interface_address(hostname, interfacename,machinename): 
+def del_machine_interface_address(hostname, interfacename,machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
 
     url = common.config.get("aquilon", "url") + DEL_INTERFACE_ADDRESS_SUFFIX.format(
@@ -264,7 +264,7 @@ def reset_env(hostname, machinename):
     try:
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
     except Exception as e:
-        raise Exception("Aquilon reset personalit etc failed")
+        raise Exception("Aquilon reset personality etc failed")
 
 
 
