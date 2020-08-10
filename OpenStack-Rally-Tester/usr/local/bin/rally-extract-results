@@ -79,8 +79,12 @@ else:
 
             if test['key']['name'] == 'VMTasks.boot_runcommand_delete':
                 metric['fields']['image'] = '"' + test['key']['kw']['args']['image']['name'] + '"'
-
             metrics.append(metric)
+
+            if test['key']['name'] == 'VMTasks.boot_runcommand_delete':
+                metric['fields']['network'] = '"' + test['key']['kw']['args']['fixednetwork'] + '"'
+            metrics.append(metric)
+
 
 #print metrics
 
