@@ -16,3 +16,7 @@ cgi script providing a simple method for obtaining the name of the creating user
 ## OpenStack-Rally-Tester
 
 ## OpenStack-SecurityGroup-Create-Project
+
+## OpenStack_irisiam_mapper
+
+CGI Script for mapping a project ID found in the instance metadata to any IRIS IAM groups that have access to this project
