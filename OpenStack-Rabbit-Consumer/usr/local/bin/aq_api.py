@@ -22,7 +22,7 @@ UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
 ADD_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
 DEL_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&fqdn={2}"
 
-ADD_HOST_SUFFIX="/host/{0}?machine={1}&ip={3}&archetype={4}{5}&personality={6}&osname={7}&osversion={8}"
+ADD_HOST_SUFFIX="/host/{0}?machine={1}&ip={3}&archetype={4}&domain={5}&personality={6}&osname={7}&osversion={8}"
 #ADD_HOST_SUFFIX="/host/{0}?machine={1}&sandbox=sap86629/daaas-main&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
 
 DELETE_HOST_SUFFIX="/host/{0}"
@@ -134,7 +134,7 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
     logger.info("Attempting to create host for %s ", hostname)
 
     try:
-        osname = "sl"
+#        osname = "sl"
 
 
 #        if domain == None:
@@ -150,10 +150,12 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
             domain = "&sandbox=" + sandbox
         else:
             domain = ""
-
+        default_domain = common.config.get("aquilon", "default_domain")
+        default_personality = common.config.get("aquilon", "default_personality")
+        default_archetype = common.config.get("aquilon", "default_archetype")
 
         url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(hostname,
-            machinename, sandbox, firstip, archetype, domain, personality, osname, osversion)
+            machinename, sandbox, firstip, default_archetype, default_domain, default_personality, osname, osversion)
 
         logger.info(url)
 
