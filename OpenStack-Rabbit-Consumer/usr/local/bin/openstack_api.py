@@ -12,7 +12,7 @@ def authenticate(project_id):
     logger.info("Attempting to authenticate to Openstack")
 
     s = requests.Session()
-    s.verify = "/etc/grid-security/certificates/"
+#    s.verify = "/etc/grid-security/certificates/"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     s.mount('https://', HTTPAdapter(max_retries=retries))
 
