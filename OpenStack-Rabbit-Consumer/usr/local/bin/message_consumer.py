@@ -10,7 +10,7 @@ import openstack_api
 import aq_api
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 logging.basicConfig(format='[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s')
 logger = logging.getLogger('tcpserver')
@@ -88,12 +88,12 @@ def consume(message):
             elif len(hostnames) <1:
                     hostname = vm_name + '.novalocal'
                     hostnames.append(hostname)
-            logger.error("Hostnames: " + ', '.join(hostnames))
+            logger.info("Hostnames: " + ', '.join(hostnames))
 
-            logger.error("Project Name: %s (%s)", project_name, project_id)
-            logger.error("VM Name: %s (%s) ", vm_name, vm_id)
-            logger.error("Username: %s", username)
-            logger.error("Hostnames: " + ', '.join(hostnames))
+            logger.info("Project Name: %s (%s)", project_name, project_id)
+            logger.info("VM Name: %s (%s) ", vm_name, vm_id)
+            logger.info("Username: %s", username)
+            logger.info("Hostnames: " + ', '.join(hostnames))
 
             try:
                 # add hostname(s) to metadata for use when capturing delete messages
@@ -102,7 +102,7 @@ def consume(message):
             except Exception as e:
                 logger.error("Failed to update metadata: %s", e)
                 raise Exception("Failed to update metadata")
-            logger.error("Building metadata")
+            logger.info("Building metadata")
 
             domain = get_metadata_value(message,"AQ_DOMAIN")
             sandbox =   get_metadata_value(message,"AQ_SANDBOX")
@@ -118,7 +118,7 @@ def consume(message):
             vmhost = message.get("payload").get("host")
             firstip = message.get("payload").get("fixed_ips")[0].get("address")
 
-            logger.error("Creating machine")
+            logger.info("Creating machine")
 
             try:
                 machinename = aq_api.create_machine(
@@ -126,7 +126,7 @@ def consume(message):
             except Exception as e:
                 raise Exception("Failed to create machine {0}".format(e))
                 logger.error("Failed to create machine {0}".format(e))
-            logger.error("Creating Interfaces")
+            logger.info("Creating Interfaces")
 
             for index,ip in enumerate(message.get("payload").get("fixed_ips")):
                     interfacename = "eth"+ str(index)
@@ -138,7 +138,7 @@ def consume(message):
                     except Exception as e:
                         raise Exception("Failed to add machine interface %s",e)
                         logger.error("Failed to add machine interface %s",e)
-            logger.error("Creating Interfaces2")
+            logger.info("Creating Interfaces2")
 
             for index,ip in enumerate(message.get("payload").get("fixed_ips")):
                 if index>0:
@@ -151,13 +151,13 @@ def consume(message):
                             hostnames[0] )
                     except Exception as e:
                         raise Exception("Failed to add machine interface address %s",e)
-            logger.error("Updating Interfaces")
+            logger.info("Updating Interfaces")
 
             try:
                 aq_api.update_machine_interface(machinename,"eth0")
             except Exception as e:
                 raise Exception("Failed to set default interface %s",e)
-            logger.error("Creating Host")
+            logger.info("Creating Host")
 
             try:
                 aq_api.create_host(hostnames[0], machinename, sandbox, firstip,
