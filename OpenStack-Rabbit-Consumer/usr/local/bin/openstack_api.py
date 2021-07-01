@@ -7,7 +7,6 @@ from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
 
-
 def authenticate(project_id):
     logger.info("Attempting to authenticate to Openstack")
 
@@ -16,7 +15,7 @@ def authenticate(project_id):
     s.mount('https://', HTTPAdapter(max_retries=retries))
 
     # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
-    data = { 
+    data = {
         "auth" : {
             "identity" : {
                 "methods" : ["password"],

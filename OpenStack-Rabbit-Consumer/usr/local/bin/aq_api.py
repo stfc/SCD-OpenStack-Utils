@@ -15,8 +15,6 @@ CREATE_MACHINE_SUFFIX = "/next_machine/{0}?model={1}&serial={2}&vmhost={3}&cpuco
 
 ADD_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?mac={2}"
 
-
-
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
 
 ADD_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
@@ -72,7 +70,6 @@ def setup_requests(url, method, desc):
     logger.info("%s: Success ", desc)
     return response.text
 
-
 def aq_make(hostname, personality=None, osversion=None,
         archetype=None, osname=None):
     logger.info("Attempting to make templates for %s", hostname)
@@ -87,9 +84,6 @@ def aq_make(hostname, personality=None, osversion=None,
 
     response = setup_requests(url,"post","Make Template: ")
 
-
-
-
 def aq_manage(hostname, env_type, env_name):
     logger.info("Attempting to manage %s to %s %s", hostname, env_type, env_name)
 
@@ -97,11 +91,6 @@ def aq_manage(hostname, env_type, env_name):
         hostname, env_type, env_name)
 
     response = setup_requests(url, "post", "Manage Host")
-
-
-
-
-
 
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
@@ -112,10 +101,6 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     response = setup_requests(url, "put", "Create Machine")
     return response
 
-
-
-
-
 def delete_machine(machinename):
     logger.info("Attempting to delete machine for %s", machinename)
 
@@ -124,26 +109,11 @@ def delete_machine(machinename):
 
     response = setup_requests(url, "delete", "Delete Machine")
 
-
-
-
-
-
 def create_host(hostname, machinename, sandbox, firstip, archetype,
         domain, personality, osname, osversion):
     logger.info("Attempting to create host for %s ", hostname)
 
     try:
-#        osname = "sl"
-
-
-#        if domain == None:
-#            domain = "&sandbox=" + sandbox
-#        elif sandbox == None:
-#            domain = ""
-#        else
-#            domain = "&domain=" + domain
-
         if domain != None:
             domain = "&domain=" + domain
         elif sandbox != None:
@@ -168,25 +138,12 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
         logger.warn("=========================")
         logger.warn(e)
 
-
-
-
-
-
-
-
-
-
-
 def delete_host(hostname):
     logger.info("Attempting to delete host for %s ", hostname)
 
     url = common.config.get("aquilon", "url") + DELETE_HOST_SUFFIX.format(hostname)
 
     response = setup_requests(url, "delete", "Host Delete")
-
-
-
 
 def add_machine_interface(machinename, ipaddr, macaddr, label,
         interfacename, hostname):
@@ -196,11 +153,6 @@ def add_machine_interface(machinename, ipaddr, macaddr, label,
         machinename, interfacename, macaddr)
 
     response = setup_requests(url, "put", "Add Machine Interface")
-
-
-
-
-
 
 def add_machine_interface_address(machinename, ipaddr, macaddr,
         label, interfacename, hostname):
@@ -215,7 +167,6 @@ def add_machine_interface_address(machinename, ipaddr, macaddr,
     except Exception as e:
         logger.warn(e)
 
-
 def del_machine_interface_address(hostname, interfacename,machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
 
@@ -227,12 +178,6 @@ def del_machine_interface_address(hostname, interfacename,machinename):
     except Exception as e:
         logger.warn(e)
 
-
-
-
-
-
-
 def update_machine_interface(machinename, interfacename):
     logger.info("Attempting to bootable %s ", machinename)
 
@@ -241,10 +186,8 @@ def update_machine_interface(machinename, interfacename):
 
     response = setup_requests(url, "post", "Update Machine Interface")
 
-
 def set_env(hostname, domain=None, sandbox=None, personality=None,
        osversion=None, archetype=None, osname=None):
-
 
     if domain:
         aq_manage(hostname, "domain", domain)
@@ -253,7 +196,6 @@ def set_env(hostname, domain=None, sandbox=None, personality=None,
 
     aq_make(hostname, personality, osversion, archetype, osname)
 
-
 def reset_env(hostname, machinename):
     # manage the host back to prod
     try:
@@ -261,15 +203,11 @@ def reset_env(hostname, machinename):
     except Exception as e:
         raise Exception("Aquilon reset env failed")
 
-
     # reset personality etc ...
     try:
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
     except Exception as e:
         raise Exception("Aquilon reset personality etc failed")
-
-
-
 
 def check_host_exists(hostname):
     logger.info("Attempting to make templates for %s", hostname)

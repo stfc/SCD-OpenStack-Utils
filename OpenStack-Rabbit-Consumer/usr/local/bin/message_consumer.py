@@ -15,7 +15,6 @@ logger.setLevel(logging.DEBUG)
 logging.basicConfig(format='[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s')
 logger = logging.getLogger('tcpserver')
 
-
 def is_aq_message(message):
     """
     Check to see if the metadata in the message contains entries that suggest it
@@ -45,7 +44,6 @@ def is_aq_message(message):
 
     return False
 
-
 def get_metadata_value(message,key):
     """
     Function which gets the value from the possible for a given metadata key
@@ -60,7 +58,6 @@ def get_metadata_value(message,key):
             if (returnstring == None):
                 returnstring = message.get("payload").get("image_meta").get(key.lower())
     return returnstring
-
 
 def consume(message):
     event = message.get("event_type")
@@ -151,7 +148,7 @@ def consume(message):
                             ip.get("address"), ip.get("vif_mac"), ip.get("label"),
                             interfacename,
                             #socket.gethostbyaddr(ip.get("address"))[0])
-                            hostnames[0] )  
+                            hostnames[0] )
                     except Exception as e:
                         raise Exception("Failed to add machine interface address %s",e)
             logger.error("Updating Interfaces")
@@ -162,7 +159,6 @@ def consume(message):
                 raise Exception("Failed to set default interface %s",e)
             logger.error("Creating Host")
 
-
             try:
                 aq_api.create_host(hostnames[0], machinename, sandbox, firstip,
                     archetype, domain, personality, osname, osversion)                      # osname needs to be valid otherwise it fails - also need to pass in sandbox
@@ -172,8 +168,6 @@ def consume(message):
                 raise Exception("IP Address already exists on %s, using that machine instead", newmachinename)
                 logger.error("IP Address already exists on %s, using that machine instead", newmachinename)
                 raise Exception("Failed to create host: %s", e)
-
-
 
             openstack_api.update_metadata(project_id, vm_id, {"AQ_MACHINENAME" : machinename})
             logger.info("Domain: %s", domain)
@@ -205,13 +199,11 @@ def consume(message):
                         vm_id, {"AQ_STATUS" : "FAILED"})
                     raise Exception("Failed to set Aquilon configuration %s",e)
 
-
             logger.info("Successfully applied Aquilon configuration")
             openstack_api.update_metadata(project_id,
                 vm_id, {"AQ_STATUS" : "SUCCESS"})
 
             logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
-
 
     if event == "compute.instance.delete.start":
         if is_aq_message(message):
@@ -230,10 +222,7 @@ def consume(message):
             logger.info("Username: %s", username)
             logger.info("Hostnames: %s", metadata.get('HOSTNAMES'))
 
-
-
             logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
-
 
             for host in metadata.get("HOSTNAMES").split(","):
                 try:
@@ -279,7 +268,6 @@ def on_message(channel, method, header, raw_body):
 
     # remove the message from the queue
     channel.basic_ack(delivery_tag=method.delivery_tag)
-
 
 def initiate_consumer():
     logger.info("Initiating message consumer")
