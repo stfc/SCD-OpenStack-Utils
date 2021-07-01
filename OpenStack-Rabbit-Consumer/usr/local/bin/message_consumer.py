@@ -16,8 +16,6 @@ logging.basicConfig(format='[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)
 logger = logging.getLogger('tcpserver')
 
 
-prefix="vm-openstack-dev-"
-
 def is_aq_message(message):
     """
     Check to see if the metadata in the message contains entries that suggest it
@@ -66,6 +64,7 @@ def get_metadata_value(message,key):
 
 def consume(message):
     event = message.get("event_type")
+    prefix = common.config.get("aquilon", "prefix")
     if event == "compute.instance.create.end":
         if is_aq_message(message):
             logger.info("=== Received Aquilon VM create message ===")
@@ -85,15 +84,19 @@ def consume(message):
 
                 except Exception as e:
                     logger.error("Problem converting ip to hostname", e)
-                    raise Exception("Problem converting ip to hostname")
+            #        raise Exception("Problem converting ip to hostname")
 
             if len(hostnames) > 1:
                 logger.warn("There are multiple hostnames assigned to this VM")
+            elif len(hostnames) <1:
+                    hostname = vm_name + '.novalocal'
+                    hostnames.append(hostname)
+            logger.error("Hostnames: " + ', '.join(hostnames))
 
-            logger.info("Project Name: %s (%s)", project_name, project_id)
-            logger.info("VM Name: %s (%s) ", vm_name, vm_id)
-            logger.info("Username: %s", username)
-            logger.info("Hostnames: " + ', '.join(hostnames))
+            logger.error("Project Name: %s (%s)", project_name, project_id)
+            logger.error("VM Name: %s (%s) ", vm_name, vm_id)
+            logger.error("Username: %s", username)
+            logger.error("Hostnames: " + ', '.join(hostnames))
 
             try:
                 # add hostname(s) to metadata for use when capturing delete messages
@@ -102,13 +105,14 @@ def consume(message):
             except Exception as e:
                 logger.error("Failed to update metadata: %s", e)
                 raise Exception("Failed to update metadata")
+            logger.error("Building metadata")
 
             domain = get_metadata_value(message,"AQ_DOMAIN")
             sandbox =   get_metadata_value(message,"AQ_SANDBOX")
             personality =  get_metadata_value(message,"AQ_PERSONALITY")
             osversion =  get_metadata_value(message,"AQ_OSVERSION")
             archetype =  get_metadata_value(message,"AQ_ARCHETYPE")
-            osname =  get_metadata_value(message,"AQ_OSNAME")
+            osname =  get_metadata_value(message,"AQ_OS")
 
             vcpus = message.get("payload").get("vcpus")
             root_gb = message.get("payload").get("root_gb")
@@ -117,23 +121,27 @@ def consume(message):
             vmhost = message.get("payload").get("host")
             firstip = message.get("payload").get("fixed_ips")[0].get("address")
 
+            logger.error("Creating machine")
+
             try:
                 machinename = aq_api.create_machine(
                     uuid, vmhost, vcpus, memory_mb, hostname, prefix)
             except Exception as e:
-                raise Exception("Failed to create machine %s",e)
-                logger.error("Failed to create machine %s",e)
-
+                raise Exception("Failed to create machine {0}".format(e))
+                logger.error("Failed to create machine {0}".format(e))
+            logger.error("Creating Interfaces")
 
             for index,ip in enumerate(message.get("payload").get("fixed_ips")):
                     interfacename = "eth"+ str(index)
                     try:
                         aq_api.add_machine_interface(machinename, ip.get("address"),
                             ip.get("vif_mac"), ip.get("label"), interfacename,
-                            socket.gethostbyaddr(ip.get("address"))[0])
+                            #socket.gethostbyaddr(ip.get("address"))[0])
+                            hostnames[0])
                     except Exception as e:
                         raise Exception("Failed to add machine interface %s",e)
                         logger.error("Failed to add machine interface %s",e)
+            logger.error("Creating Interfaces2")
 
             for index,ip in enumerate(message.get("payload").get("fixed_ips")):
                 if index>0:
@@ -142,14 +150,17 @@ def consume(message):
                         aq_api.add_machine_interface_address(machinename,
                             ip.get("address"), ip.get("vif_mac"), ip.get("label"),
                             interfacename,
-                            socket.gethostbyaddr(ip.get("address"))[0])
+                            #socket.gethostbyaddr(ip.get("address"))[0])
+                            hostnames[0] )  
                     except Exception as e:
                         raise Exception("Failed to add machine interface address %s",e)
+            logger.error("Updating Interfaces")
 
             try:
                 aq_api.update_machine_interface(machinename,"eth0")
             except Exception as e:
                 raise Exception("Failed to set default interface %s",e)
+            logger.error("Creating Host")
 
 
             try:
@@ -161,7 +172,7 @@ def consume(message):
                 raise Exception("IP Address already exists on %s, using that machine instead", newmachinename)
                 logger.error("IP Address already exists on %s, using that machine instead", newmachinename)
                 raise Exception("Failed to create host: %s", e)
-                
+
 
 
             openstack_api.update_metadata(project_id, vm_id, {"AQ_MACHINENAME" : machinename})
@@ -184,7 +195,7 @@ def consume(message):
                 except Exception as e:
                     logger.error("Failed to manage in Aquilon: %s", e)
                     openstack_api.update_metadata(project_id,
-                        vm_id, {"AQ_STATUS" : "FAILED"})
+                       vm_id, {"AQ_STATUS" : "FAILED"})
                     raise Exception("Failed to set Aquilon configuration %s",e)
                 try:
                     aq_api.aq_make(hostname, personality, osversion, archetype, osname)
