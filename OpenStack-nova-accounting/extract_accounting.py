@@ -21,7 +21,7 @@ try:
    password = parser.get('auth', 'password')
    instance = parser.get('cloud','instance')
 except:
-   print 'Unable to read from config file'
+   print('Unable to read from config file')
    sys.exit(1)
 
 url = 'http://'+host+'/write?db='+database +'&precision=s'
@@ -32,7 +32,7 @@ try:
    parser.read('/etc/nova/nova.conf')
    connectionstring = parser.get('database','connection')
 except:
-   print 'Unable to read from config file'
+   print('Unable to read from config file')
    sys.exit(1)
 
 starttime='2017-04-19 12:00'
@@ -42,7 +42,7 @@ endtime='2017-04-19 12:15'
 endtime=sys.argv[2]
 print(endtime)
 endyyyymm=datetime.datetime.strptime(endtime,"%Y-%m-%d %H:%M").strftime('%Y-%m')
-endtimestamp = time.mktime(datetime.datetime.strptime(endtime, "%Y-%m-%d %H:%M").timetuple())  
+endtimestamp = time.mktime(datetime.datetime.strptime(endtime, "%Y-%m-%d %H:%M").timetuple())
 print(endtimestamp)
 
 engine = sqlalchemy.create_engine(connectionstring, encoding='utf-8')
@@ -51,7 +51,7 @@ sess = sessionmaker(bind=engine)()
 query = 'call get_accounting_data( "' + starttime +'","' + endtime + '")'
 
 
-print query
+print(query)
 results = sess.execute(query, { 'p1': starttime, 'p2': endtime })
 
 
@@ -66,18 +66,18 @@ for result in results:
             if "default" in result["Department"]:
                 department=result["Project"]
             else:
-                department=result["Department"]   
+                department=result["Department"]
 
-    except: 
+    except:
         department="UNKNOWN"
-    
+
     instancetype=result['Charge_Unit']
 
 
     datastring += "Accounting"
     datastring += ",instance="+instance
     datastring += ",AvailabilityZone="+result["AvailabilityZone"]
-    datastring += ",Project="+result["Project"].replace(' ','\ ') 
+    datastring += ",Project="+result["Project"].replace(' ','\ ')
     datastring += ",Department="+department.replace(' ','\ ')
     datastring += ",Flavor="+result["Flavor"].replace('.','_')
     datastring += ",FlavorPrefix="+result["Flavor"].split('.')[0]
@@ -102,7 +102,7 @@ for result in results:
         print(result)
         datastring += ",COST=" + str(float(result["GPU_Num"]) * float(result['VM_Seconds']) * float(result["Per_Unit_Cost"]) / float(3600))
     else:
-        datastring += ",COST=" + str(float(result["VCPU"]) * float(result['VM_Seconds']) * float(result["Per_Unit_Cost"]) / float(3600))    
+        datastring += ",COST=" + str(float(result["VCPU"]) * float(result['VM_Seconds']) * float(result["Per_Unit_Cost"]) / float(3600))
 
     datastring += " "+str(long(endtimestamp))
     datastring += "\n"
