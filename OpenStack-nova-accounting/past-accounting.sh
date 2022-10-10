@@ -8,11 +8,7 @@ enddateepoch=`date -d "$enddate" +%s`
 startdateepoch=`date -d "$startdate" +%s`
 
 endtime=$startdate
-starttime=`date -d "$startdate 1 day" +"%Y-%m-%d %H:%M"`
-starttimeepoch=`date -d "$starttime" +%s`
-endtimeepoch=`date -d "$starttime" +%s`
-echo $endtimeepoch
-echo $enddateepoch
+starttime=`date -d "$startdate" +"%Y-%m-%d %H:%M"`
 
 
 while [ $endtimeepoch -lt $enddateepoch ];
