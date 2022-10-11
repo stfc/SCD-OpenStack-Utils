@@ -21,7 +21,7 @@ try:
    password = parser.get('auth', 'password')
    instance = parser.get('cloud','instance')
 except:
-   print('Unable to read from config file')
+   raise RuntimeError('Unable to read from config file')
    sys.exit(1)
 
 url = 'http://'+host+'/write?db='+database +'&precision=s'
@@ -32,13 +32,11 @@ try:
    parser.read('/etc/nova/nova.conf')
    connectionstring = parser.get('database','connection')
 except:
-   print('Unable to read from config file')
+   raise RuntimeError('Unable to read from config file')
    sys.exit(1)
 
-starttime='2017-04-19 12:00'
 starttime=sys.argv[1]
 print(starttime)
-endtime='2017-04-19 12:15'
 endtime=sys.argv[2]
 print(endtime)
 endyyyymm=datetime.datetime.strptime(endtime,"%Y-%m-%d %H:%M").strftime('%Y-%m')
@@ -107,9 +105,9 @@ for result in results:
     datastring += " "+str(long(endtimestamp))
     datastring += "\n"
 
-print datastring
+print(datastring)
 
 
 r = requests.post(url,data=datastring,auth=(username,password))
-print r.text
-print r
+print(r.text)
+print(r)
