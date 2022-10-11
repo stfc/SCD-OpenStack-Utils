@@ -10,6 +10,8 @@ from sqlalchemy.sql import select
 from sqlalchemy.orm import sessionmaker
 from ConfigParser import SafeConfigParser
 
+#This config parsing needs rewriting to support python3
+#The parsing of the nova.conf seems to not work with the python3 version
 
 # Read from config file
 parser = SafeConfigParser()
