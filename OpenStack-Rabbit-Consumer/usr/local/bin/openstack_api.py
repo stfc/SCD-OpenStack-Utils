@@ -8,6 +8,7 @@ import common
 
 logger = logging.getLogger(__name__)
 
+
 def authenticate(project_id):
     logger.info("Attempting to authenticate to Openstack")
 
@@ -17,20 +18,20 @@ def authenticate(project_id):
 
     # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
     data = {
-        "auth" : {
-            "identity" : {
-                "methods" : ["password"],
-                "password" : {
-                    "user" : {
-                        "name" : common.config.get("openstack", "username"),
-                        "domain" : { "name": common.config.get("openstack", "domain") },
-                        "password" : common.config.get("openstack", "password")
+        "auth": {
+            "identity": {
+                "methods": ["password"],
+                "password": {
+                    "user": {
+                        "name": common.config.get("openstack", "username"),
+                        "domain": {"name": common.config.get("openstack", "domain")},
+                        "password": common.config.get("openstack", "password")
                     }
                 }
             },
-            "scope" : {
-                "project" : {
-                    "id" : project_id
+            "scope": {
+                "project": {
+                    "id": project_id
                 }
             }
         }
@@ -55,10 +56,10 @@ def update_metadata(project_id, instance_id, metadata):
 
     token = authenticate(project_id)
 
-    headers = {'Content-type': 'application/json', "X-Auth-Token" : token}
+    headers = {'Content-type': 'application/json', "X-Auth-Token": token}
     url = common.config.get("openstack", "compute_url") + '/%s/servers/%s/metadata' % (project_id, instance_id)
 
-    response = s.post(url, headers=headers, json={"metadata" : metadata})
+    response = s.post(url, headers=headers, json={"metadata": metadata})
 
     if response.status_code != 200:
         logger.error("Setting metadata failed")

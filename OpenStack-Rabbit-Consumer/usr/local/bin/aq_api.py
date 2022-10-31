@@ -8,7 +8,7 @@ from urllib3.util.retry import Retry
 
 import common
 
-MODEL="vm-openstack"
+MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
 MANAGE_SUFFIX = "/host/{0}/command/manage?hostname={0}&{1}={2}&force=true"
 HOST_CHECK_SUFFIX = "/host/{0}"
@@ -21,11 +21,11 @@ UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
 ADD_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
 DEL_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&fqdn={2}"
 
-ADD_HOST_SUFFIX="/host/{0}?machine={1}&ip={3}&archetype={4}&domain={5}&personality={6}&osname={7}&osversion={8}"
-#ADD_HOST_SUFFIX="/host/{0}?machine={1}&sandbox=sap86629/daaas-main&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
+ADD_HOST_SUFFIX = "/host/{0}?machine={1}&ip={3}&archetype={4}&domain={5}&personality={6}&osname={7}&osversion={8}"
+# ADD_HOST_SUFFIX="/host/{0}?machine={1}&sandbox=sap86629/daaas-main&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
 
-DELETE_HOST_SUFFIX="/host/{0}"
-DELETE_MACHINE_SUFFIX="/machine/{0}"
+DELETE_HOST_SUFFIX = "/host/{0}"
+DELETE_MACHINE_SUFFIX = "/machine/{0}"
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ def verify_kerberos_ticket():
 
     logger.info("Kerberos ticket success")
     return True
+
 
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
@@ -71,8 +72,9 @@ def setup_requests(url, method, desc):
     logger.info("%s: Success ", desc)
     return response.text
 
+
 def aq_make(hostname, personality=None, osversion=None,
-        archetype=None, osname=None):
+            archetype=None, osname=None):
     logger.info("Attempting to make templates for %s", hostname)
 
     # strip out blank parameters and hostname
@@ -83,7 +85,8 @@ def aq_make(hostname, personality=None, osversion=None,
 
     url = common.config.get("aquilon", "url") + MAKE_SUFFIX.format(hostname) + "?" + "&".join(params)
 
-    response = setup_requests(url,"post","Make Template: ")
+    response = setup_requests(url, "post", "Make Template: ")
+
 
 def aq_manage(hostname, env_type, env_name):
     logger.info("Attempting to manage %s to %s %s", hostname, env_type, env_name)
@@ -92,6 +95,7 @@ def aq_manage(hostname, env_type, env_name):
         hostname, env_type, env_name)
 
     response = setup_requests(url, "post", "Manage Host")
+
 
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
@@ -102,6 +106,7 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     response = setup_requests(url, "put", "Create Machine")
     return response
 
+
 def delete_machine(machinename):
     logger.info("Attempting to delete machine for %s", machinename)
 
@@ -110,8 +115,9 @@ def delete_machine(machinename):
 
     response = setup_requests(url, "delete", "Delete Machine")
 
+
 def create_host(hostname, machinename, sandbox, firstip, archetype,
-        domain, personality, osname, osversion):
+                domain, personality, osname, osversion):
     logger.info("Attempting to create host for %s ", hostname)
 
     try:
@@ -126,7 +132,9 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
         default_archetype = common.config.get("aquilon", "default_archetype")
 
         url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(hostname,
-            machinename, sandbox, firstip, default_archetype, default_domain, default_personality, osname, osversion)
+                                                                           machinename, sandbox, firstip,
+                                                                           default_archetype, default_domain,
+                                                                           default_personality, osname, osversion)
 
         logger.info(url)
 
@@ -139,6 +147,7 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
         logger.warning("=========================")
         logger.warning(e)
 
+
 def delete_host(hostname):
     logger.info("Attempting to delete host for %s ", hostname)
 
@@ -146,8 +155,9 @@ def delete_host(hostname):
 
     response = setup_requests(url, "delete", "Host Delete")
 
+
 def add_machine_interface(machinename, ipaddr, macaddr, label,
-        interfacename, hostname):
+                          interfacename, hostname):
     logger.info("Attempting to add interface %s to machine %s ", interfacename, machinename)
 
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_SUFFIX.format(
@@ -155,10 +165,11 @@ def add_machine_interface(machinename, ipaddr, macaddr, label,
 
     response = setup_requests(url, "put", "Add Machine Interface")
 
+
 def add_machine_interface_address(machinename, ipaddr, macaddr,
-        label, interfacename, hostname):
+                                  label, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ",
-        ipaddr, machinename)
+                ipaddr, machinename)
 
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname)
@@ -168,7 +179,8 @@ def add_machine_interface_address(machinename, ipaddr, macaddr,
     except Exception as e:
         logger.warning(e)
 
-def del_machine_interface_address(hostname, interfacename,machinename):
+
+def del_machine_interface_address(hostname, interfacename, machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
 
     url = common.config.get("aquilon", "url") + DEL_INTERFACE_ADDRESS_SUFFIX.format(
@@ -179,6 +191,7 @@ def del_machine_interface_address(hostname, interfacename,machinename):
     except Exception as e:
         logger.warning(e)
 
+
 def update_machine_interface(machinename, interfacename):
     logger.info("Attempting to bootable %s ", machinename)
 
@@ -187,15 +200,16 @@ def update_machine_interface(machinename, interfacename):
 
     response = setup_requests(url, "post", "Update Machine Interface")
 
-def set_env(hostname, domain=None, sandbox=None, personality=None,
-       osversion=None, archetype=None, osname=None):
 
+def set_env(hostname, domain=None, sandbox=None, personality=None,
+            osversion=None, archetype=None, osname=None):
     if domain:
         aq_manage(hostname, "domain", domain)
     else:
         aq_manage(hostname, "sandbox", sandbox)
 
     aq_make(hostname, personality, osversion, archetype, osname)
+
 
 def reset_env(hostname, machinename):
     # manage the host back to prod
@@ -209,6 +223,7 @@ def reset_env(hostname, machinename):
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
     except Exception as e:
         raise Exception("Aquilon reset personality etc failed")
+
 
 def check_host_exists(hostname):
     logger.info("Attempting to make templates for %s", hostname)
