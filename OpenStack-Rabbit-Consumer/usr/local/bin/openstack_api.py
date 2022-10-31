@@ -1,9 +1,10 @@
 import logging
-import requests
-import common
 
-from requests.packages.urllib3.util.retry import Retry
+import requests
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+import common
 
 logger = logging.getLogger(__name__)
 

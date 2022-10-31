@@ -1,13 +1,14 @@
-import sys
-import pika
 import json
-import socket
 import logging
 import re
+import socket
+import sys
 
+import pika
+
+import aq_api
 import common
 import openstack_api
-import aq_api
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -84,7 +85,7 @@ def consume(message):
             #        raise Exception("Problem converting ip to hostname")
 
             if len(hostnames) > 1:
-                logger.warn("There are multiple hostnames assigned to this VM")
+                logger.warning("There are multiple hostnames assigned to this VM")
             elif len(hostnames) <1:
                     hostname = vm_name + '.novalocal'
                     hostnames.append(hostname)

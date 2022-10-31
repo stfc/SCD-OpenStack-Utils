@@ -1,11 +1,12 @@
 import logging
-import requests
-import common
 import subprocess
 
-from requests.packages.urllib3.util.retry import Retry
+import requests
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
+from urllib3.util.retry import Retry
+
+import common
 
 MODEL="vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
@@ -33,7 +34,7 @@ def verify_kerberos_ticket():
     logger.info("Checking for valid Kerberos Ticket")
 
     if subprocess.call(['klist', '-s']) == 1:
-        logger.warn("No ticket found / expired. Obtaining new one")
+        logger.warning("No ticket found / expired. Obtaining new one")
         kinit_cmd = ['kinit', '-k']
 
         if common.config.get("kerberos", "suffix") != "":
@@ -133,10 +134,10 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
         try:
             response = setup_requests(url, "put", "Host Create")
         except Exception as e:
-            logger.warn("Aquilon create host failed")
+            logger.warning("Aquilon create host failed")
     except Exception as e:
-        logger.warn("=========================")
-        logger.warn(e)
+        logger.warning("=========================")
+        logger.warning(e)
 
 def delete_host(hostname):
     logger.info("Attempting to delete host for %s ", hostname)
@@ -165,7 +166,7 @@ def add_machine_interface_address(machinename, ipaddr, macaddr,
     try:
         response = setup_requests(url, "put", "Add Machine Interface Address")
     except Exception as e:
-        logger.warn(e)
+        logger.warning(e)
 
 def del_machine_interface_address(hostname, interfacename,machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
@@ -176,7 +177,7 @@ def del_machine_interface_address(hostname, interfacename,machinename):
     try:
         response = setup_requests(url, "delete", "Del Machine Interface Address")
     except Exception as e:
-        logger.warn(e)
+        logger.warning(e)
 
 def update_machine_interface(machinename, interfacename):
     logger.info("Attempting to bootable %s ", machinename)
