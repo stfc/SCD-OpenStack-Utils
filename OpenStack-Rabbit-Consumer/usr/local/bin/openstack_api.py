@@ -2,7 +2,7 @@ import logging
 import requests
 import common
 
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
