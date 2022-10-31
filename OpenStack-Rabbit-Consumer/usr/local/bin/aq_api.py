@@ -121,9 +121,9 @@ def create_host(hostname, machinename, sandbox, firstip, archetype,
     logger.info("Attempting to create host for %s ", hostname)
 
     try:
-        if domain != None:
+        if domain is not None:
             domain = "&domain=" + domain
-        elif sandbox != None:
+        elif sandbox is not None:
             domain = "&sandbox=" + sandbox
         else:
             domain = ""

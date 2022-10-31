@@ -57,11 +57,11 @@ def get_metadata_value(message, key):
     the key in uppercase or lowercase
     """
     returnstring = message.get("payload").get("metadata").get(key)
-    if (returnstring == None):
+    if returnstring is None:
         returnstring = message.get("payload").get("image_meta").get(key)
-        if (returnstring == None):
+        if returnstring is None:
             returnstring = message.get("payload").get("metadata").get(key.lower())
-            if (returnstring == None):
+            if returnstring is None:
                 returnstring = message.get("payload").get("image_meta").get(key.lower())
     return returnstring
 
