@@ -1,6 +1,6 @@
 #!/usr/bin/python
-import sys
 import logging
+import sys
 import time
 
 import common

@@ -1,13 +1,14 @@
-import sys
-import pika
 import json
-import socket
 import logging
 import re
+import socket
+import sys
 
+import pika
+
+import aq_api
 import common
 import openstack_api
-import aq_api
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

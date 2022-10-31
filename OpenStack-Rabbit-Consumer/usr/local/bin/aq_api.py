@@ -1,11 +1,12 @@
 import logging
-import requests
-import common
 import subprocess
 
-from urllib3.util.retry import Retry
+import requests
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
+from urllib3.util.retry import Retry
+
+import common
 
 MODEL="vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
