@@ -132,7 +132,6 @@ def consume(message):
                     uuid, vmhost, vcpus, memory_mb, hostname, prefix)
             except Exception as e:
                 raise Exception("Failed to create machine {0}".format(e))
-                logger.error("Failed to create machine {0}".format(e))
             logger.info("Creating Interfaces")
 
             for index, ip in enumerate(message.get("payload").get("fixed_ips")):
