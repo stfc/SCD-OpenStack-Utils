@@ -41,13 +41,14 @@ def verify_kerberos_ticket():
         logger.warning("No ticket found / expired. Obtaining new one")
         kinit_cmd = ["kinit", "-k"]
 
-        if common.config.get("kerberos", "suffix") != "":
-            kinit_cmd.append(common.config.get("kerberos", "suffix"))
+        suffix = common.config.get("kerberos", "suffix", fallback="")
+        if suffix:
+            kinit_cmd.append(suffix)
 
         subprocess.call(kinit_cmd)
 
         if subprocess.call(["klist", "-s"]) == 1:
-            raise Exception("Failed to obtain valid Kerberos ticket")
+            raise RuntimeError("Failed to obtain valid Kerberos ticket")
 
     logger.info("Kerberos ticket success")
     return True
