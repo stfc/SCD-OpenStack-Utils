@@ -1,10 +1,12 @@
 import logging
+import sys
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 logger = logging.getLogger(__name__)
 
 config = None
+
 
 def load_config():
     global config
