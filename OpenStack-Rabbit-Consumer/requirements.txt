@@ -1,4 +1,3 @@
-ConfigParser
 requests
 requests_kerberos
 pika
