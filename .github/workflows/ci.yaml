@@ -18,8 +18,13 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
       - name: Install test runner and deps
         run: |
-          echo "TODO"
-      - name: Run Tests
-        run: echo "TODO"
+          python -m pip install --upgrade pip
+          # Required for requests-kerberos
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libkrb5-dev
+          pip install -r OpenStack-Rabbit-Consumer/requirements.txt
+          pip install -r OpenStack-Rabbit-Consumer/requirements-test.txt
+      - name: Run OpenStack-Rabbit-Consumer tests
+        run: pytest 
