@@ -13,8 +13,10 @@ import openstack_api
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logging.basicConfig(format='[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s')
-logger = logging.getLogger('tcpserver')
+logging.basicConfig(
+    format="[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s"
+)
+logger = logging.getLogger("tcpserver")
 
 
 def is_aq_message(message):
@@ -28,11 +30,27 @@ def is_aq_message(message):
     metadata = message.get("payload").get("metadata")
     if metadata:
         if set(metadata.keys()).intersection(
-                ['AQ_DOMAIN', 'AQ_SANDBOX', 'AQ_OSVERSION', 'AQ_PERSONALITY', 'AQ_ARCHETYPE', 'AQ_OS']):
+            [
+                "AQ_DOMAIN",
+                "AQ_SANDBOX",
+                "AQ_OSVERSION",
+                "AQ_PERSONALITY",
+                "AQ_ARCHETYPE",
+                "AQ_OS",
+            ]
+        ):
             return True
     if metadata:
         if set(metadata.keys()).intersection(
-                ['aq_domain', 'aq_sandbox', 'aq_osversion', 'aq_personality', 'aq_archetype', 'aq_os']):
+            [
+                "aq_domain",
+                "aq_sandbox",
+                "aq_osversion",
+                "aq_personality",
+                "aq_archetype",
+                "aq_os",
+            ]
+        ):
             return True
     metadata = message.get("payload").get("image_meta")
 
@@ -40,11 +58,27 @@ def is_aq_message(message):
 
     if metadata:
         if set(metadata.keys()).intersection(
-                ['AQ_DOMAIN', 'AQ_SANDBOX', 'AQ_OSVERSION', 'AQ_PERSONALITY', 'AQ_ARCHETYPE', 'AQ_OS']):
+            [
+                "AQ_DOMAIN",
+                "AQ_SANDBOX",
+                "AQ_OSVERSION",
+                "AQ_PERSONALITY",
+                "AQ_ARCHETYPE",
+                "AQ_OS",
+            ]
+        ):
             return True
     if metadata:
         if set(metadata.keys()).intersection(
-                ['aq_domain', 'aq_sandbox', 'aq_osversion', 'aq_personality', 'aq_archetype', 'aq_os']):
+            [
+                "aq_domain",
+                "aq_sandbox",
+                "aq_osversion",
+                "aq_personality",
+                "aq_archetype",
+                "aq_os",
+            ]
+        ):
             return True
 
     return False
@@ -93,19 +127,21 @@ def consume(message):
             if len(hostnames) > 1:
                 logger.warning("There are multiple hostnames assigned to this VM")
             elif len(hostnames) < 1:
-                hostname = vm_name + '.novalocal'
+                hostname = vm_name + ".novalocal"
                 hostnames.append(hostname)
-            logger.info("Hostnames: " + ', '.join(hostnames))
+            logger.info("Hostnames: " + ", ".join(hostnames))
 
             logger.info("Project Name: %s (%s)", project_name, project_id)
             logger.info("VM Name: %s (%s) ", vm_name, vm_id)
             logger.info("Username: %s", username)
-            logger.info("Hostnames: " + ', '.join(hostnames))
+            logger.info("Hostnames: " + ", ".join(hostnames))
 
             try:
                 # add hostname(s) to metadata for use when capturing delete messages
                 # as these messages do not contain ip information
-                openstack_api.update_metadata(project_id, vm_id, {"HOSTNAMES": ', '.join(hostnames)})
+                openstack_api.update_metadata(
+                    project_id, vm_id, {"HOSTNAMES": ", ".join(hostnames)}
+                )
             except Exception as e:
                 logger.error("Failed to update metadata: %s", e)
                 raise Exception("Failed to update metadata")
@@ -129,7 +165,8 @@ def consume(message):
 
             try:
                 machinename = aq_api.create_machine(
-                    uuid, vmhost, vcpus, memory_mb, hostname, prefix)
+                    uuid, vmhost, vcpus, memory_mb, hostname, prefix
+                )
             except Exception as e:
                 raise Exception("Failed to create machine {0}".format(e))
             logger.info("Creating Interfaces")
@@ -137,10 +174,15 @@ def consume(message):
             for index, ip in enumerate(message.get("payload").get("fixed_ips")):
                 interfacename = "eth" + str(index)
                 try:
-                    aq_api.add_machine_interface(machinename, ip.get("address"),
-                                                 ip.get("vif_mac"), ip.get("label"), interfacename,
-                                                 # socket.gethostbyaddr(ip.get("address"))[0])
-                                                 hostnames[0])
+                    aq_api.add_machine_interface(
+                        machinename,
+                        ip.get("address"),
+                        ip.get("vif_mac"),
+                        ip.get("label"),
+                        interfacename,
+                        # socket.gethostbyaddr(ip.get("address"))[0])
+                        hostnames[0],
+                    )
                 except Exception as e:
                     raise Exception("Failed to add machine interface %s", e)
                     logger.error("Failed to add machine interface %s", e)
@@ -150,11 +192,15 @@ def consume(message):
                 if index > 0:
                     interfacename = "eth" + str(index)
                     try:
-                        aq_api.add_machine_interface_address(machinename,
-                                                             ip.get("address"), ip.get("vif_mac"), ip.get("label"),
-                                                             interfacename,
-                                                             # socket.gethostbyaddr(ip.get("address"))[0])
-                                                             hostnames[0])
+                        aq_api.add_machine_interface_address(
+                            machinename,
+                            ip.get("address"),
+                            ip.get("vif_mac"),
+                            ip.get("label"),
+                            interfacename,
+                            # socket.gethostbyaddr(ip.get("address"))[0])
+                            hostnames[0],
+                        )
                     except Exception as e:
                         raise Exception("Failed to add machine interface address %s", e)
             logger.info("Updating Interfaces")
@@ -166,17 +212,33 @@ def consume(message):
             logger.info("Creating Host")
 
             try:
-                aq_api.create_host(hostnames[0], machinename, sandbox, firstip,
-                                   archetype, domain, personality, osname,
-                                   osversion)  # osname needs to be valid otherwise it fails - also need to pass in sandbox
+                aq_api.create_host(
+                    hostnames[0],
+                    machinename,
+                    sandbox,
+                    firstip,
+                    archetype,
+                    domain,
+                    personality,
+                    osname,
+                    osversion,
+                )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
             except Exception as e:
                 logger.error("Failed to create host: %s", e)
                 newmachinename = re.search("vm-openstack-[A-Za-z]*-[0-9]*", e).group(1)
-                raise Exception("IP Address already exists on %s, using that machine instead", newmachinename)
-                logger.error("IP Address already exists on %s, using that machine instead", newmachinename)
+                raise Exception(
+                    "IP Address already exists on %s, using that machine instead",
+                    newmachinename,
+                )
+                logger.error(
+                    "IP Address already exists on %s, using that machine instead",
+                    newmachinename,
+                )
                 raise Exception("Failed to create host: %s", e)
 
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_MACHINENAME": machinename})
+            openstack_api.update_metadata(
+                project_id, vm_id, {"AQ_MACHINENAME": machinename}
+            )
             logger.info("Domain: %s", domain)
             logger.info("Sandbox: %s", sandbox)
             logger.info("Personality: %s", personality)
@@ -195,20 +257,21 @@ def consume(message):
                         aq_api.aq_manage(hostname, "domain", domain)
                 except Exception as e:
                     logger.error("Failed to manage in Aquilon: %s", e)
-                    openstack_api.update_metadata(project_id,
-                                                  vm_id, {"AQ_STATUS": "FAILED"})
+                    openstack_api.update_metadata(
+                        project_id, vm_id, {"AQ_STATUS": "FAILED"}
+                    )
                     raise Exception("Failed to set Aquilon configuration %s", e)
                 try:
                     aq_api.aq_make(hostname, personality, osversion, archetype, osname)
                 except Exception as e:
                     logger.error("Failed to make in Aquilon: %s", e)
-                    openstack_api.update_metadata(project_id,
-                                                  vm_id, {"AQ_STATUS": "FAILED"})
+                    openstack_api.update_metadata(
+                        project_id, vm_id, {"AQ_STATUS": "FAILED"}
+                    )
                     raise Exception("Failed to set Aquilon configuration %s", e)
 
             logger.info("Successfully applied Aquilon configuration")
-            openstack_api.update_metadata(project_id,
-                                          vm_id, {"AQ_STATUS": "SUCCESS"})
+            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
 
             logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
 
@@ -227,7 +290,7 @@ def consume(message):
             logger.info("Project Name: %s (%s)", project_name, project_id)
             logger.info("VM Name: %s (%s) ", vm_name, vm_id)
             logger.info("Username: %s", username)
-            logger.info("Hostnames: %s", metadata.get('HOSTNAMES'))
+            logger.info("Hostnames: %s", metadata.get("HOSTNAMES"))
 
             logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
 
@@ -236,13 +299,16 @@ def consume(message):
                     aq_api.delete_host(host)
                 except Exception as e:
                     logger.error("Failed to delete host: %s", e)
-                    openstack_api.update_metadata(project_id,
-                                                  vm_id, {"AQ_STATUS": "FAILED"})
+                    openstack_api.update_metadata(
+                        project_id, vm_id, {"AQ_STATUS": "FAILED"}
+                    )
                     raise Exception("Failed to delete host")
                 try:
-                    aq_api.del_machine_interface_address(host, 'eth0', machinename)
+                    aq_api.del_machine_interface_address(host, "eth0", machinename)
                 except Exception as e:
-                    raise Exception("Failed to delete interface address from machine  %s", e)
+                    raise Exception(
+                        "Failed to delete interface address from machine  %s", e
+                    )
 
             try:
                 aq_api.delete_machine(machinename)
@@ -250,17 +316,17 @@ def consume(message):
                 raise Exception("Failed to delete machine")
 
             try:
-                for host in metadata.get('HOSTNAMES').split(','):
+                for host in metadata.get("HOSTNAMES").split(","):
                     aq_api.reset_env(host, machinename)
             except Exception as e:
                 logger.error("Failed to reset Aquilon configuration: %s", e)
-                openstack_api.update_metadata(project_id,
-                                              vm_id, {"AQ_STATUS": "FAILED"})
+                openstack_api.update_metadata(
+                    project_id, vm_id, {"AQ_STATUS": "FAILED"}
+                )
                 raise Exception("Failed to reset Aquilon configuration")
 
             logger.info("Successfully reset Aquilon configuration")
-            logger.info("=== Finished Aquilon deletion hook for VM %s ===",
-                        vm_name)
+            logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 
 def on_message(channel, method, header, raw_body):
@@ -287,9 +353,9 @@ def initiate_consumer():
     exchanges = common.config.get("rabbit", "exchanges").split(",")
 
     credentials = pika.PlainCredentials(login_user, login_pass)
-    parameters = pika.ConnectionParameters(host, port, "/", credentials,
-                                           connection_attempts=10,
-                                           retry_delay=2)
+    parameters = pika.ConnectionParameters(
+        host, port, "/", credentials, connection_attempts=10, retry_delay=2
+    )
 
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()

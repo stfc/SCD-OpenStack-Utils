@@ -14,7 +14,7 @@ def authenticate(project_id):
 
     s = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount('https://', HTTPAdapter(max_retries=retries))
+    s.mount("https://", HTTPAdapter(max_retries=retries))
 
     # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
     data = {
@@ -25,18 +25,16 @@ def authenticate(project_id):
                     "user": {
                         "name": common.config.get("openstack", "username"),
                         "domain": {"name": common.config.get("openstack", "domain")},
-                        "password": common.config.get("openstack", "password")
+                        "password": common.config.get("openstack", "password"),
                     }
-                }
+                },
             },
-            "scope": {
-                "project": {
-                    "id": project_id
-                }
-            }
+            "scope": {"project": {"id": project_id}},
         }
     }
-    response = s.post(common.config.get("openstack", "identity_url") + '/auth/tokens', json=data)
+    response = s.post(
+        common.config.get("openstack", "identity_url") + "/auth/tokens", json=data
+    )
 
     if response.status_code != 201:
         logger.error("Authenticatication failure")
@@ -44,20 +42,25 @@ def authenticate(project_id):
 
     logger.info("Authentication successful")
 
-    return str(response.headers['X-Subject-Token'])
+    return str(response.headers["X-Subject-Token"])
 
 
 def update_metadata(project_id, instance_id, metadata):
-    logger.info("Attempting to set new metadata for VM: %s - %s" % (instance_id, str(metadata)))
+    logger.info(
+        "Attempting to set new metadata for VM: %s - %s" % (instance_id, str(metadata))
+    )
 
     s = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount('https://', HTTPAdapter(max_retries=retries))
+    s.mount("https://", HTTPAdapter(max_retries=retries))
 
     token = authenticate(project_id)
 
-    headers = {'Content-type': 'application/json', "X-Auth-Token": token}
-    url = common.config.get("openstack", "compute_url") + '/%s/servers/%s/metadata' % (project_id, instance_id)
+    headers = {"Content-type": "application/json", "X-Auth-Token": token}
+    url = common.config.get("openstack", "compute_url") + "/%s/servers/%s/metadata" % (
+        project_id,
+        instance_id,
+    )
 
     response = s.post(url, headers=headers, json={"metadata": metadata})
 

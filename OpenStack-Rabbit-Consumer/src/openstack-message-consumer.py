@@ -8,7 +8,7 @@ import message_consumer
 
 logger = logging.getLogger(__name__)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     logging.getLogger("pika").setLevel(logging.ERROR)
     logging.getLogger("requests").setLevel(logging.WARNING)
