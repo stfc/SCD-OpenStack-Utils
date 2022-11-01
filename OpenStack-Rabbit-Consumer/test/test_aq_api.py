@@ -2,19 +2,19 @@ from unittest.mock import patch, call
 
 import pytest
 
-from src.aq_api import verify_kerberos_ticket
+from rabbit_consumer.aq_api import verify_kerberos_ticket
 
 
 def test_verify_kerberos_ticket_valid():
-    with patch("src.aq_api.subprocess.call") as mocked_call:
+    with patch("rabbit_consumer.aq_api.subprocess.call") as mocked_call:
         # Exit code 0 - i.e. valid ticket
         mocked_call.return_value = 0
         assert verify_kerberos_ticket()
         mocked_call.assert_called_once_with(["klist", "-s"])
 
 
-@patch("src.aq_api.subprocess.call")
-@patch("src.aq_api.common.config")
+@patch("rabbit_consumer.aq_api.subprocess.call")
+@patch("rabbit_consumer.aq_api.common.config")
 def test_verify_kerberos_ticket_renew(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
@@ -30,8 +30,8 @@ def test_verify_kerberos_ticket_renew(config, subprocess):
     ]
 
 
-@patch("src.aq_api.subprocess.call")
-@patch("src.aq_api.common.config")
+@patch("rabbit_consumer.aq_api.subprocess.call")
+@patch("rabbit_consumer.aq_api.common.config")
 def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
@@ -48,8 +48,8 @@ def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
     ]
 
 
-@patch("src.aq_api.subprocess.call")
-@patch("src.aq_api.common.config")
+@patch("rabbit_consumer.aq_api.subprocess.call")
+@patch("rabbit_consumer.aq_api.common.config")
 def test_verify_kerberos_ticket_raises(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 1 (klist -s)

@@ -27,4 +27,5 @@ jobs:
           pip install -r OpenStack-Rabbit-Consumer/requirements.txt
           pip install -r OpenStack-Rabbit-Consumer/requirements-test.txt
       - name: Run OpenStack-Rabbit-Consumer tests
-        run: pytest 
+        # Using Python3 to launch the module sets up the Python path for us
+        run: cd OpenStack-Rabbit-Consumer && python3 -m pytest .

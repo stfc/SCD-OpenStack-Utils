@@ -24,4 +24,4 @@ jobs:
           pip install -r OpenStack-Rabbit-Consumer/requirements-test.txt
       - name: Analysing Rabbit Consumer with pylint
         run: |
-          pylint $(git ls-files '*.py' | grep OpenStack-Rabbit-Consumer)
+          cd OpenStack-Rabbit-Consumer && pylint --recursive yes rabbit_consumer test
