@@ -160,8 +160,6 @@ def test_aq_make(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.common.config")
 def test_aq_make_whitespace(config, setup):
-    # TODO: This handling is buggy and will include the
-    # TODO: whitespace strings
     hostname = "host"
     personality = " "
     os_version = "  "
@@ -174,15 +172,13 @@ def test_aq_make_whitespace(config, setup):
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
 
-    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&osversion={os_version}&archetype={archetype}&osname={os_name}"
+    expected_url = f"{domain}/host/{hostname}/command/make?osname={os_name}"
     assert setup.call_args == call(expected_url, "post", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.common.config")
 def test_aq_make_none(config, setup):
-    # TODO: This handling is buggy and will include the
-    # TODO: whitespace strings
     hostname = "my_host_name"
     personality = " "
     os_version = None
@@ -195,27 +191,20 @@ def test_aq_make_none(config, setup):
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
 
-    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&archetype={archetype}"
+    expected_url = f"{domain}/host/{hostname}/command/make"
+    assert "?" not in expected_url  # Since there's no query params
     assert setup.call_args == call(expected_url, "post", mock.ANY)
 
 
+@pytest.mark.parametrize("hostname", ["  ", "", None])
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.common.config")
-def test_aq_make_none_hostname(config, setup):
-    # TODO: This handling is buggy and will include the
-    # TODO: whitespace strings
-    hostname = " "
-    personality = None
-    os_version = None
-    archetype = None
-    os_name = None
+def test_aq_make_none_hostname(config, setup, hostname):
     domain = "https://example.com"
 
     config.get.return_value = domain
 
-    aq_make(hostname, personality, os_version, archetype, os_name)
-    setup.assert_called_once()
+    with pytest.raises(ValueError):
+        aq_make(hostname)
 
-    # TODO strip empty query string
-    expected_url = f"{domain}/host/{hostname}/command/make?"
-    assert setup.call_args == call(expected_url, "post", mock.ANY)
+    setup.assert_not_called()

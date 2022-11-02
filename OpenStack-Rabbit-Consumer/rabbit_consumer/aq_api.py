@@ -81,8 +81,16 @@ def setup_requests(url, method, desc):
 def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=None):
     logger.info("Attempting to make templates for %s", hostname)
 
-    # strip out blank parameters and hostname
-    params = {k: v for k, v in locals().items() if v is not None and k != "hostname"}
+    params = {
+        "personality": personality,
+        "osversion": osversion,
+        "archetype": archetype,
+        "osname": osname,
+    }
+    # Remove empty values or whitespace values
+    params = {k: v for k, v in params.items() if v and str(v).strip()}
+    if not hostname or not str(hostname).strip():
+        raise ValueError("An empty hostname cannot be used.")
 
     # join remaining parameters to form url string
     params = [k + "=" + v for k, v in params.items()]
@@ -93,8 +101,12 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
         + "?"
         + "&".join(params)
     )
+    if url[-1] == "?":
+        # Trim trailing query param where there are no values
+        url = url[:-1]
 
-    response = setup_requests(url, "post", "Make Template: ")
+    logging.debug(f"POST: {url}")
+    setup_requests(url, "post", "Make Template: ")
 
 
 def aq_manage(hostname, env_type, env_name):
