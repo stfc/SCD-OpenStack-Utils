@@ -1,10 +1,9 @@
 from unittest import mock
-from unittest.mock import patch, call, NonCallableMock, Mock
+from unittest.mock import patch, call, NonCallableMock
 
 import pytest
-from requests.adapters import HTTPAdapter, Retry
 
-from rabbit_consumer.aq_api import verify_kerberos_ticket, setup_requests
+from rabbit_consumer.aq_api import verify_kerberos_ticket, setup_requests, aq_make
 
 
 def test_verify_kerberos_ticket_valid():
@@ -137,3 +136,86 @@ def test_setup_requests_get(_, kerb_auth, requests):
     assert setup_requests(url, "get", desc) == response.text
 
     session.get.assert_called_once_with(url, auth=kerb_auth.return_value)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_make(config, setup):
+    hostname = "host"
+    personality = "pers"
+    os_version = "osvers"
+    archetype = "arch"
+    os_name = "name"
+    domain = "https://example.com"
+
+    config.get.return_value = domain
+
+    aq_make(hostname, personality, os_version, archetype, os_name)
+    setup.assert_called_once()
+
+    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&osversion={os_version}&archetype={archetype}&osname={os_name}"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_make_whitespace(config, setup):
+    # TODO: This handling is buggy and will include the
+    # TODO: whitespace strings
+    hostname = "host"
+    personality = " "
+    os_version = "  "
+    archetype = ""
+    os_name = "name"
+    domain = "https://example.com"
+
+    config.get.return_value = domain
+
+    aq_make(hostname, personality, os_version, archetype, os_name)
+    setup.assert_called_once()
+
+    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&osversion={os_version}&archetype={archetype}&osname={os_name}"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_make_none(config, setup):
+    # TODO: This handling is buggy and will include the
+    # TODO: whitespace strings
+    hostname = "my_host_name"
+    personality = " "
+    os_version = None
+    archetype = ""
+    os_name = None
+    domain = "https://example.com"
+
+    config.get.return_value = domain
+
+    aq_make(hostname, personality, os_version, archetype, os_name)
+    setup.assert_called_once()
+
+    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&archetype={archetype}"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_make_none_hostname(config, setup):
+    # TODO: This handling is buggy and will include the
+    # TODO: whitespace strings
+    hostname = " "
+    personality = None
+    os_version = None
+    archetype = None
+    os_name = None
+    domain = "https://example.com"
+
+    config.get.return_value = domain
+
+    aq_make(hostname, personality, os_version, archetype, os_name)
+    setup.assert_called_once()
+
+    # TODO strip empty query string
+    expected_url = f"{domain}/host/{hostname}/command/make?"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
