@@ -272,7 +272,7 @@ def test_aq_delete_machine(config, setup):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.common.config")
-def test_aq_create_machine(config, setup):
+def test_aq_create_host(config, setup):
     host, machine = "host_str", "machine_str"
     first_ip = "ip_str"
     os_name, os_version = "name_str", "vers_str"
