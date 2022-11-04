@@ -57,27 +57,29 @@ def verify_kerberos_ticket():
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
 
-    logging.debug(f"{method}: {url}")
+    logging.debug("%s: %s", method, url)
 
-    s = requests.Session()
-    s.verify = "/etc/grid-security/certificates/"
+    session = requests.Session()
+    session.verify = "/etc/grid-security/certificates/"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":
-        response = s.post(url, auth=HTTPKerberosAuth())
+        response = session.post(url, auth=HTTPKerberosAuth())
     elif method == "put":
-        response = s.put(url, auth=HTTPKerberosAuth())
+        response = session.put(url, auth=HTTPKerberosAuth())
     elif method == "delete":
-        response = s.delete(url, auth=HTTPKerberosAuth())
+        response = session.delete(url, auth=HTTPKerberosAuth())
     else:
-        response = s.get(url, auth=HTTPKerberosAuth())
+        response = session.get(url, auth=HTTPKerberosAuth())
     if response.status_code != 200:
         logger.error("%s: Failed: %s", desc, response.text)
         logger.error(url)
-        raise Exception("%s: Failed", desc)
+        raise ConnectionError(
+            f"Failed {desc}: {response.status_code} -" "{response.text}"
+        )
 
     logger.info("%s: Success ", desc)
-    logger.debug(f"Response: {response.text}")
+    logger.debug("Response: %s", response.text)
     return response.text
 
 

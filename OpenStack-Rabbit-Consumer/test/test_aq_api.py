@@ -109,7 +109,7 @@ def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests)
     response = session.get.return_value
     response.status_code = 500
 
-    with pytest.raises(Exception):
+    with pytest.raises(ConnectionError):
         setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
 
     assert session.verify == "/etc/grid-security/certificates/"
