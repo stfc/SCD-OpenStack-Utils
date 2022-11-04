@@ -207,10 +207,7 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
         machinename, interfacename, ipaddr, hostname
     )
 
-    try:
-        setup_requests(url, "put", "Add Machine Interface Address")
-    except Exception as e:
-        logger.warning(e)
+    setup_requests(url, "put", "Add Machine Interface Address")
 
 
 def del_machine_interface_address(hostname, interfacename, machinename):
@@ -220,10 +217,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
         machinename, interfacename, hostname
     )
 
-    try:
-        setup_requests(url, "delete", "Del Machine Interface Address")
-    except Exception as e:
-        logger.warning(e)
+    setup_requests(url, "delete", "Del Machine Interface Address")
 
 
 def update_machine_interface(machinename, interfacename):
@@ -257,15 +251,15 @@ def reset_env(hostname):
     # manage the host back to prod
     try:
         aq_manage(hostname, "domain", "prod_cloud")
-    except Exception as e:
-        raise Exception(f"Aquilon reset env failed: {e}")
+    except Exception as err:
+        raise Exception(f"Aquilon reset env failed: {err}") from err
 
     # reset personality etc ...
     try:
         # TODO this is SL6, are we using this?
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
-    except Exception as e:
-        raise Exception(f"Aquilon reset personality: {e}")
+    except Exception as err:
+        raise Exception(f"Aquilon reset personality: {err}") from err
 
 
 def check_host_exists(hostname):
