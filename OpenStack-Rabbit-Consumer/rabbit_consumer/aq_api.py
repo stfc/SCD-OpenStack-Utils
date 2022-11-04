@@ -155,40 +155,29 @@ def create_host(
 ):
     logger.info("Attempting to create host for %s ", hostname)
 
-    try:
-        if domain is not None:
-            domain = "&domain=" + domain
-        elif sandbox is not None:
-            domain = "&sandbox=" + sandbox
-        else:
-            domain = ""
-        default_domain = common.config.get("aquilon", "default_domain")
-        default_personality = common.config.get("aquilon", "default_personality")
-        default_archetype = common.config.get("aquilon", "default_archetype")
+    if domain or sandbox:
+        raise NotImplementedError("Custom domain or sandboxes are not passed through")
 
-        url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
-            hostname,
-            machinename,
-            sandbox,
-            firstip,
-            default_archetype,
-            default_domain,
-            default_personality,
-            osname,
-            osversion,
-        )
+    default_domain = common.config.get("aquilon", "default_domain")
+    default_personality = common.config.get("aquilon", "default_personality")
+    default_archetype = common.config.get("aquilon", "default_archetype")
 
-        logger.info(url)
+    url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
+        hostname,
+        machinename,
+        sandbox,
+        firstip,
+        default_archetype,
+        default_domain,
+        default_personality,
+        osname,
+        osversion,
+    )
 
-        # reset personality etc ...
-        try:
-            setup_requests(url, "put", "Host Create")
-        # TODO unwrap these methods from their exception handling
-        except Exception as e:
-            logger.warning("Aquilon create host failed")
-    except Exception as e:
-        logger.warning("=========================")
-        logger.warning(e)
+    logger.info(url)
+
+    # reset personality etc ...
+    setup_requests(url, "put", "Host Create")
 
 
 def delete_host(hostname):
