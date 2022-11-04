@@ -275,8 +275,6 @@ def test_aq_delete_machine(config, setup):
 def test_aq_create_machine(config, setup):
     host, machine = "host_str", "machine_str"
     first_ip = "ip_str"
-    archetype = "arch_str"
-    personality = "pers_str"
     os_name, os_version = "name_str", "vers_str"
 
     # Based on the order of calls in the impl
@@ -290,8 +288,6 @@ def test_aq_create_machine(config, setup):
         host,
         machinename=machine,
         firstip=first_ip,
-        archetype=archetype,
-        personality=personality,
         osname=os_name,
         osversion=os_version,
         # Not used
@@ -322,8 +318,6 @@ def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
             hostname="",
             machinename="",
             firstip="",
-            archetype="",
-            personality="",
             osname="",
             osversion="",
             sandbox=arg[0],
@@ -356,11 +350,8 @@ def test_add_machine_interface(config, setup):
     config.get.return_value = "https://example.com"
     add_machine_interface(
         machine_name,
-        ipaddr="",
         macaddr=mac_addr,
-        label="",
         interfacename=interface_name,
-        hostname="",
     )
 
     setup.assert_called_once()

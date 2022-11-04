@@ -176,12 +176,9 @@ def consume(message):
                 try:
                     aq_api.add_machine_interface(
                         machinename,
-                        ip.get("address"),
                         ip.get("vif_mac"),
-                        ip.get("label"),
                         interfacename,
                         # socket.gethostbyaddr(ip.get("address"))[0])
-                        hostnames[0],
                     )
                 except Exception as e:
                     raise Exception("Failed to add machine interface %s", e)
@@ -195,8 +192,6 @@ def consume(message):
                         aq_api.add_machine_interface_address(
                             machinename,
                             ip.get("address"),
-                            ip.get("vif_mac"),
-                            ip.get("label"),
                             interfacename,
                             # socket.gethostbyaddr(ip.get("address"))[0])
                             hostnames[0],
@@ -317,7 +312,7 @@ def consume(message):
 
             try:
                 for host in metadata.get("HOSTNAMES").split(","):
-                    aq_api.reset_env(host, machinename)
+                    aq_api.reset_env(host)
             except Exception as e:
                 logger.error("Failed to reset Aquilon configuration: %s", e)
                 openstack_api.update_metadata(

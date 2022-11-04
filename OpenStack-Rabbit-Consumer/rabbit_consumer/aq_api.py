@@ -149,9 +149,7 @@ def create_host(
     machinename,
     sandbox,
     firstip,
-    archetype,
     domain,
-    personality,
     osname,
     osversion,
 ):
@@ -190,7 +188,7 @@ def delete_host(hostname):
     setup_requests(url, "delete", "Host Delete")
 
 
-def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, hostname):
+def add_machine_interface(machinename, macaddr, interfacename):
     logger.info(
         "Attempting to add interface %s to machine %s ", interfacename, machinename
     )
@@ -202,9 +200,7 @@ def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, ho
     setup_requests(url, "put", "Add Machine Interface")
 
 
-def add_machine_interface_address(
-    machinename, ipaddr, macaddr, label, interfacename, hostname
-):
+def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
@@ -212,7 +208,7 @@ def add_machine_interface_address(
     )
 
     try:
-        response = setup_requests(url, "put", "Add Machine Interface Address")
+        setup_requests(url, "put", "Add Machine Interface Address")
     except Exception as e:
         logger.warning(e)
 
@@ -225,7 +221,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
     )
 
     try:
-        response = setup_requests(url, "delete", "Del Machine Interface Address")
+        setup_requests(url, "delete", "Del Machine Interface Address")
     except Exception as e:
         logger.warning(e)
 
@@ -257,18 +253,19 @@ def set_env(
     aq_make(hostname, personality, osversion, archetype, osname)
 
 
-def reset_env(hostname, machinename):
+def reset_env(hostname):
     # manage the host back to prod
     try:
         aq_manage(hostname, "domain", "prod_cloud")
     except Exception as e:
-        raise Exception("Aquilon reset env failed")
+        raise Exception(f"Aquilon reset env failed: {e}")
 
     # reset personality etc ...
     try:
+        # TODO this is SL6, are we using this?
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
     except Exception as e:
-        raise Exception("Aquilon reset personality etc failed")
+        raise Exception(f"Aquilon reset personality: {e}")
 
 
 def check_host_exists(hostname):
