@@ -3,7 +3,21 @@ from unittest.mock import patch, call, NonCallableMock
 
 import pytest
 
-from rabbit_consumer.aq_api import verify_kerberos_ticket, setup_requests, aq_make
+from rabbit_consumer.aq_api import (
+    verify_kerberos_ticket,
+    setup_requests,
+    aq_make,
+    aq_manage,
+    create_machine,
+    delete_machine,
+    create_host,
+    delete_host,
+    add_machine_interface,
+    del_machine_interface_address,
+    update_machine_interface,
+    check_host_exists,
+    set_env,
+)
 
 
 def test_verify_kerberos_ticket_valid():
@@ -208,3 +222,201 @@ def test_aq_make_none_hostname(config, setup, hostname):
         aq_make(hostname)
 
     setup.assert_not_called()
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_manage(config, setup):
+    env_type, env_name = "type", "name"
+    host = "mocked_host"
+    config.get.return_value = "https://example.com"
+
+    aq_manage(host, env_type, env_name)
+
+    config.get.assert_called_once_with("aquilon", "url")
+    setup.assert_called_once()
+    expected_url = "https://example.com/host/mocked_host/command/manage?hostname=mocked_host&type=name&force=true"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_create_machine(config, setup):
+    uuid, prefix = "uuid_mock", "prefix_mock"
+    vmhost, vcpus = "vmhost_mock", "vcpus_mock"
+    memory, hostname = "memory_mock", "hostname_mock"
+
+    config.get.return_value = "https://example.com"
+    returned = create_machine(uuid, vmhost, vcpus, memory, hostname, prefix)
+
+    config.get.assert_called_once_with("aquilon", "url")
+    setup.assert_called_once()
+    assert returned == setup.return_value
+    expected_url = "https://example.com/next_machine/prefix_mock?model=vm-openstack&serial=uuid_mock&vmhost=vmhost_mock&cpucount=vcpus_mock&memory=memory_mock"
+    assert setup.call_args == call(expected_url, "put", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_delete_machine(config, setup):
+    machine_name = "name_mock"
+
+    config.get.return_value = "https://example.com"
+    delete_machine(machine_name)
+
+    config.get.assert_called_once_with("aquilon", "url")
+    setup.assert_called_once()
+    expected_url = "https://example.com/machine/name_mock"
+    assert setup.call_args == call(expected_url, "delete", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_create_machine(config, setup):
+    host, machine = "host_str", "machine_str"
+    sandbox, first_ip = "sandbox_str", "ip_str"
+    archetype, domain = "arch_str", "domain_str"
+    personality = "pers_str"
+    os_name, os_version = "name_str", "vers_str"
+
+    # Based on the order of calls in the impl
+    config.get.side_effect = [
+        "def_domain_str",
+        "def_pers_str",
+        "def_arch_str",
+        "https://example.com",
+    ]
+    create_host(
+        host,
+        machine,
+        sandbox,
+        first_ip,
+        archetype,
+        domain,
+        personality,
+        os_name,
+        os_version,
+    )
+    config.get.assert_has_calls(
+        [
+            call("aquilon", "url"),
+            call("aquilon", "default_domain"),
+            call("aquilon", "default_personality"),
+            call("aquilon", "default_archetype"),
+        ],
+        any_order=True,
+    )
+
+    setup.assert_called_once()
+    expected_url = "https://example.com/host/host_str?machine=machine_str&ip=ip_str&archetype=def_arch_str&domain=def_domain_str&personality=def_pers_str&osname=name_str&osversion=vers_str"
+    assert setup.call_args == call(expected_url, "put", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_delete_host(config, setup):
+    machine_name = "name_mock"
+
+    config.get.return_value = "https://example.com"
+    delete_host(machine_name)
+
+    config.get.assert_called_once_with("aquilon", "url")
+    setup.assert_called_once()
+    expected_url = "https://example.com/host/name_mock"
+    assert setup.call_args == call(expected_url, "delete", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_add_machine_interface(config, setup):
+    # Other attrs are unused
+    machine_name = "name_str"
+    mac_addr = "mac_addr"
+    interface_name = "iface_name"
+
+    config.get.return_value = "https://example.com"
+    add_machine_interface(
+        machine_name,
+        ipaddr="",
+        macaddr=mac_addr,
+        label="",
+        interfacename=interface_name,
+        hostname="",
+    )
+
+    setup.assert_called_once()
+    expected_url = (
+        "https://example.com/machine/name_str/interface/iface_name?mac=mac_addr"
+    )
+    assert setup.call_args == call(expected_url, "put", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_delete_machine_interface(config, setup):
+    host_name = "name_str"
+    machine_name = "machine_str"
+    interface_name = "iface_name"
+
+    config.get.return_value = "https://example.com"
+    del_machine_interface_address(
+        host_name, machinename=machine_name, interfacename=interface_name
+    )
+
+    setup.assert_called_once()
+    expected_url = "https://example.com/interface_address?machine=machine_str&interface=iface_name&fqdn=name_str"
+    assert setup.call_args == call(expected_url, "delete", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_update_machine_interface(config, setup):
+    machine_name = "machine_str"
+    interface_name = "iface_name"
+
+    config.get.return_value = "https://example.com"
+    update_machine_interface(machinename=machine_name, interfacename=interface_name)
+
+    setup.assert_called_once()
+    expected_url = "https://example.com/machine/machine_str/interface/iface_name?boot&default_route"
+    assert setup.call_args == call(expected_url, "post", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_check_host_exists(config, setup):
+    hostname = "host_str"
+
+    config.get.return_value = "https://example.com"
+    check_host_exists(hostname)
+
+    expected_url = f"{config.get.return_value}/host/{hostname}"
+    setup.assert_called_once_with(expected_url, "get", mock.ANY)
+
+
+@pytest.mark.parametrize("domain", ["set", ""])
+@patch("rabbit_consumer.aq_api.aq_manage")
+@patch("rabbit_consumer.aq_api.aq_make")
+def test_set_env_selects_domain_or_sandbox(_, manage, domain):
+    hostname = NonCallableMock()
+    sandbox = NonCallableMock()
+
+    # TODO we should check if sandbox is actually set
+    set_env(hostname, domain=domain, sandbox=sandbox)
+
+    selected_method = "domain" if domain else "sandbox"
+    selected_obj = domain if domain else sandbox
+    manage.assert_called_once_with(hostname, selected_method, selected_obj)
+
+
+@patch("rabbit_consumer.aq_api.aq_manage")
+@patch("rabbit_consumer.aq_api.aq_make")
+def test_set_env_calls_make(make, _):
+    host, domain = NonCallableMock(), NonCallableMock()
+    sandbox, personality = NonCallableMock(), NonCallableMock()
+    os_version, os_name = NonCallableMock(), NonCallableMock()
+    arch = NonCallableMock()
+
+    set_env(host, domain, sandbox, personality, os_version, arch, os_name)
+
+    make.assert_called_once_with(host, personality, os_version, arch, os_name)

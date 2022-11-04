@@ -57,6 +57,8 @@ def verify_kerberos_ticket():
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
 
+    logging.debug(f"{method}: {url}")
+
     s = requests.Session()
     s.verify = "/etc/grid-security/certificates/"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
@@ -75,6 +77,7 @@ def setup_requests(url, method, desc):
         raise Exception("%s: Failed", desc)
 
     logger.info("%s: Success ", desc)
+    logger.debug(f"Response: {response.text}")
     return response.text
 
 
@@ -105,7 +108,6 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
         # Trim trailing query param where there are no values
         url = url[:-1]
 
-    logging.debug(f"POST: {url}")
     setup_requests(url, "post", "Make Template: ")
 
 
@@ -116,7 +118,7 @@ def aq_manage(hostname, env_type, env_name):
         hostname, env_type, env_name
     )
 
-    response = setup_requests(url, "post", "Manage Host")
+    setup_requests(url, "post", "Manage Host")
 
 
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
@@ -137,7 +139,7 @@ def delete_machine(machinename):
         machinename
     )
 
-    response = setup_requests(url, "delete", "Delete Machine")
+    setup_requests(url, "delete", "Delete Machine")
 
 
 def create_host(
@@ -180,7 +182,8 @@ def create_host(
 
         # reset personality etc ...
         try:
-            response = setup_requests(url, "put", "Host Create")
+            setup_requests(url, "put", "Host Create")
+        # TODO unwrap these methods from their exception handling
         except Exception as e:
             logger.warning("Aquilon create host failed")
     except Exception as e:
@@ -193,7 +196,7 @@ def delete_host(hostname):
 
     url = common.config.get("aquilon", "url") + DELETE_HOST_SUFFIX.format(hostname)
 
-    response = setup_requests(url, "delete", "Host Delete")
+    setup_requests(url, "delete", "Host Delete")
 
 
 def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, hostname):
@@ -205,7 +208,7 @@ def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, ho
         machinename, interfacename, macaddr
     )
 
-    response = setup_requests(url, "put", "Add Machine Interface")
+    setup_requests(url, "put", "Add Machine Interface")
 
 
 def add_machine_interface_address(
@@ -243,7 +246,7 @@ def update_machine_interface(machinename, interfacename):
         machinename, interfacename
     )
 
-    response = setup_requests(url, "post", "Update Machine Interface")
+    setup_requests(url, "post", "Update Machine Interface")
 
 
 def set_env(
@@ -282,4 +285,4 @@ def check_host_exists(hostname):
 
     url = common.config.get("aquilon", "url") + HOST_CHECK_SUFFIX.format(hostname)
 
-    response = setup_requests(url, "get", "Check Host")
+    setup_requests(url, "get", "Check Host")
