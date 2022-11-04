@@ -1,4 +1,4 @@
-name: Pylint
+name: Test and Lint
 
 on: [push]
 
@@ -22,6 +22,9 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libkrb5-dev
           pip install -r OpenStack-Rabbit-Consumer/requirements.txt
           pip install -r OpenStack-Rabbit-Consumer/requirements-test.txt
-      - name: Analysing Rabbit Consumer with pylint
+      - name: Run tests
+        # Using Python3 to launch the module sets up the Python path for us
+        run: cd OpenStack-Rabbit-Consumer && python3 -m pytest .
+      - name: Analyse with pylint
         run: |
-          pylint $(git ls-files '*.py' | grep OpenStack-Rabbit-Consumer)
+          cd OpenStack-Rabbit-Consumer && pylint --recursive yes rabbit_consumer test

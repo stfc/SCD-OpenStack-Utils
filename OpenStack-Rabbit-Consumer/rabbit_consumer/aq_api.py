@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-import common
+from rabbit_consumer import common
 
 MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
@@ -41,13 +41,14 @@ def verify_kerberos_ticket():
         logger.warning("No ticket found / expired. Obtaining new one")
         kinit_cmd = ["kinit", "-k"]
 
-        if common.config.get("kerberos", "suffix") != "":
-            kinit_cmd.append(common.config.get("kerberos", "suffix"))
+        suffix = common.config.get("kerberos", "suffix", fallback="")
+        if suffix:
+            kinit_cmd.append(suffix)
 
         subprocess.call(kinit_cmd)
 
         if subprocess.call(["klist", "-s"]) == 1:
-            raise Exception("Failed to obtain valid Kerberos ticket")
+            raise RuntimeError("Failed to obtain valid Kerberos ticket")
 
     logger.info("Kerberos ticket success")
     return True
@@ -55,6 +56,8 @@ def verify_kerberos_ticket():
 
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
+
+    logging.debug(f"{method}: {url}")
 
     s = requests.Session()
     s.verify = "/etc/grid-security/certificates/"
@@ -74,14 +77,23 @@ def setup_requests(url, method, desc):
         raise Exception("%s: Failed", desc)
 
     logger.info("%s: Success ", desc)
+    logger.debug(f"Response: {response.text}")
     return response.text
 
 
 def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=None):
     logger.info("Attempting to make templates for %s", hostname)
 
-    # strip out blank parameters and hostname
-    params = {k: v for k, v in locals().items() if v is not None and k != "hostname"}
+    params = {
+        "personality": personality,
+        "osversion": osversion,
+        "archetype": archetype,
+        "osname": osname,
+    }
+    # Remove empty values or whitespace values
+    params = {k: v for k, v in params.items() if v and str(v).strip()}
+    if not hostname or not str(hostname).strip():
+        raise ValueError("An empty hostname cannot be used.")
 
     # join remaining parameters to form url string
     params = [k + "=" + v for k, v in params.items()]
@@ -92,8 +104,11 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
         + "?"
         + "&".join(params)
     )
+    if url[-1] == "?":
+        # Trim trailing query param where there are no values
+        url = url[:-1]
 
-    response = setup_requests(url, "post", "Make Template: ")
+    setup_requests(url, "post", "Make Template: ")
 
 
 def aq_manage(hostname, env_type, env_name):
@@ -103,7 +118,7 @@ def aq_manage(hostname, env_type, env_name):
         hostname, env_type, env_name
     )
 
-    response = setup_requests(url, "post", "Manage Host")
+    setup_requests(url, "post", "Manage Host")
 
 
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
@@ -124,7 +139,7 @@ def delete_machine(machinename):
         machinename
     )
 
-    response = setup_requests(url, "delete", "Delete Machine")
+    setup_requests(url, "delete", "Delete Machine")
 
 
 def create_host(
@@ -167,7 +182,8 @@ def create_host(
 
         # reset personality etc ...
         try:
-            response = setup_requests(url, "put", "Host Create")
+            setup_requests(url, "put", "Host Create")
+        # TODO unwrap these methods from their exception handling
         except Exception as e:
             logger.warning("Aquilon create host failed")
     except Exception as e:
@@ -180,7 +196,7 @@ def delete_host(hostname):
 
     url = common.config.get("aquilon", "url") + DELETE_HOST_SUFFIX.format(hostname)
 
-    response = setup_requests(url, "delete", "Host Delete")
+    setup_requests(url, "delete", "Host Delete")
 
 
 def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, hostname):
@@ -192,7 +208,7 @@ def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, ho
         machinename, interfacename, macaddr
     )
 
-    response = setup_requests(url, "put", "Add Machine Interface")
+    setup_requests(url, "put", "Add Machine Interface")
 
 
 def add_machine_interface_address(
@@ -230,7 +246,7 @@ def update_machine_interface(machinename, interfacename):
         machinename, interfacename
     )
 
-    response = setup_requests(url, "post", "Update Machine Interface")
+    setup_requests(url, "post", "Update Machine Interface")
 
 
 def set_env(
@@ -269,4 +285,4 @@ def check_host_exists(hostname):
 
     url = common.config.get("aquilon", "url") + HOST_CHECK_SUFFIX.format(hostname)
 
-    response = setup_requests(url, "get", "Check Host")
+    setup_requests(url, "get", "Check Host")
