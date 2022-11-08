@@ -6,9 +6,8 @@ import sys
 
 import pika
 
-import aq_api
-import common
-import openstack_api
+from rabbit_consumer import aq_api
+from rabbit_consumer import openstack_api
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
