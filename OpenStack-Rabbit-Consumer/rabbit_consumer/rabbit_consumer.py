@@ -1,9 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import logging
 import sys
 import time
 
-import common
 import message_consumer
 
 logger = logging.getLogger(__name__)
