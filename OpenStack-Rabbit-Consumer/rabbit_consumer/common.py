@@ -1,6 +1,6 @@
 import logging
 
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 logger = logging.getLogger(__name__)
 CONFIG_FILE_PATH = "/etc/openstack-utils/consumer.ini"
@@ -25,7 +25,7 @@ class RabbitConsumer(metaclass=_ConfigMeta):
     __config_handle = None
 
     @staticmethod
-    def get_config() -> SafeConfigParser:
+    def get_config() -> ConfigParser:
         if RabbitConsumer.__config_handle is None:
             RabbitConsumer.__config_handle = RabbitConsumer.__load_config()
         return RabbitConsumer.__config_handle
@@ -39,8 +39,8 @@ class RabbitConsumer(metaclass=_ConfigMeta):
         RabbitConsumer.__config_handle = None
 
     @staticmethod
-    def __load_config():
+    def __load_config() -> ConfigParser:
         logger.debug("Reading config from: %s", CONFIG_FILE_PATH)
-        config = SafeConfigParser()
+        config = ConfigParser()
         config.read(CONFIG_FILE_PATH)
         return config

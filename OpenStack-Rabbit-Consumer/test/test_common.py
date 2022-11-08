@@ -5,7 +5,7 @@ import pytest
 from rabbit_consumer.common import RabbitConsumer
 
 
-@patch("rabbit_consumer.common.SafeConfigParser")
+@patch("rabbit_consumer.common.ConfigParser")
 def test_get_config_key(config_parser):
     RabbitConsumer.reset()
     config_parser.assert_not_called()
@@ -20,7 +20,7 @@ def test_get_config_key(config_parser):
     assert returned == config_handle.__getitem__.return_value
 
 
-@patch("rabbit_consumer.common.SafeConfigParser")
+@patch("rabbit_consumer.common.ConfigParser")
 def test_get_config_parsed_correct_number_of_times(config_parser):
     RabbitConsumer.reset()
     config_parser.assert_not_called()
@@ -37,7 +37,7 @@ def test_get_config_parsed_correct_number_of_times(config_parser):
 
 
 @pytest.mark.parametrize("exception", [IOError, SystemError, RuntimeError])
-@patch("rabbit_consumer.common.SafeConfigParser")
+@patch("rabbit_consumer.common.ConfigParser")
 def test_load_config_throw_logs(config, exception):
     RabbitConsumer.reset()
     config.side_effect = exception()
