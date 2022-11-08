@@ -1,27 +1,46 @@
-from unittest.mock import patch
+from unittest.mock import patch, NonCallableMock
 
-import rabbit_consumer
-from rabbit_consumer.common import load_config
+import pytest
+
+from rabbit_consumer.common import RabbitConsumer
 
 
 @patch("rabbit_consumer.common.SafeConfigParser")
-def test_load_config(config_parser):
-    # TODO drop global for singleton
-    assert rabbit_consumer.common.config is None
+def test_get_config_key(config_parser):
+    RabbitConsumer.reset()
+    config_parser.assert_not_called()
 
-    load_config()
+    key_name = NonCallableMock()
+    returned = RabbitConsumer.config[key_name]
+
     config_handle = config_parser.return_value
-    assert rabbit_consumer.common.config == config_handle
-
     config_handle.read.assert_called_once_with("/etc/openstack-utils/consumer.ini")
 
+    config_handle.__getitem__.assert_called_once_with(key_name)
+    assert returned == config_handle.__getitem__.return_value
+
 
 @patch("rabbit_consumer.common.SafeConfigParser")
-@patch("rabbit_consumer.common.logger")
-@patch("rabbit_consumer.common.sys.exit")
-def test_load_config_throw_logs(_, logger, config):
-    # TODO check this just escalates the warning
-    config.side_effect = IOError()
+def test_get_config_parsed_correct_number_of_times(config_parser):
+    RabbitConsumer.reset()
+    config_parser.assert_not_called()
+    config_handle = config_parser.return_value.read
 
-    load_config()
-    logger.error.assert_called_once()
+    RabbitConsumer.get_config()
+    RabbitConsumer.get_config()
+    config_handle.assert_called_once()
+
+    RabbitConsumer.reset()
+    RabbitConsumer.get_config()
+    # Two resets == two config parse times
+    assert config_handle.call_count == 2
+
+
+@pytest.mark.parametrize("exception", [IOError, SystemError, RuntimeError])
+@patch("rabbit_consumer.common.SafeConfigParser")
+def test_load_config_throw_logs(config, exception):
+    RabbitConsumer.reset()
+    config.side_effect = exception()
+
+    with pytest.raises(exception):
+        RabbitConsumer.get_config()

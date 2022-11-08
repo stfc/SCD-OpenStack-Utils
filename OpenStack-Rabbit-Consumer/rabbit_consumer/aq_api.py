@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer import common
+from rabbit_consumer.common import RabbitConsumer
 
 MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
@@ -41,7 +41,7 @@ def verify_kerberos_ticket():
         logger.warning("No ticket found / expired. Obtaining new one")
         kinit_cmd = ["kinit", "-k"]
 
-        suffix = common.config.get("kerberos", "suffix", fallback="")
+        suffix = RabbitConsumer.config.get("kerberos", "suffix", fallback="")
         if suffix:
             kinit_cmd.append(suffix)
 
@@ -101,7 +101,7 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
     params = [k + "=" + v for k, v in params.items()]
 
     url = (
-        common.config.get("aquilon", "url")
+        RabbitConsumer.config.get("aquilon", "url")
         + MAKE_SUFFIX.format(hostname)
         + "?"
         + "&".join(params)
@@ -116,7 +116,7 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
 def aq_manage(hostname, env_type, env_name):
     logger.info("Attempting to manage %s to %s %s", hostname, env_type, env_name)
 
-    url = common.config.get("aquilon", "url") + MANAGE_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + MANAGE_SUFFIX.format(
         hostname, env_type, env_name
     )
 
@@ -126,7 +126,7 @@ def aq_manage(hostname, env_type, env_name):
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
 
-    url = common.config.get("aquilon", "url") + CREATE_MACHINE_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + CREATE_MACHINE_SUFFIX.format(
         prefix, MODEL, uuid, vmhost, vcpus, memory
     )
 
@@ -137,7 +137,7 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
 def delete_machine(machinename):
     logger.info("Attempting to delete machine for %s", machinename)
 
-    url = common.config.get("aquilon", "url") + DELETE_MACHINE_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + DELETE_MACHINE_SUFFIX.format(
         machinename
     )
 
@@ -158,11 +158,11 @@ def create_host(
     if domain or sandbox:
         raise NotImplementedError("Custom domain or sandboxes are not passed through")
 
-    default_domain = common.config.get("aquilon", "default_domain")
-    default_personality = common.config.get("aquilon", "default_personality")
-    default_archetype = common.config.get("aquilon", "default_archetype")
+    default_domain = RabbitConsumer.config.get("aquilon", "default_domain")
+    default_personality = RabbitConsumer.config.get("aquilon", "default_personality")
+    default_archetype = RabbitConsumer.config.get("aquilon", "default_archetype")
 
-    url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
         hostname,
         machinename,
         sandbox,
@@ -183,7 +183,9 @@ def create_host(
 def delete_host(hostname):
     logger.info("Attempting to delete host for %s ", hostname)
 
-    url = common.config.get("aquilon", "url") + DELETE_HOST_SUFFIX.format(hostname)
+    url = RabbitConsumer.config.get("aquilon", "url") + DELETE_HOST_SUFFIX.format(
+        hostname
+    )
 
     setup_requests(url, "delete", "Host Delete")
 
@@ -193,7 +195,7 @@ def add_machine_interface(machinename, macaddr, interfacename):
         "Attempting to add interface %s to machine %s ", interfacename, machinename
     )
 
-    url = common.config.get("aquilon", "url") + ADD_INTERFACE_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + ADD_INTERFACE_SUFFIX.format(
         machinename, interfacename, macaddr
     )
 
@@ -203,7 +205,9 @@ def add_machine_interface(machinename, macaddr, interfacename):
 def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
-    url = common.config.get("aquilon", "url") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
+    url = RabbitConsumer.config.get(
+        "aquilon", "url"
+    ) + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname
     )
 
@@ -213,9 +217,9 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
 def del_machine_interface_address(hostname, interfacename, machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
 
-    url = common.config.get("aquilon", "url") + DEL_INTERFACE_ADDRESS_SUFFIX.format(
-        machinename, interfacename, hostname
-    )
+    url = RabbitConsumer.config.get(
+        "aquilon", "url"
+    ) + DEL_INTERFACE_ADDRESS_SUFFIX.format(machinename, interfacename, hostname)
 
     setup_requests(url, "delete", "Del Machine Interface Address")
 
@@ -223,7 +227,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
 def update_machine_interface(machinename, interfacename):
     logger.info("Attempting to bootable %s ", machinename)
 
-    url = common.config.get("aquilon", "url") + UPDATE_INTERFACE_SUFFIX.format(
+    url = RabbitConsumer.config.get("aquilon", "url") + UPDATE_INTERFACE_SUFFIX.format(
         machinename, interfacename
     )
 
@@ -265,6 +269,8 @@ def reset_env(hostname):
 def check_host_exists(hostname):
     logger.info("Attempting to make templates for %s", hostname)
 
-    url = common.config.get("aquilon", "url") + HOST_CHECK_SUFFIX.format(hostname)
+    url = RabbitConsumer.config.get("aquilon", "url") + HOST_CHECK_SUFFIX.format(
+        hostname
+    )
 
     setup_requests(url, "get", "Check Host")

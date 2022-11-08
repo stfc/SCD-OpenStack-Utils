@@ -4,7 +4,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-import common
+from rabbit_consumer.common import RabbitConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,11 @@ def authenticate(project_id):
                 "methods": ["password"],
                 "password": {
                     "user": {
-                        "name": common.config.get("openstack", "username"),
-                        "domain": {"name": common.config.get("openstack", "domain")},
-                        "password": common.config.get("openstack", "password"),
+                        "name": RabbitConsumer.config.get("openstack", "username"),
+                        "domain": {
+                            "name": RabbitConsumer.config.get("openstack", "domain")
+                        },
+                        "password": RabbitConsumer.config.get("openstack", "password"),
                     }
                 },
             },
@@ -33,7 +35,8 @@ def authenticate(project_id):
         }
     }
     response = s.post(
-        common.config.get("openstack", "identity_url") + "/auth/tokens", json=data
+        RabbitConsumer.config.get("openstack", "identity_url") + "/auth/tokens",
+        json=data,
     )
 
     if response.status_code != 201:
@@ -57,7 +60,9 @@ def update_metadata(project_id, instance_id, metadata):
     token = authenticate(project_id)
 
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
-    url = common.config.get("openstack", "compute_url") + "/%s/servers/%s/metadata" % (
+    url = RabbitConsumer.config.get(
+        "openstack", "compute_url"
+    ) + "/%s/servers/%s/metadata" % (
         project_id,
         instance_id,
     )

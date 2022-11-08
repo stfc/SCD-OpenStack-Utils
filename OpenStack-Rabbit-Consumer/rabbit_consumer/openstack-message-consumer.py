@@ -14,8 +14,6 @@ if __name__ == "__main__":
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-    common.load_config()
-
     while True:
         try:
             message_consumer.initiate_consumer()

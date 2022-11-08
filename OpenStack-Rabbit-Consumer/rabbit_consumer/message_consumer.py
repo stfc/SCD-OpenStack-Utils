@@ -102,7 +102,7 @@ def get_metadata_value(message, key):
 
 def consume(message):
     event = message.get("event_type")
-    prefix = common.config.get("aquilon", "prefix")
+    prefix = RabbitConsumer.config.get("aquilon", "prefix")
     if event == "compute.instance.create.end":
         if is_aq_message(message):
             logger.info("=== Received Aquilon VM create message ===")
@@ -340,12 +340,12 @@ def on_message(channel, method, header, raw_body):
 
 def initiate_consumer():
     logger.info("Initiating message consumer")
-    prefix = common.config.get("aquilon", "prefix")
-    host = common.config.get("rabbit", "host")
-    port = common.config.getint("rabbit", "port")
-    login_user = common.config.get("rabbit", "login_user")
-    login_pass = common.config.get("rabbit", "login_pass")
-    exchanges = common.config.get("rabbit", "exchanges").split(",")
+    prefix = RabbitConsumer.config.get("aquilon", "prefix")
+    host = RabbitConsumer.config.get("rabbit", "host")
+    port = RabbitConsumer.config.getint("rabbit", "port")
+    login_user = RabbitConsumer.config.get("rabbit", "login_user")
+    login_pass = RabbitConsumer.config.get("rabbit", "login_pass")
+    exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
 
     credentials = pika.PlainCredentials(login_user, login_pass)
     parameters = pika.ConnectionParameters(
