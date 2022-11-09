@@ -11,12 +11,22 @@ logger = logging.getLogger(__name__)
 
 
 class ConsumerState(enum.Enum):
+    """
+    Holds the state of the consumer loop, this is primarily
+    used in unit tests to stop the loop
+    """
+
     RUNNING = enum.auto()
-    # Used to stop for testing only
     STOP = enum.auto()
 
 
+# pylint: disable=too-few-public-methods
 class ConsumerLoop:
+    """
+    Runs the main consumer loop continuously,
+    this is the main entrypoint for the application.
+    """
+
     state = ConsumerState.RUNNING
 
     def __init__(self, service: Callable):
@@ -26,8 +36,9 @@ class ConsumerLoop:
         while self.state == ConsumerState.RUNNING:
             try:
                 self._service()
-            except Exception as e:
-                logger.error(e)
+            # pylint: disable=broad-except
+            except Exception as err:
+                logger.error(err)
                 time.sleep(60)
 
 
