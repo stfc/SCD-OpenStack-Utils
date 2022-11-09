@@ -12,6 +12,7 @@ class _ConfigMeta(type):
     for a static type
     """
 
+    # pylint: disable=no-value-for-parameter
     def get_config(cls):
         # Stub to satiate the linter
         raise NotImplementedError()
@@ -22,6 +23,11 @@ class _ConfigMeta(type):
 
 
 class RabbitConsumer(metaclass=_ConfigMeta):
+    """
+    Class to hold the configuration
+    for the consumer application and other future global attrs
+    """
+
     __config_handle = None
 
     @staticmethod
