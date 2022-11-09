@@ -8,6 +8,7 @@ import pika
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
+from rabbit_consumer.common import RabbitConsumer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
