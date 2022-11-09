@@ -7,6 +7,8 @@ import pytest
 from rabbit_consumer.openstack_api import authenticate, update_metadata
 
 
+# This is duplicated as it matches a REST API call
+# pylint: disable=duplicate-code
 def _get_json_auth(config, project_id) -> Dict:
     return {
         "auth": {
@@ -52,7 +54,7 @@ def test_authenticate_throws(requests, _):
     session = requests.Session.return_value
     session.post.return_value.status_code = 500
 
-    with pytest.raises(Exception):
+    with pytest.raises(ConnectionRefusedError):
         authenticate(NonCallableMock())
 
 
@@ -87,5 +89,5 @@ def test_update_metadata_throws_exception(_, __, requests):
     session = requests.Session.return_value
     session.post.return_value.status_code = 500
 
-    with pytest.raises(Exception):
+    with pytest.raises(ConnectionAbortedError):
         update_metadata(NonCallableMock(), NonCallableMock(), NonCallableMock())

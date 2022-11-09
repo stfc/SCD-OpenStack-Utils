@@ -40,10 +40,10 @@ def authenticate(project_id):
     )
 
     if response.status_code != 201:
-        logger.error("Authenticatication failure")
-        raise Exception(str(response.status_code), response.text)
+        logger.error("Authentication failure")
+        raise ConnectionRefusedError(f"{response.status_code}: {response.text}")
 
-    logger.info("Authentication successful")
+    logger.debug("Authentication successful")
 
     return str(response.headers["X-Subject-Token"])
 
@@ -71,6 +71,6 @@ def update_metadata(project_id, instance_id, metadata):
 
     if response.status_code != 200:
         logger.error("Setting metadata failed")
-        raise Exception(str(response.status_code), response.text)
+        raise ConnectionAbortedError(f"{response.status_code}: {response.text}")
 
-    logger.info("Setting metadata successful")
+    logger.debug("Setting metadata successful")
