@@ -57,27 +57,29 @@ def verify_kerberos_ticket():
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
 
-    logging.debug(f"{method}: {url}")
+    logging.debug("%s: %s", method, url)
 
-    s = requests.Session()
-    s.verify = "/etc/grid-security/certificates/"
+    session = requests.Session()
+    session.verify = "/etc/grid-security/certificates/"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":
-        response = s.post(url, auth=HTTPKerberosAuth())
+        response = session.post(url, auth=HTTPKerberosAuth())
     elif method == "put":
-        response = s.put(url, auth=HTTPKerberosAuth())
+        response = session.put(url, auth=HTTPKerberosAuth())
     elif method == "delete":
-        response = s.delete(url, auth=HTTPKerberosAuth())
+        response = session.delete(url, auth=HTTPKerberosAuth())
     else:
-        response = s.get(url, auth=HTTPKerberosAuth())
+        response = session.get(url, auth=HTTPKerberosAuth())
     if response.status_code != 200:
         logger.error("%s: Failed: %s", desc, response.text)
         logger.error(url)
-        raise Exception("%s: Failed", desc)
+        raise ConnectionError(
+            f"Failed {desc}: {response.status_code} -" "{response.text}"
+        )
 
     logger.info("%s: Success ", desc)
-    logger.debug(f"Response: {response.text}")
+    logger.debug("Response: %s", response.text)
     return response.text
 
 
@@ -147,48 +149,35 @@ def create_host(
     machinename,
     sandbox,
     firstip,
-    archetype,
     domain,
-    personality,
     osname,
     osversion,
 ):
     logger.info("Attempting to create host for %s ", hostname)
 
-    try:
-        if domain is not None:
-            domain = "&domain=" + domain
-        elif sandbox is not None:
-            domain = "&sandbox=" + sandbox
-        else:
-            domain = ""
-        default_domain = common.config.get("aquilon", "default_domain")
-        default_personality = common.config.get("aquilon", "default_personality")
-        default_archetype = common.config.get("aquilon", "default_archetype")
+    if domain or sandbox:
+        raise NotImplementedError("Custom domain or sandboxes are not passed through")
 
-        url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
-            hostname,
-            machinename,
-            sandbox,
-            firstip,
-            default_archetype,
-            default_domain,
-            default_personality,
-            osname,
-            osversion,
-        )
+    default_domain = common.config.get("aquilon", "default_domain")
+    default_personality = common.config.get("aquilon", "default_personality")
+    default_archetype = common.config.get("aquilon", "default_archetype")
 
-        logger.info(url)
+    url = common.config.get("aquilon", "url") + ADD_HOST_SUFFIX.format(
+        hostname,
+        machinename,
+        sandbox,
+        firstip,
+        default_archetype,
+        default_domain,
+        default_personality,
+        osname,
+        osversion,
+    )
 
-        # reset personality etc ...
-        try:
-            setup_requests(url, "put", "Host Create")
-        # TODO unwrap these methods from their exception handling
-        except Exception as e:
-            logger.warning("Aquilon create host failed")
-    except Exception as e:
-        logger.warning("=========================")
-        logger.warning(e)
+    logger.info(url)
+
+    # reset personality etc ...
+    setup_requests(url, "put", "Host Create")
 
 
 def delete_host(hostname):
@@ -199,7 +188,7 @@ def delete_host(hostname):
     setup_requests(url, "delete", "Host Delete")
 
 
-def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, hostname):
+def add_machine_interface(machinename, macaddr, interfacename):
     logger.info(
         "Attempting to add interface %s to machine %s ", interfacename, machinename
     )
@@ -211,19 +200,14 @@ def add_machine_interface(machinename, ipaddr, macaddr, label, interfacename, ho
     setup_requests(url, "put", "Add Machine Interface")
 
 
-def add_machine_interface_address(
-    machinename, ipaddr, macaddr, label, interfacename, hostname
-):
+def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
     url = common.config.get("aquilon", "url") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname
     )
 
-    try:
-        response = setup_requests(url, "put", "Add Machine Interface Address")
-    except Exception as e:
-        logger.warning(e)
+    setup_requests(url, "put", "Add Machine Interface Address")
 
 
 def del_machine_interface_address(hostname, interfacename, machinename):
@@ -233,10 +217,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
         machinename, interfacename, hostname
     )
 
-    try:
-        response = setup_requests(url, "delete", "Del Machine Interface Address")
-    except Exception as e:
-        logger.warning(e)
+    setup_requests(url, "delete", "Del Machine Interface Address")
 
 
 def update_machine_interface(machinename, interfacename):
@@ -266,18 +247,19 @@ def set_env(
     aq_make(hostname, personality, osversion, archetype, osname)
 
 
-def reset_env(hostname, machinename):
+def reset_env(hostname):
     # manage the host back to prod
     try:
         aq_manage(hostname, "domain", "prod_cloud")
-    except Exception as e:
-        raise Exception("Aquilon reset env failed")
+    except Exception as err:
+        raise Exception(f"Aquilon reset env failed: {err}") from err
 
     # reset personality etc ...
     try:
+        # TODO this is SL6, are we using this?
         aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
-    except Exception as e:
-        raise Exception("Aquilon reset personality etc failed")
+    except Exception as err:
+        raise Exception(f"Aquilon reset personality: {err}") from err
 
 
 def check_host_exists(hostname):

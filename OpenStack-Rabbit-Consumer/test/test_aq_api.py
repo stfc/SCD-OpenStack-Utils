@@ -109,7 +109,7 @@ def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests)
     response = session.get.return_value
     response.status_code = 500
 
-    with pytest.raises(Exception):
+    with pytest.raises(ConnectionError):
         setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
 
     assert session.verify == "/etc/grid-security/certificates/"
@@ -272,11 +272,9 @@ def test_aq_delete_machine(config, setup):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.common.config")
-def test_aq_create_machine(config, setup):
+def test_aq_create_host(config, setup):
     host, machine = "host_str", "machine_str"
-    sandbox, first_ip = "sandbox_str", "ip_str"
-    archetype, domain = "arch_str", "domain_str"
-    personality = "pers_str"
+    first_ip = "ip_str"
     os_name, os_version = "name_str", "vers_str"
 
     # Based on the order of calls in the impl
@@ -288,14 +286,13 @@ def test_aq_create_machine(config, setup):
     ]
     create_host(
         host,
-        machine,
-        sandbox,
-        first_ip,
-        archetype,
-        domain,
-        personality,
-        os_name,
-        os_version,
+        machinename=machine,
+        firstip=first_ip,
+        osname=os_name,
+        osversion=os_version,
+        # Not used
+        domain="",
+        sandbox="",
     )
     config.get.assert_has_calls(
         [
@@ -310,6 +307,22 @@ def test_aq_create_machine(config, setup):
     setup.assert_called_once()
     expected_url = "https://example.com/host/host_str?machine=machine_str&ip=ip_str&archetype=def_arch_str&domain=def_domain_str&personality=def_pers_str&osname=name_str&osversion=vers_str"
     assert setup.call_args == call(expected_url, "put", mock.ANY)
+
+
+@pytest.mark.parametrize("arg", [("sandbox", ""), ("", "domain"), ("both", "both")])
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.common.config")
+def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
+    with pytest.raises(NotImplementedError):
+        create_host(
+            hostname="",
+            machinename="",
+            firstip="",
+            osname="",
+            osversion="",
+            sandbox=arg[0],
+            domain=arg[1],
+        )
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -337,11 +350,8 @@ def test_add_machine_interface(config, setup):
     config.get.return_value = "https://example.com"
     add_machine_interface(
         machine_name,
-        ipaddr="",
         macaddr=mac_addr,
-        label="",
         interfacename=interface_name,
-        hostname="",
     )
 
     setup.assert_called_once()
