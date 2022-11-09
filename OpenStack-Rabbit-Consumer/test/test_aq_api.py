@@ -29,33 +29,37 @@ def test_verify_kerberos_ticket_valid():
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_verify_kerberos_ticket_renew(config, subprocess):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_verify_kerberos_ticket_renew(rabbit_consumer, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1, 0, 0]
 
     assert verify_kerberos_ticket()
 
-    config.get.assert_called_once_with("kerberos", "suffix", fallback="")
+    rabbit_consumer.config.get.assert_called_once_with(
+        "kerberos", "suffix", fallback=""
+    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
-        call(["kinit", "-k", config.get.return_value]),
+        call(["kinit", "-k", rabbit_consumer.config.get.return_value]),
         call(["klist", "-s"]),
     ]
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_verify_kerberos_ticket_renew_empty_conf(rabbit_consumer, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1, 0, 0]
-    config.get.return_value = ""
+    rabbit_consumer.config.get.return_value = ""
 
     assert verify_kerberos_ticket()
 
-    config.get.assert_called_once_with("kerberos", "suffix", fallback="")
+    rabbit_consumer.config.get.assert_called_once_with(
+        "kerberos", "suffix", fallback=""
+    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
         call(["kinit", "-k"]),
@@ -64,17 +68,19 @@ def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_verify_kerberos_ticket_raises(config, subprocess):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_verify_kerberos_ticket_raises(rabbit_consumer, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 1 (klist -s)
     subprocess.side_effect = [1, 0, 1]
-    config.get.return_value = ""
+    rabbit_consumer.config.get.return_value = ""
 
     with pytest.raises(RuntimeError):
         verify_kerberos_ticket()
 
-    config.get.assert_called_once_with("kerberos", "suffix", fallback="")
+    rabbit_consumer.config.get.assert_called_once_with(
+        "kerberos", "suffix", fallback=""
+    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
         call(["kinit", "-k"]),
@@ -153,8 +159,8 @@ def test_setup_requests_get(_, kerb_auth, requests):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_make(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_make(rabbit_consumer, setup):
     hostname = "host"
     personality = "pers"
     os_version = "osvers"
@@ -162,7 +168,7 @@ def test_aq_make(config, setup):
     os_name = "name"
     domain = "https://example.com"
 
-    config.get.return_value = domain
+    rabbit_consumer.config.get.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -172,8 +178,8 @@ def test_aq_make(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_make_whitespace(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_make_whitespace(rabbit_consumer, setup):
     hostname = "host"
     personality = " "
     os_version = "  "
@@ -181,7 +187,7 @@ def test_aq_make_whitespace(config, setup):
     os_name = "name"
     domain = "https://example.com"
 
-    config.get.return_value = domain
+    rabbit_consumer.config.get.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -191,8 +197,8 @@ def test_aq_make_whitespace(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_make_none(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_make_none(rabbit_consumer, setup):
     hostname = "my_host_name"
     personality = " "
     os_version = None
@@ -200,7 +206,7 @@ def test_aq_make_none(config, setup):
     os_name = None
     domain = "https://example.com"
 
-    config.get.return_value = domain
+    rabbit_consumer.config.get.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -212,11 +218,11 @@ def test_aq_make_none(config, setup):
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_make_none_hostname(config, setup, hostname):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_make_none_hostname(rabbit_consumer, setup, hostname):
     domain = "https://example.com"
 
-    config.get.return_value = domain
+    rabbit_consumer.config.get.return_value = domain
 
     with pytest.raises(ValueError):
         aq_make(hostname)
@@ -225,31 +231,31 @@ def test_aq_make_none_hostname(config, setup, hostname):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_manage(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_manage(rabbit_consumer, setup):
     env_type, env_name = "type", "name"
     host = "mocked_host"
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
 
     aq_manage(host, env_type, env_name)
 
-    config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
     setup.assert_called_once()
     expected_url = "https://example.com/host/mocked_host/command/manage?hostname=mocked_host&type=name&force=true"
     assert setup.call_args == call(expected_url, "post", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_create_machine(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_create_machine(rabbit_consumer, setup):
     uuid, prefix = "uuid_mock", "prefix_mock"
     vmhost, vcpus = "vmhost_mock", "vcpus_mock"
     memory, hostname = "memory_mock", "hostname_mock"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     returned = create_machine(uuid, vmhost, vcpus, memory, hostname, prefix)
 
-    config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
     setup.assert_called_once()
     assert returned == setup.return_value
     expected_url = "https://example.com/next_machine/prefix_mock?model=vm-openstack&serial=uuid_mock&vmhost=vmhost_mock&cpucount=vcpus_mock&memory=memory_mock"
@@ -257,28 +263,28 @@ def test_aq_create_machine(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_delete_machine(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_delete_machine(rabbit_consumer, setup):
     machine_name = "name_mock"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     delete_machine(machine_name)
 
-    config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
     setup.assert_called_once()
     expected_url = "https://example.com/machine/name_mock"
     assert setup.call_args == call(expected_url, "delete", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_create_host(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_create_host(rabbit_consumer, setup):
     host, machine = "host_str", "machine_str"
     first_ip = "ip_str"
     os_name, os_version = "name_str", "vers_str"
 
     # Based on the order of calls in the impl
-    config.get.side_effect = [
+    rabbit_consumer.config.get.side_effect = [
         "def_domain_str",
         "def_pers_str",
         "def_arch_str",
@@ -294,7 +300,7 @@ def test_aq_create_host(config, setup):
         domain="",
         sandbox="",
     )
-    config.get.assert_has_calls(
+    rabbit_consumer.config.get.assert_has_calls(
         [
             call("aquilon", "url"),
             call("aquilon", "default_domain"),
@@ -311,7 +317,7 @@ def test_aq_create_host(config, setup):
 
 @pytest.mark.parametrize("arg", [("sandbox", ""), ("", "domain"), ("both", "both")])
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
 def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
     with pytest.raises(NotImplementedError):
         create_host(
@@ -326,28 +332,28 @@ def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_aq_delete_host(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_aq_delete_host(rabbit_consumer, setup):
     machine_name = "name_mock"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     delete_host(machine_name)
 
-    config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
     setup.assert_called_once()
     expected_url = "https://example.com/host/name_mock"
     assert setup.call_args == call(expected_url, "delete", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_add_machine_interface(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_add_machine_interface(rabbit_consumer, setup):
     # Other attrs are unused
     machine_name = "name_str"
     mac_addr = "mac_addr"
     interface_name = "iface_name"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     add_machine_interface(
         machine_name,
         macaddr=mac_addr,
@@ -362,13 +368,13 @@ def test_add_machine_interface(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_delete_machine_interface(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_delete_machine_interface(rabbit_consumer, setup):
     host_name = "name_str"
     machine_name = "machine_str"
     interface_name = "iface_name"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     del_machine_interface_address(
         host_name, machinename=machine_name, interfacename=interface_name
     )
@@ -379,12 +385,12 @@ def test_delete_machine_interface(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_update_machine_interface(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_update_machine_interface(rabbit_consumer, setup):
     machine_name = "machine_str"
     interface_name = "iface_name"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     update_machine_interface(machinename=machine_name, interfacename=interface_name)
 
     setup.assert_called_once()
@@ -393,14 +399,14 @@ def test_update_machine_interface(config, setup):
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.common.config")
-def test_check_host_exists(config, setup):
+@patch("rabbit_consumer.aq_api.RabbitConsumer")
+def test_check_host_exists(rabbit_consumer, setup):
     hostname = "host_str"
 
-    config.get.return_value = "https://example.com"
+    rabbit_consumer.config.get.return_value = "https://example.com"
     check_host_exists(hostname)
 
-    expected_url = f"{config.get.return_value}/host/{hostname}"
+    expected_url = f"{rabbit_consumer.config.get.return_value}/host/{hostname}"
     setup.assert_called_once_with(expected_url, "get", mock.ANY)
 
 
