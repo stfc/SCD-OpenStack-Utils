@@ -30,23 +30,6 @@ def _get_metadata_known_messages() -> List[str]:
     ]
 
 
-def _get_image_metadata_known_messages() -> List[str]:
-    return [
-        "AQ_DOMAIN",
-        "AQ_SANDBOX",
-        "AQ_OSVERSION",
-        "AQ_PERSONALITY",
-        "AQ_ARCHETYPE",
-        "AQ_OS",
-        "aq_domain",
-        "aq_sandbox",
-        "aq_osversion",
-        "aq_personality",
-        "aq_archetype",
-        "aq_os",
-    ]
-
-
 @pytest.mark.parametrize("message", _get_metadata_known_messages())
 def test_aq_messages_payload_metadata(message):
     rabbit_message = Mock()
@@ -55,7 +38,7 @@ def test_aq_messages_payload_metadata(message):
     assert is_aq_message(rabbit_message)
 
 
-@pytest.mark.parametrize("message", _get_image_metadata_known_messages())
+@pytest.mark.parametrize("message", _get_metadata_known_messages())
 def test_aq_messages_payload_image_metadata(message):
     rabbit_message = Mock()
     rabbit_message.get.return_value.get.return_value = {message: ""}
