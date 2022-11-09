@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 def authenticate(project_id):
     logger.info("Attempting to authenticate to Openstack")
 
-    s = requests.Session()
+    session = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
 
     # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
     data = {
@@ -34,7 +34,7 @@ def authenticate(project_id):
             "scope": {"project": {"id": project_id}},
         }
     }
-    response = s.post(
+    response = session.post(
         RabbitConsumer.config.get("openstack", "identity_url") + "/auth/tokens",
         json=data,
     )
@@ -50,24 +50,22 @@ def authenticate(project_id):
 
 def update_metadata(project_id, instance_id, metadata):
     logger.info(
-        "Attempting to set new metadata for VM: %s - %s" % (instance_id, str(metadata))
+        "Attempting to set new metadata for VM: %s - %s", instance_id, str(metadata)
     )
 
-    s = requests.Session()
+    session = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    s.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
 
     token = authenticate(project_id)
 
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
-    url = RabbitConsumer.config.get(
-        "openstack", "compute_url"
-    ) + "/%s/servers/%s/metadata" % (
-        project_id,
-        instance_id,
+    url = (
+        RabbitConsumer.config.get("openstack", "compute_url")
+        + f"/{project_id}/servers/{instance_id}/metadata"
     )
 
-    response = s.post(url, headers=headers, json={"metadata": metadata})
+    response = session.post(url, headers=headers, json={"metadata": metadata})
 
     if response.status_code != 200:
         logger.error("Setting metadata failed")
