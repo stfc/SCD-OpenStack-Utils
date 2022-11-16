@@ -515,3 +515,101 @@ def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
         "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
     )
     assert "Failed to set Aquilon configuration" in str(err.value)
+
+
+_DELETE_FAKE_PAYLOAD = {
+    "instance_id": NonCallableMock(),
+    "metadata": {"AQ_MACHINENAME": "AQ-HOST1", "HOSTNAMES": "host1,host2"},
+}
+
+
+def _message_get_delete(arg_name: str) -> Union[str, Dict]:
+    if arg_name == "event_type":
+        return "compute.instance.delete.start"
+    if arg_name == "payload":
+        return _DELETE_FAKE_PAYLOAD
+    return arg_name
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_good_path(aq_api, _):
+    message = Mock()
+    message.get.side_effect = _message_get_delete
+
+    consume(message)
+
+    aq_api.delete_host.assert_has_calls([call("host1"), call("host2")], any_order=True)
+    aq_api.del_machine_interface_address.assert_has_calls(
+        [
+            call("host1", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
+            call("host2", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
+        ]
+    )
+
+    aq_api.delete_machine.assert_called_once_with(
+        _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]
+    )
+
+    aq_api.reset_env.assert_has_calls([call("host1"), call("host2")], any_order=True)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __):
+    message = Mock()
+    message.get.side_effect = _message_get_delete
+
+    aq_api.delete_host.side_effect = Exception("mocked exception")
+    with pytest.raises(Exception) as err:
+        consume(message)
+
+    openstack_api.update_metadata.assert_called_with(
+        "_context_project_id",
+        _DELETE_FAKE_PAYLOAD["instance_id"],
+        {"AQ_STATUS": "FAILED"},
+    )
+    assert "Failed to delete host" in str(err.value)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_aq_del_machine_interface_address(aq_api, _):
+    message = Mock()
+    message.get.side_effect = _message_get_delete
+
+    aq_api.del_machine_interface_address.side_effect = Exception("mocked exception")
+    with pytest.raises(Exception) as err:
+        consume(message)
+    assert "Failed to delete interface address" in str(err.value)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
+    message = Mock()
+    message.get.side_effect = _message_get_delete
+
+    aq_api.delete_machine.side_effect = Exception("mocked exception")
+    with pytest.raises(Exception) as err:
+        consume(message)
+    assert "Failed to delete machine" in str(err.value)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_aq_reset_env_failure(aq_api, openstack_api, _):
+    message = Mock()
+    message.get.side_effect = _message_get_delete
+
+    aq_api.reset_env.side_effect = Exception("mocked exception")
+    with pytest.raises(Exception) as err:
+        consume(message)
+    openstack_api.update_metadata.assert_called_with(
+        "_context_project_id",
+        _DELETE_FAKE_PAYLOAD["instance_id"],
+        {"AQ_STATUS": "FAILED"},
+    )
+    assert "Failed to reset Aquilon configuration" in str(err.value)
