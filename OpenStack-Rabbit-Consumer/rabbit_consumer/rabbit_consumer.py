@@ -1,8 +1,5 @@
-#!/usr/bin/python3
 import enum
 import logging
-import sys
-import time
 from typing import Callable
 
 from rabbit_consumer import message_consumer
@@ -29,7 +26,7 @@ class ConsumerLoop:
 
     state = ConsumerState.RUNNING
 
-    def __init__(self, service: Callable):
+    def __init__(self, service: Callable = message_consumer.initiate_consumer):
         self._service = service
 
     def start(self):
@@ -40,13 +37,3 @@ class ConsumerLoop:
             except Exception as err:
                 logger.error(err)
                 time.sleep(60)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    logging.getLogger("pika").setLevel(logging.ERROR)
-    logging.getLogger("requests").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-    consumer = ConsumerLoop(service=message_consumer.initiate_consumer)
-    consumer.start()
