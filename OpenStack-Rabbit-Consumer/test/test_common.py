@@ -24,7 +24,7 @@ def test_get_config_key(config_parser):
     returned = RabbitConsumer.config[key_name]
 
     config_handle = config_parser.return_value
-    config_handle.read.assert_called_once_with("/etc/openstack-utils/consumer.ini")
+    config_handle.read.assert_called_once_with("/usr/src/app/consumer.ini")
 
     config_handle.__getitem__.assert_called_once_with(key_name)
     assert returned == config_handle.__getitem__.return_value
