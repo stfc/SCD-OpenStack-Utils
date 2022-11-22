@@ -31,9 +31,4 @@ class ConsumerLoop:
 
     def start(self):
         while self.state == ConsumerState.RUNNING:
-            try:
-                self._service()
-            # pylint: disable=broad-except
-            except Exception as err:
-                logger.error(err)
-                time.sleep(60)
+            self._service()
