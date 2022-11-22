@@ -23,11 +23,11 @@ def authenticate(project_id):
                 "methods": ["password"],
                 "password": {
                     "user": {
-                        "name": RabbitConsumer.config.get("openstack", "username"),
+                        "name": RabbitConsumer.get_env_str("OPENSTACK_USERNAME"),
                         "domain": {
-                            "name": RabbitConsumer.config.get("openstack", "domain")
+                            "name": RabbitConsumer.get_env_str("OPENSTACK_DOMAIN_NAME")
                         },
-                        "password": RabbitConsumer.config.get("openstack", "password"),
+                        "password": RabbitConsumer.get_env_str("OPENSTACK_PASSWORD"),
                     }
                 },
             },
@@ -35,7 +35,7 @@ def authenticate(project_id):
         }
     }
     response = session.post(
-        RabbitConsumer.config.get("openstack", "identity_url") + "/auth/tokens",
+        RabbitConsumer.get_env_str("OPENSTACK_AUTH_URL") + "/auth/tokens",
         json=data,
     )
 
@@ -61,7 +61,7 @@ def update_metadata(project_id, instance_id, metadata):
 
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
     url = (
-        RabbitConsumer.config.get("openstack", "compute_url")
+        RabbitConsumer.get_env_str("OPENSTACK_COMPUTE_URL")
         + f"/{project_id}/servers/{instance_id}/metadata"
     )
 

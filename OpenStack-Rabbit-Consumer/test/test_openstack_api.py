@@ -1,6 +1,6 @@
 from typing import Dict
 from unittest import mock
-from unittest.mock import NonCallableMock, patch, call
+from unittest.mock import NonCallableMock, patch, call, Mock
 
 import pytest
 
@@ -9,16 +9,18 @@ from rabbit_consumer.openstack_api import authenticate, update_metadata
 
 # This is duplicated as it matches a REST API call
 # pylint: disable=duplicate-code
-def _get_json_auth(config, project_id) -> Dict:
+def _get_json_auth(rabbit_consumer: Mock, project_id) -> Dict:
     return {
         "auth": {
             "identity": {
                 "methods": ["password"],
                 "password": {
                     "user": {
-                        "name": config.get("openstack", "username"),
-                        "domain": {"name": config.get("openstack", "domain")},
-                        "password": config.get("openstack", "password"),
+                        "name": rabbit_consumer.get_env_str("OPENSTACK_USERNAME"),
+                        "domain": {
+                            "name": rabbit_consumer.get_env_str("OPENSTACK_DOMAIN_NAME")
+                        },
+                        "password": rabbit_consumer.get_env_str("OPENSTACK_PASSWORD"),
                     }
                 },
             },
@@ -39,12 +41,11 @@ def test_authenticate(requests, consumer):
     requests.Session.assert_called_once()
     session.mount.assert_called_once_with("https://", mock.ANY)
     session.post.assert_called_once()
-    config = consumer.config
 
     args = session.post.call_args
     assert args == call(
-        config.get("openstack", "identity_url") + "/auth/tokens",
-        json=_get_json_auth(config, project_id),
+        consumer.get_env_str("OPENSTACK_AUTH_URL") + "/auth/tokens",
+        json=_get_json_auth(consumer, project_id),
     )
 
 
@@ -72,10 +73,9 @@ def test_update_metadata(auth, requests, consumer):
     session.mount.assert_called_once_with("https://", mock.ANY)
     auth.assert_called_once_with(project_id)
     session.post.assert_called_once()
-    config = consumer.config
 
     assert session.post.call_args == call(
-        config.get("openstack", "compute_url")
+        consumer.get_env_str("OPENSTACK_COMPUTE_URL")
         + f"{project_id}/servers/{instance_id}/metadata",
         headers={"Content-type": "application/json", "X-Auth-Token": auth.return_value},
         json={"metadata": metadata},
