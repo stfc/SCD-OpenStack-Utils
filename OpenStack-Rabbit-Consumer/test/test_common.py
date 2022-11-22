@@ -5,6 +5,16 @@ import pytest
 from rabbit_consumer.common import RabbitConsumer
 
 
+def test_get_env_str():
+    with patch.dict("os.environ", {"TEST_VAR": "test_value"}):
+        assert RabbitConsumer.get_env_str("TEST_VAR") == "test_value"
+
+
+def test_get_env_int():
+    with patch.dict("os.environ", {"TEST_VAR": "1"}):
+        assert RabbitConsumer.get_env_int("TEST_VAR") == 1
+
+
 @patch("rabbit_consumer.common.ConfigParser")
 def test_get_config_key(config_parser):
     RabbitConsumer.reset()

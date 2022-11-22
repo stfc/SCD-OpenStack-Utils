@@ -128,18 +128,23 @@ def test_on_message_exception_handling(_, consume_mock):
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 def test_initiate_consumer_config_elements(rabbit_conf, _):
     initiate_consumer()
+    rabbit_conf.get_env_str.assert_has_calls(
+        [
+            call("AQ_PREFIX"),
+            call("RABBIT_HOST"),
+            call("RABBIT_USERNAME"),
+            call("RABBIT_PASSWORD"),
+        ]
+    )
+
+    rabbit_conf.get_env_int.assert_called_once_with("RABBIT_PORT")
+
     rabbit_conf.config.get.assert_has_calls(
         [
-            call("aquilon", "prefix"),
-            call("rabbit", "host"),
-            call("rabbit", "login_user"),
-            call("rabbit", "login_pass"),
             call("rabbit", "exchanges"),
         ],
         any_order=True,
     )
-
-    rabbit_conf.config.getint.assert_called_with("rabbit", "port")
 
 
 @patch("rabbit_consumer.message_consumer.pika")
@@ -150,12 +155,12 @@ def test_initiate_consumer_channel_setup(rabbit_conf, pika):
     initiate_consumer()
 
     pika.PlainCredentials.assert_called_once_with(
-        rabbit_conf.config.get.return_value, rabbit_conf.config.get.return_value
+        rabbit_conf.get_env_str.return_value, rabbit_conf.get_env_str.return_value
     )
 
     pika.ConnectionParameters.assert_called_once_with(
-        rabbit_conf.config.get.return_value,
-        rabbit_conf.config.getint.return_value,
+        rabbit_conf.get_env_str.return_value,
+        rabbit_conf.get_env_int.return_value,
         "/",
         pika.PlainCredentials.return_value,
         connection_attempts=mock.ANY,

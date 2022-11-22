@@ -1,8 +1,0 @@
-change scd-openrc.sh:
-correct username and password
-specify path to cacert
-
-change consumer.ini:
-password
-user
-hostname

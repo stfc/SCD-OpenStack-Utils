@@ -1,0 +1,7 @@
+version: "3.7"
+services:
+  rabbit_consumer:
+    restart: "no"
+    image: stfc/rabbit-consumer:latest
+    env_file:
+      - .env
