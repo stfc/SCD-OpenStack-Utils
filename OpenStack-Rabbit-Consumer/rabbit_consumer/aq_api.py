@@ -203,9 +203,7 @@ def add_machine_interface(machinename, macaddr, interfacename):
 def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
-    url = RabbitConsumer.config.get(
-        "aquilon", "url"
-    ) + ADD_INTERFACE_ADDRESS_SUFFIX.format(
+    url = RabbitConsumer.get_env_str("AQ_URL") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname
     )
 
