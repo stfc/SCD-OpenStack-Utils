@@ -31,4 +31,5 @@ class ConsumerLoop:
 
     def start(self):
         while self.state == ConsumerState.RUNNING:
+            logger.debug("Starting consumer")
             self._service()

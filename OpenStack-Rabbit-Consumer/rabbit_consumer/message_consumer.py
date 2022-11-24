@@ -1,8 +1,6 @@
 import json
 import logging
-import re
 import socket
-import sys
 
 import pika
 
@@ -11,12 +9,6 @@ from rabbit_consumer import openstack_api
 from rabbit_consumer.common import RabbitConsumer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-logging.basicConfig(
-    format="[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s"
-)
-logger = logging.getLogger("tcpserver")
 
 
 def is_aq_message(message):
@@ -333,6 +325,7 @@ def convert_hostnames(message, vm_name):
 
 
 def on_message(channel, method, header, raw_body):
+    logging.debug("Got message: %s", raw_body)
     body = json.loads(raw_body.decode("utf-8"))
     message = json.loads(body["oslo.message"])
 
@@ -371,12 +364,9 @@ def initiate_consumer():
     channel.basic_consume("ral.info", on_message)
 
     try:
+        logging.debug("Starting to consume messages")
         channel.start_consuming()
-    except KeyboardInterrupt:
+    finally:
+        logging.info("Closing connection")
         channel.stop_consuming()
         connection.close()
-        sys.exit(0)
-    except Exception as e:
-        logger.error("Something went wrong with the pika message consumer %s", e)
-        connection.close()
-        raise e

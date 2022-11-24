@@ -4,7 +4,7 @@ import os
 from configparser import ConfigParser
 
 logger = logging.getLogger(__name__)
-CONFIG_FILE_PATH = "/usr/src/app/consumer.ini"
+CONFIG_FILE_PATH = "consumer.ini"
 
 
 class _ConfigMeta(type):
