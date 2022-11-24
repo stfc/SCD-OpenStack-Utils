@@ -5,7 +5,7 @@ from unittest.mock import NonCallableMock, patch, call
 import pytest
 
 from rabbit_consumer.openstack_api import authenticate, update_metadata
-from rabbit_consumer.rabbit_consumer import ConsumerConfig
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 
 # This is duplicated as it matches a REST API call

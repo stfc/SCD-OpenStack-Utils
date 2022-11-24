@@ -6,7 +6,8 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.rabbit_consumer import RabbitConsumer, ConsumerConfig
+from rabbit_consumer.rabbit_consumer import RabbitConsumer
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"

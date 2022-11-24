@@ -6,7 +6,8 @@ import rabbitpy
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
-from rabbit_consumer.rabbit_consumer import RabbitConsumer, ConsumerConfig
+from rabbit_consumer.rabbit_consumer import RabbitConsumer
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 logger = logging.getLogger(__name__)
 

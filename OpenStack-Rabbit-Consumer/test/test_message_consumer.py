@@ -12,7 +12,7 @@ from rabbit_consumer.message_consumer import (
     consume,
     convert_hostnames,
 )
-from rabbit_consumer.rabbit_consumer import ConsumerConfig
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 
 # pylint: disable=duplicate-code

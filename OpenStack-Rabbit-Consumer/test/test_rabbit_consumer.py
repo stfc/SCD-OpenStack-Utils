@@ -2,7 +2,8 @@ from unittest.mock import patch, NonCallableMock
 
 import pytest
 
-from rabbit_consumer.rabbit_consumer import RabbitConsumer, ConsumerConfig
+from rabbit_consumer.rabbit_consumer import RabbitConsumer
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 AQ_FIELDS = [
     ("aq_archetype", "AQ_ARCHETYPE"),
