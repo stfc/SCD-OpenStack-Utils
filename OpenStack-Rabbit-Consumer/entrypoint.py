@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import logging
+import os
 import signal
 import sys
 
@@ -16,7 +17,12 @@ def _sigint_handler(*_):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logger = logging.getLogger("rabbit_consumer")
+    logger.setLevel(os.getenv("LOG_LEVEL").upper())
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.debug("TEST DEBUG")
+    logger.info("TEST INFO")
+
     logging.getLogger("pika").setLevel(logging.ERROR)
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
