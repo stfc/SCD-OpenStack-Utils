@@ -368,7 +368,7 @@ def initiate_consumer():
     for exchange in exchanges:
         channel.queue_bind("ral.info", exchange, "ral.info")
 
-    channel.basic_consume(on_message, "ral.info")
+    channel.basic_consume("ral.info", on_message)
 
     try:
         channel.start_consuming()

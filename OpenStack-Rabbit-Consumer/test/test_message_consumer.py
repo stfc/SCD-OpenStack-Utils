@@ -183,7 +183,7 @@ def test_initiate_consumer_channel_setup(rabbit_conf, pika):
 def test_initiate_consumer_actual_consumption(_, pika):
     initiate_consumer()
     channel = pika.BlockingConnection.return_value.channel.return_value
-    channel.basic_consume.assert_called_once_with(on_message, "ral.info")
+    channel.basic_consume.assert_called_once_with("ral.info", on_message)
 
     channel.start_consuming.assert_called_once()
 
