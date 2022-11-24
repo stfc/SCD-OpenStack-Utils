@@ -5,3 +5,5 @@ services:
     image: stfc/rabbit-consumer:latest
     env_file:
       - .env
+    volumes:
+      - "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro"
