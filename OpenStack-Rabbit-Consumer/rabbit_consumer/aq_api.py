@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.common import RabbitConsumer
+from rabbit_consumer.rabbit_consumer import RabbitConsumer, ConsumerConfig
 
 MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
@@ -101,10 +101,7 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
     params = [k + "=" + v for k, v in params.items()]
 
     url = (
-        RabbitConsumer.get_env_str("AQ_URL")
-        + MAKE_SUFFIX.format(hostname)
-        + "?"
-        + "&".join(params)
+        ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname) + "?" + "&".join(params)
     )
     if url[-1] == "?":
         # Trim trailing query param where there are no values
@@ -116,9 +113,7 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
 def aq_manage(hostname, env_type, env_name):
     logger.info("Attempting to manage %s to %s %s", hostname, env_type, env_name)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + MANAGE_SUFFIX.format(
-        hostname, env_type, env_name
-    )
+    url = ConsumerConfig().aq_url + MANAGE_SUFFIX.format(hostname, env_type, env_name)
 
     setup_requests(url, "post", "Manage Host")
 
@@ -126,7 +121,7 @@ def aq_manage(hostname, env_type, env_name):
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
     logger.info("Attempting to create machine for %s ", hostname)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + CREATE_MACHINE_SUFFIX.format(
+    url = ConsumerConfig().aq_url + CREATE_MACHINE_SUFFIX.format(
         prefix, MODEL, uuid, vmhost, vcpus, memory
     )
 
@@ -137,9 +132,7 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
 def delete_machine(machinename):
     logger.info("Attempting to delete machine for %s", machinename)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + DELETE_MACHINE_SUFFIX.format(
-        machinename
-    )
+    url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machinename)
 
     setup_requests(url, "delete", "Delete Machine")
 
@@ -158,11 +151,13 @@ def create_host(
     if domain or sandbox:
         raise NotImplementedError("Custom domain or sandboxes are not passed through")
 
-    default_domain = RabbitConsumer.get_env_str("AQ_DOMAIN")
-    default_personality = RabbitConsumer.get_env_str("AQ_PERSONALITY")
-    default_archetype = RabbitConsumer.get_env_str("AQ_ARCHETYPE")
+    config = ConsumerConfig()
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + ADD_HOST_SUFFIX.format(
+    default_domain = config.aq_domain
+    default_personality = config.aq_personality
+    default_archetype = config.aq_archetype
+
+    url = config.aq_url + ADD_HOST_SUFFIX.format(
         hostname,
         machinename,
         sandbox,
@@ -183,7 +178,7 @@ def create_host(
 def delete_host(hostname):
     logger.info("Attempting to delete host for %s ", hostname)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + DELETE_HOST_SUFFIX.format(hostname)
+    url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
 
     setup_requests(url, "delete", "Host Delete")
 
@@ -193,7 +188,7 @@ def add_machine_interface(machinename, macaddr, interfacename):
         "Attempting to add interface %s to machine %s ", interfacename, machinename
     )
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + ADD_INTERFACE_SUFFIX.format(
+    url = ConsumerConfig().aq_url + ADD_INTERFACE_SUFFIX.format(
         machinename, interfacename, macaddr
     )
 
@@ -203,7 +198,7 @@ def add_machine_interface(machinename, macaddr, interfacename):
 def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + ADD_INTERFACE_ADDRESS_SUFFIX.format(
+    url = ConsumerConfig().aq_url + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname
     )
 
@@ -213,7 +208,7 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
 def del_machine_interface_address(hostname, interfacename, machinename):
     logger.info("Attempting to delete address from machine %s ", machinename)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + DEL_INTERFACE_ADDRESS_SUFFIX.format(
+    url = ConsumerConfig().aq_url + DEL_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, hostname
     )
 
@@ -223,7 +218,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
 def update_machine_interface(machinename, interfacename):
     logger.info("Attempting to bootable %s ", machinename)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + UPDATE_INTERFACE_SUFFIX.format(
+    url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
         machinename, interfacename
     )
 
@@ -265,6 +260,6 @@ def reset_env(hostname):
 def check_host_exists(hostname):
     logger.info("Attempting to make templates for %s", hostname)
 
-    url = RabbitConsumer.get_env_str("AQ_URL") + HOST_CHECK_SUFFIX.format(hostname)
+    url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
 
     setup_requests(url, "get", "Check Host")

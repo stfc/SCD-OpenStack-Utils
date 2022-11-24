@@ -12,6 +12,7 @@ from rabbit_consumer.message_consumer import (
     consume,
     convert_hostnames,
 )
+from rabbit_consumer.rabbit_consumer import ConsumerConfig
 
 
 # pylint: disable=duplicate-code
@@ -75,12 +76,11 @@ def test_get_metadata_value(key_name):
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_parses_json(json, _):
-    channel = Mock()
     method = Mock()
     header = Mock()
     raw_body = Mock()
 
-    on_message(channel, method, header, raw_body)
+    on_message(method, header, raw_body)
     raw_body.decode.assert_called_once_with("utf-8")
 
     decoded_body = json.loads.return_value
@@ -100,123 +100,87 @@ def test_on_message_parses_json(json, _):
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_forwards_json_to_consumer(json, consume_mock):
-    channel = Mock()
     method = Mock()
     header = Mock()
     raw_body = Mock()
 
-    on_message(channel, method, header, raw_body)
+    on_message(method, header, raw_body)
     consume_mock.assert_called_once_with(json.loads.return_value)
-    channel.basic_ack.assert_called_once_with(delivery_tag=method.delivery_tag)
 
 
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_exception_handling(_, consume_mock):
-    channel = Mock()
     method = Mock()
     header = Mock()
     raw_body = Mock()
 
     consume_mock.side_effect = Exception("test")
-    on_message(channel, method, header, raw_body)
+    on_message(method, header, raw_body)
     consume_mock.assert_called_once()
-    channel.basic_ack.assert_called_once_with(delivery_tag=method.delivery_tag)
 
 
-@patch("rabbit_consumer.message_consumer.pika")
+@patch("rabbit_consumer.message_consumer.rabbitpy")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 def test_initiate_consumer_config_elements(rabbit_conf, _):
     initiate_consumer()
-    rabbit_conf.get_env_str.assert_has_calls(
+    rabbit_conf.config.get.assert_called_once_with("rabbit", "exchanges")
+
+
+class MockedConfig(ConsumerConfig):
+    rabbit_host = "rabbit_host"
+    rabbit_port = 1234
+    rabbit_username = "rabbit_username"
+    rabbit_password = "rabbit_password"
+
+
+@patch("rabbit_consumer.message_consumer.rabbitpy")
+@patch("rabbit_consumer.message_consumer.RabbitConsumer")
+def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy):
+    exchanges = ["ex1", "ex2"]
+    rabbit_conf.config.get.return_value.split.return_value = exchanges
+    mocked_config = MockedConfig()
+
+    with patch("rabbit_consumer.message_consumer.ConsumerConfig") as config:
+        config.return_value = mocked_config
+        initiate_consumer()
+
+    rabbitpy.Connection.assert_called_once_with(
+        f"amqp://{mocked_config.rabbit_username}:{mocked_config.rabbit_password}@{mocked_config.rabbit_host}:{mocked_config.rabbit_port}/"
+    )
+
+    connection = rabbitpy.Connection.return_value.__enter__.return_value
+    connection.channel.assert_called_once()
+    channel = connection.channel.return_value.__enter__.return_value
+
+    rabbitpy.Queue.assert_called_once_with(channel, name="ral.info", durable=True)
+    queue = rabbitpy.Queue.return_value
+    queue.bind.assert_has_calls(
+        [call(exchange, routing_key="ral.info") for exchange in exchanges]
+    )
+
+
+@patch("rabbit_consumer.message_consumer.RabbitConsumer")
+@patch("rabbit_consumer.message_consumer.on_message")
+@patch("rabbit_consumer.message_consumer.rabbitpy")
+def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
+    queue_messages = [NonCallableMock(), NonCallableMock()]
+    # We need our mocked queue to act like a generator
+    rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
+
+    initiate_consumer()
+
+    message_mock.assert_has_calls(
         [
-            call("AQ_PREFIX"),
-            call("RABBIT_HOST"),
-            call("RABBIT_USERNAME"),
-            call("RABBIT_PASSWORD"),
+            call(
+                method=message.method, header=message.properties, raw_body=message.body
+            )
+            for message in queue_messages
         ]
     )
 
-    rabbit_conf.get_env_int.assert_called_once_with("RABBIT_PORT")
-
-    rabbit_conf.config.get.assert_has_calls(
-        [
-            call("rabbit", "exchanges"),
-        ],
-        any_order=True,
-    )
-
-
-@patch("rabbit_consumer.message_consumer.pika")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_channel_setup(rabbit_conf, pika):
-    exchanges = ["ex1", "ex2"]
-    rabbit_conf.config.get.return_value.split.return_value = exchanges
-    initiate_consumer()
-
-    pika.PlainCredentials.assert_called_once_with(
-        rabbit_conf.get_env_str.return_value, rabbit_conf.get_env_str.return_value
-    )
-
-    pika.ConnectionParameters.assert_called_once_with(
-        rabbit_conf.get_env_str.return_value,
-        rabbit_conf.get_env_int.return_value,
-        "/",
-        pika.PlainCredentials.return_value,
-        connection_attempts=mock.ANY,
-        retry_delay=mock.ANY,
-    )
-
-    pika.BlockingConnection.assert_called_once_with(
-        pika.ConnectionParameters.return_value
-    )
-
-    channel = pika.BlockingConnection.return_value.channel.return_value
-    channel.queue_declare.assert_called_once_with("ral.info")
-    channel.queue_bind.assert_has_calls(
-        [call("ral.info", i, "ral.info") for i in exchanges]
-    )
-
-
-@patch("rabbit_consumer.message_consumer.pika")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_actual_consumption(_, pika):
-    initiate_consumer()
-    channel = pika.BlockingConnection.return_value.channel.return_value
-    channel.basic_consume.assert_called_once_with("ral.info", on_message)
-
-    channel.start_consuming.assert_called_once()
-
-
-@patch("rabbit_consumer.message_consumer.pika")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_consumption_exception(_, pika):
-    channel = pika.BlockingConnection.return_value.channel.return_value
-    channel.start_consuming.side_effect = Exception("test")
-
-    with pytest.raises(Exception) as err:
-        initiate_consumer()
-
-    assert err.value.args[0] == "test"
-
-    channel.start_consuming.assert_called_once()
-    connection = pika.BlockingConnection.return_value
-    connection.close.assert_called_once()
-
-
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-@patch("rabbit_consumer.message_consumer.sys.exit")
-@patch("rabbit_consumer.message_consumer.pika")
-def test_initiate_consumer_keyboard_interrupt(pika, sys_exit, _):
-    channel = pika.BlockingConnection.return_value.channel.return_value
-    channel.start_consuming.side_effect = KeyboardInterrupt()
-
-    initiate_consumer()
-
-    channel.stop_consuming.assert_called_once()
-    connection = pika.BlockingConnection.return_value
-    connection.close.assert_called_once()
-    sys_exit.assert_called_once_with(0)
+    for message in queue_messages:
+        message.ack.assert_called_once()
 
 
 @patch("rabbit_consumer.message_consumer.socket")

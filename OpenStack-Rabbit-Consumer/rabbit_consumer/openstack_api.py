@@ -4,7 +4,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.common import RabbitConsumer
+from rabbit_consumer.rabbit_consumer import RabbitConsumer, ConsumerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,8 @@ def authenticate(project_id):
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
+    config = ConsumerConfig()
+
     # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
     data = {
         "auth": {
@@ -23,11 +25,9 @@ def authenticate(project_id):
                 "methods": ["password"],
                 "password": {
                     "user": {
-                        "name": RabbitConsumer.get_env_str("OPENSTACK_USERNAME"),
-                        "domain": {
-                            "name": RabbitConsumer.get_env_str("OPENSTACK_DOMAIN_NAME")
-                        },
-                        "password": RabbitConsumer.get_env_str("OPENSTACK_PASSWORD"),
+                        "name": config.openstack_username,
+                        "domain": {"name": config.openstack_domain_name},
+                        "password": config.openstack_password,
                     }
                 },
             },
@@ -35,7 +35,7 @@ def authenticate(project_id):
         }
     }
     response = session.post(
-        RabbitConsumer.get_env_str("OPENSTACK_AUTH_URL") + "/auth/tokens",
+        f"{config.openstack_auth_url}/auth/tokens",
         json=data,
     )
 
@@ -61,8 +61,8 @@ def update_metadata(project_id, instance_id, metadata):
 
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
     url = (
-        RabbitConsumer.get_env_str("OPENSTACK_COMPUTE_URL")
-        + f"/{project_id}/servers/{instance_id}/metadata"
+        f"{ConsumerConfig().openstack_compute_url}"
+        "/{project_id}/servers/{instance_id}/metadata"
     )
 
     response = session.post(url, headers=headers, json={"metadata": metadata})
