@@ -1,3 +1,4 @@
+rabbitpy
 requests
 requests_kerberos
 pika

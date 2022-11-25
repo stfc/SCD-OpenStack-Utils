@@ -1,22 +1,15 @@
 import json
 import logging
-import re
 import socket
-import sys
 
-import pika
+import rabbitpy
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
-from rabbit_consumer.common import RabbitConsumer
+from rabbit_consumer.rabbit_consumer import RabbitConsumer
+from rabbit_consumer.consumer_config import ConsumerConfig
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-logging.basicConfig(
-    format="[%(levelname)s:%(filename)s:%(funcName)s():%(lineno)d] %(message)s"
-)
-logger = logging.getLogger("tcpserver")
 
 
 def is_aq_message(message):
@@ -332,7 +325,8 @@ def convert_hostnames(message, vm_name):
     return hostnames
 
 
-def on_message(channel, method, header, raw_body):
+def on_message(method, header, raw_body):
+    logging.debug("Got message: %s", raw_body)
     body = json.loads(raw_body.decode("utf-8"))
     message = json.loads(body["oslo.message"])
 
@@ -342,41 +336,37 @@ def on_message(channel, method, header, raw_body):
         logger.error("Something went wrong parsing the message: %s", e)
         logger.error(str(message))
 
-    # remove the message from the queue
-    channel.basic_ack(delivery_tag=method.delivery_tag)
-
 
 def initiate_consumer():
     logger.info("Initiating message consumer")
-    prefix = RabbitConsumer.get_env_str("AQ_PREFIX")
-    host = RabbitConsumer.get_env_str("RABBIT_HOST")
-    port = RabbitConsumer.get_env_int("RABBIT_PORT")
-    login_user = RabbitConsumer.get_env_str("RABBIT_USERNAME")
-    login_pass = RabbitConsumer.get_env_str("RABBIT_PASSWORD")
+
+    config = ConsumerConfig()
+
+    host = config.rabbit_host
+    port = config.rabbit_port
+    login_user = config.rabbit_username
+    login_pass = config.rabbit_password
+    login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
 
     exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
 
-    credentials = pika.PlainCredentials(login_user, login_pass)
-    parameters = pika.ConnectionParameters(
-        host, port, "/", credentials, connection_attempts=10, retry_delay=2
-    )
+    with rabbitpy.Connection(login_str) as conn:
+        with conn.channel() as channel:
+            logger.info("Connected to RabbitMQ")
 
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-    channel.queue_declare("ral.info")
+            # Durable indicates that the queue will survive a broker restart
+            queue = rabbitpy.Queue(channel, name="ral.info", durable=True)
+            for exchange in exchanges:
+                logger.debug("Binding to exchange: %s", exchange)
+                queue.bind(exchange, routing_key="ral.info")
 
-    for exchange in exchanges:
-        channel.queue_bind("ral.info", exchange, "ral.info")
-
-    channel.basic_consume("ral.info", on_message)
-
-    try:
-        channel.start_consuming()
-    except KeyboardInterrupt:
-        channel.stop_consuming()
-        connection.close()
-        sys.exit(0)
-    except Exception as e:
-        logger.error("Something went wrong with the pika message consumer %s", e)
-        connection.close()
-        raise e
+            # Consume the messages from generator
+            message: rabbitpy.Message
+            logger.info("Starting to consume messages")
+            for message in queue:
+                on_message(
+                    method=message.method,
+                    header=message.properties,
+                    raw_body=message.body,
+                )
+                message.ack()
