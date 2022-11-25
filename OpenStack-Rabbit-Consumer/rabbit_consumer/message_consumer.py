@@ -348,11 +348,12 @@ def on_message(channel, method, header, raw_body):
 
 def initiate_consumer():
     logger.info("Initiating message consumer")
-    prefix = RabbitConsumer.config.get("aquilon", "prefix")
-    host = RabbitConsumer.config.get("rabbit", "host")
-    port = RabbitConsumer.config.getint("rabbit", "port")
-    login_user = RabbitConsumer.config.get("rabbit", "login_user")
-    login_pass = RabbitConsumer.config.get("rabbit", "login_pass")
+    prefix = RabbitConsumer.get_env_str("AQ_PREFIX")
+    host = RabbitConsumer.get_env_str("RABBIT_HOST")
+    port = RabbitConsumer.get_env_int("RABBIT_PORT")
+    login_user = RabbitConsumer.get_env_str("RABBIT_USERNAME")
+    login_pass = RabbitConsumer.get_env_str("RABBIT_PASSWORD")
+
     exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
 
     credentials = pika.PlainCredentials(login_user, login_pass)
@@ -367,7 +368,7 @@ def initiate_consumer():
     for exchange in exchanges:
         channel.queue_bind("ral.info", exchange, "ral.info")
 
-    channel.basic_consume(on_message, "ral.info")
+    channel.basic_consume("ral.info", on_message)
 
     try:
         channel.start_consuming()

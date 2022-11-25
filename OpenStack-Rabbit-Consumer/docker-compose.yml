@@ -1,0 +1,9 @@
+version: "3.7"
+services:
+  rabbit_consumer:
+    restart: "no"
+    image: stfc/rabbit-consumer:latest
+    env_file:
+      - .env
+    volumes:
+      - "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro"

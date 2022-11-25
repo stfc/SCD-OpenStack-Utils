@@ -1,8 +1,0 @@
-[Unit]
-Description=Rabbit MQ consumer - Runs aquilon commands based on rabbitmq messages
-
-[Service]
-ExecStart=/usr/local/bin/openstack-message-consumer.py
-StandardOutput=syslog
-StandardError=syslog
-WorkingDirectory=/usr/local/bin/

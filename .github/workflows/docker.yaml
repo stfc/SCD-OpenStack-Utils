@@ -1,0 +1,22 @@
+name: Build image
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Rabbit Consumer
+        uses: docker/build-push-action@v3
+        with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+          context: "{{defaultContext}}:OpenStack-Rabbit-Consumer"
+          # TODO versioning
+          tags: "harbor.stfc.ac.uk/stfc-cloud/rabbit_consumer:latest"

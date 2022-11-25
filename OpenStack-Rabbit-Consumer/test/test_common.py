@@ -5,6 +5,16 @@ import pytest
 from rabbit_consumer.common import RabbitConsumer
 
 
+def test_get_env_str():
+    with patch.dict("os.environ", {"TEST_VAR": "test_value"}):
+        assert RabbitConsumer.get_env_str("TEST_VAR") == "test_value"
+
+
+def test_get_env_int():
+    with patch.dict("os.environ", {"TEST_VAR": "1"}):
+        assert RabbitConsumer.get_env_int("TEST_VAR") == 1
+
+
 @patch("rabbit_consumer.common.ConfigParser")
 def test_get_config_key(config_parser):
     RabbitConsumer.reset()
@@ -14,7 +24,7 @@ def test_get_config_key(config_parser):
     returned = RabbitConsumer.config[key_name]
 
     config_handle = config_parser.return_value
-    config_handle.read.assert_called_once_with("/etc/openstack-utils/consumer.ini")
+    config_handle.read.assert_called_once_with("/usr/src/app/consumer.ini")
 
     config_handle.__getitem__.assert_called_once_with(key_name)
     assert returned == config_handle.__getitem__.return_value

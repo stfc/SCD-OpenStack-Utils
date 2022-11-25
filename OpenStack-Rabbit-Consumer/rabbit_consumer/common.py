@@ -1,9 +1,10 @@
 import logging
+import os
 
 from configparser import ConfigParser
 
 logger = logging.getLogger(__name__)
-CONFIG_FILE_PATH = "/etc/openstack-utils/consumer.ini"
+CONFIG_FILE_PATH = "/usr/src/app/consumer.ini"
 
 
 class _ConfigMeta(type):
@@ -29,6 +30,20 @@ class RabbitConsumer(metaclass=_ConfigMeta):
     """
 
     __config_handle = None
+
+    @classmethod
+    def get_env_str(cls, key) -> str:
+        """
+        Get an environment variable
+        """
+        return os.environ[key]
+
+    @classmethod
+    def get_env_int(cls, key) -> int:
+        """
+        Get an environment variable
+        """
+        return int(os.environ[key])
 
     @staticmethod
     def get_config() -> ConfigParser:

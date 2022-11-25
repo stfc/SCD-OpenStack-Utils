@@ -168,7 +168,7 @@ def test_aq_make(rabbit_consumer, setup):
     os_name = "name"
     domain = "https://example.com"
 
-    rabbit_consumer.config.get.return_value = domain
+    rabbit_consumer.get_env_str.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -187,7 +187,7 @@ def test_aq_make_whitespace(rabbit_consumer, setup):
     os_name = "name"
     domain = "https://example.com"
 
-    rabbit_consumer.config.get.return_value = domain
+    rabbit_consumer.get_env_str.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -206,7 +206,7 @@ def test_aq_make_none(rabbit_consumer, setup):
     os_name = None
     domain = "https://example.com"
 
-    rabbit_consumer.config.get.return_value = domain
+    rabbit_consumer.get_env_str.return_value = domain
 
     aq_make(hostname, personality, os_version, archetype, os_name)
     setup.assert_called_once()
@@ -222,7 +222,7 @@ def test_aq_make_none(rabbit_consumer, setup):
 def test_aq_make_none_hostname(rabbit_consumer, setup, hostname):
     domain = "https://example.com"
 
-    rabbit_consumer.config.get.return_value = domain
+    rabbit_consumer.get_env_str.return_value = domain
 
     with pytest.raises(ValueError):
         aq_make(hostname)
@@ -235,11 +235,11 @@ def test_aq_make_none_hostname(rabbit_consumer, setup, hostname):
 def test_aq_manage(rabbit_consumer, setup):
     env_type, env_name = "type", "name"
     host = "mocked_host"
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
 
     aq_manage(host, env_type, env_name)
 
-    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.get_env_str.assert_called_once_with("AQ_URL")
     setup.assert_called_once()
     expected_url = "https://example.com/host/mocked_host/command/manage?hostname=mocked_host&type=name&force=true"
     assert setup.call_args == call(expected_url, "post", mock.ANY)
@@ -252,10 +252,10 @@ def test_aq_create_machine(rabbit_consumer, setup):
     vmhost, vcpus = "vmhost_mock", "vcpus_mock"
     memory, hostname = "memory_mock", "hostname_mock"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     returned = create_machine(uuid, vmhost, vcpus, memory, hostname, prefix)
 
-    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.get_env_str.assert_called_once_with("AQ_URL")
     setup.assert_called_once()
     assert returned == setup.return_value
     expected_url = "https://example.com/next_machine/prefix_mock?model=vm-openstack&serial=uuid_mock&vmhost=vmhost_mock&cpucount=vcpus_mock&memory=memory_mock"
@@ -267,10 +267,10 @@ def test_aq_create_machine(rabbit_consumer, setup):
 def test_aq_delete_machine(rabbit_consumer, setup):
     machine_name = "name_mock"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     delete_machine(machine_name)
 
-    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.get_env_str.assert_called_once_with("AQ_URL")
     setup.assert_called_once()
     expected_url = "https://example.com/machine/name_mock"
     assert setup.call_args == call(expected_url, "delete", mock.ANY)
@@ -284,7 +284,7 @@ def test_aq_create_host(rabbit_consumer, setup):
     os_name, os_version = "name_str", "vers_str"
 
     # Based on the order of calls in the impl
-    rabbit_consumer.config.get.side_effect = [
+    rabbit_consumer.get_env_str.side_effect = [
         "def_domain_str",
         "def_pers_str",
         "def_arch_str",
@@ -300,14 +300,15 @@ def test_aq_create_host(rabbit_consumer, setup):
         domain="",
         sandbox="",
     )
-    rabbit_consumer.config.get.assert_has_calls(
+
+    rabbit_consumer.get_env_str.assert_has_calls(
         [
-            call("aquilon", "url"),
-            call("aquilon", "default_domain"),
-            call("aquilon", "default_personality"),
-            call("aquilon", "default_archetype"),
+            call("AQ_DOMAIN"),
+            call("AQ_PERSONALITY"),
+            call("AQ_ARCHETYPE"),
+            call("AQ_URL"),
         ],
-        any_order=True,
+        any_order=False,
     )
 
     setup.assert_called_once()
@@ -336,10 +337,10 @@ def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
 def test_aq_delete_host(rabbit_consumer, setup):
     machine_name = "name_mock"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     delete_host(machine_name)
 
-    rabbit_consumer.config.get.assert_called_once_with("aquilon", "url")
+    rabbit_consumer.get_env_str.assert_called_once_with("AQ_URL")
     setup.assert_called_once()
     expected_url = "https://example.com/host/name_mock"
     assert setup.call_args == call(expected_url, "delete", mock.ANY)
@@ -353,7 +354,7 @@ def test_add_machine_interface(rabbit_consumer, setup):
     mac_addr = "mac_addr"
     interface_name = "iface_name"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     add_machine_interface(
         machine_name,
         macaddr=mac_addr,
@@ -374,7 +375,7 @@ def test_delete_machine_interface(rabbit_consumer, setup):
     machine_name = "machine_str"
     interface_name = "iface_name"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     del_machine_interface_address(
         host_name, machinename=machine_name, interfacename=interface_name
     )
@@ -390,7 +391,7 @@ def test_update_machine_interface(rabbit_consumer, setup):
     machine_name = "machine_str"
     interface_name = "iface_name"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     update_machine_interface(machinename=machine_name, interfacename=interface_name)
 
     setup.assert_called_once()
@@ -403,10 +404,10 @@ def test_update_machine_interface(rabbit_consumer, setup):
 def test_check_host_exists(rabbit_consumer, setup):
     hostname = "host_str"
 
-    rabbit_consumer.config.get.return_value = "https://example.com"
+    rabbit_consumer.get_env_str.return_value = "https://example.com"
     check_host_exists(hostname)
 
-    expected_url = f"{rabbit_consumer.config.get.return_value}/host/{hostname}"
+    expected_url = f"{rabbit_consumer.get_env_str.return_value}/host/{hostname}"
     setup.assert_called_once_with(expected_url, "get", mock.ANY)
 
 
