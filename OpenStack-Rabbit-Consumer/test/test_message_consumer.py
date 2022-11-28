@@ -136,9 +136,10 @@ class MockedConfig(ConsumerConfig):
     rabbit_password = "rabbit_password"
 
 
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy):
+def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy, _):
     exchanges = ["ex1", "ex2"]
     rabbit_conf.config.get.return_value.split.return_value = exchanges
     mocked_config = MockedConfig()
@@ -162,10 +163,11 @@ def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy):
     )
 
 
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.on_message")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
-def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
+def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _, __):
     queue_messages = [NonCallableMock(), NonCallableMock()]
     # We need our mocked queue to act like a generator
     rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
