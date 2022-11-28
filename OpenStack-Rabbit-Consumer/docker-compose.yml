@@ -1,10 +1,13 @@
 version: "3.7"
 services:
   rabbit_consumer:
+    build: .
     restart: "no"
     image: stfc/rabbit-consumer:latest
     env_file:
       - .env
+    environment:
+      AQ_FQDN: $HOSTNAME
     volumes:
       - "/etc/krb5.conf:/etc/krb5.conf:ro"
       - "/etc/krb5.keytab:/etc/krb5.keytab:ro"
