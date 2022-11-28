@@ -6,4 +6,6 @@ services:
     env_file:
       - .env
     volumes:
+      - "/etc/krb5.conf:/etc/krb5.conf:ro"
+      - "/etc/krb5.keytab:/etc/krb5.keytab:ro"
       - "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro"
