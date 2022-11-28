@@ -2,6 +2,12 @@ FROM python:3.10
 
 WORKDIR /usr/src/app
 
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+    krb5-user \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
