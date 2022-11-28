@@ -6,6 +6,7 @@ import rabbitpy
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
+from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.rabbit_consumer import RabbitConsumer
 from rabbit_consumer.consumer_config import ConsumerConfig
 
@@ -339,6 +340,8 @@ def on_message(method, header, raw_body):
 
 def initiate_consumer():
     logger.info("Initiating message consumer")
+    # Ensure we have valid creds before trying to contact rabbit
+    verify_kerberos_ticket()
 
     config = ConsumerConfig()
 

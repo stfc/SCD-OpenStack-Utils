@@ -122,8 +122,10 @@ def test_on_message_exception_handling(_, consume_mock):
 
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_config_elements(rabbit_conf, _):
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
+def test_initiate_consumer_config_elements(kerb, rabbit_conf, _):
     initiate_consumer()
+    kerb.assert_called_once()
     rabbit_conf.config.get.assert_called_once_with("rabbit", "exchanges")
 
 
