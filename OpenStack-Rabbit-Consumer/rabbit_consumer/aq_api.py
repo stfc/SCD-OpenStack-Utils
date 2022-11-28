@@ -40,11 +40,8 @@ def verify_kerberos_ticket():
 
     if subprocess.call(["klist", "-s"]) == 1:
         logger.warning("No ticket found / expired. Obtaining new one")
-        kinit_cmd = ["kinit", "-k"]
-
-        suffix = RabbitConsumer.config.get("kerberos", "suffix", fallback="")
-        if suffix:
-            kinit_cmd.append(suffix)
+        kinit_cmd = ["kinit", "-k", f"HTTP/{ConsumerConfig().aq_fqdn}"]
+        logger.debug("Running command: %s", kinit_cmd)
 
         subprocess.call(kinit_cmd)
 

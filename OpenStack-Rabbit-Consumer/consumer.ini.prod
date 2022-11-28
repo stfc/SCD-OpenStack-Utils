@@ -14,6 +14,3 @@ exchanges=ceilometer
     swift
     trove
     zaqar
-
-[kerberos]
-suffix=HTTP/server

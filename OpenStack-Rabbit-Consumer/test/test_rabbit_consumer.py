@@ -8,6 +8,7 @@ from rabbit_consumer.consumer_config import ConsumerConfig
 AQ_FIELDS = [
     ("aq_archetype", "AQ_ARCHETYPE"),
     ("aq_domain", "AQ_DOMAIN"),
+    ("aq_fqdn", "AQ_FQDN"),
     ("aq_personality", "AQ_PERSONALITY"),
     ("aq_prefix", "AQ_PREFIX"),
     ("aq_url", "AQ_URL"),

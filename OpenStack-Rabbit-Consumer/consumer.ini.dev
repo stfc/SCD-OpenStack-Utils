@@ -1,5 +1,2 @@
 [rabbit]
 exchanges=nova
-
-[kerberos]
-suffix=HTTP/server
