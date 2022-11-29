@@ -289,8 +289,6 @@ def test_consume_create_machine_hostnames_good_path(
         get_metadata.return_value,
         get_metadata.return_value,
         get_metadata.return_value,
-        get_metadata.return_value,
-        get_metadata.return_value,
     )
 
     openstack.update_metadata.assert_has_calls(

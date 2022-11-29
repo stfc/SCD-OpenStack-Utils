@@ -252,9 +252,7 @@ def _handle_create_machine(message):
                 machinename,
                 sandbox,
                 firstip,
-                archetype,
                 domain,
-                personality,
                 osname,
                 osversion,
             )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
