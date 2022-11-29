@@ -63,7 +63,7 @@ def update_metadata(project_id, instance_id, metadata):
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
     url = (
         f"{ConsumerConfig().openstack_compute_url}"
-        "/{project_id}/servers/{instance_id}/metadata"
+        f"/{project_id}/servers/{instance_id}/metadata"
     )
 
     logger.debug("POST: %s", url)
