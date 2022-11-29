@@ -24,7 +24,6 @@ UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
 ADD_INTERFACE_ADDRESS_SUFFIX = (
     "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
 )
-DEL_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&fqdn={2}"
 
 DELETE_HOST_SUFFIX = "/host/{0}"
 DELETE_MACHINE_SUFFIX = "/machine/{0}"
@@ -197,10 +196,8 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
 def del_machine_interface_address(hostname, interfacename, machinename):
     logger.debug("Attempting to delete address from machine %s ", machinename)
 
-    url = ConsumerConfig().aq_url + DEL_INTERFACE_ADDRESS_SUFFIX.format(
-        machinename, interfacename, hostname
-    )
-
+    url = ConsumerConfig().aq_url
+    url += f"/interface_address?machine={machinename}&interface={interfacename}&fqdn={hostname}"
     setup_requests(url, "delete", "Del Machine Interface Address")
 
 
