@@ -66,10 +66,12 @@ def update_metadata(project_id, instance_id, metadata):
         "/{project_id}/servers/{instance_id}/metadata"
     )
 
+    logger.debug("POST: %s", url)
     response = session.post(url, headers=headers, json={"metadata": metadata})
 
     if response.status_code != 200:
         logger.error("Setting metadata failed")
+        logger.error("POST URL: %s", url)
         raise ConnectionAbortedError(f"{response.status_code}: {response.text}")
 
     logger.debug("Setting metadata successful")

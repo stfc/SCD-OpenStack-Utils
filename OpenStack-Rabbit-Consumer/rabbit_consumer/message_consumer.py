@@ -105,6 +105,7 @@ def consume(message):
 
 def _handle_machine_delete(message):
     if is_aq_message(message):
+        logger.debug("Message: %s", message)
         logger.info("=== Received Aquilon VM delete message ===")
 
         project_name = message.get("_context_project_name")
@@ -115,11 +116,9 @@ def _handle_machine_delete(message):
         metadata = message.get("payload").get("metadata")
         machinename = message.get("payload").get("metadata").get("AQ_MACHINENAME")
 
-        logger.info("Project Name: %s (%s)", project_name, project_id)
-        logger.info("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.info("Username: %s", username)
-        logger.info("Hostnames: %s", metadata.get("HOSTNAMES"))
-
+        logger.debug("Project Name: %s (%s)", project_name, project_id)
+        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
+        logger.debug("Username: %s", username)
         logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
 
         for host in metadata.get("HOSTNAMES").split(","):
