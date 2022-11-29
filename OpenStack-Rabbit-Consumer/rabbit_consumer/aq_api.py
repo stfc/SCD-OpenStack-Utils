@@ -26,9 +26,6 @@ ADD_INTERFACE_ADDRESS_SUFFIX = (
 )
 DEL_INTERFACE_ADDRESS_SUFFIX = "/interface_address?machine={0}&interface={1}&fqdn={2}"
 
-ADD_HOST_SUFFIX = "/host/{0}?machine={1}&ip={3}&archetype={4}&domain={5}&personality={6}&osname={7}&osversion={8}"
-# ADD_HOST_SUFFIX="/host/{0}?machine={1}&sandbox=sap86629/daaas-main&ip={2}&archetype={3}&domain={4}&personality={5}&osname={6}&osversion={7}"
-
 DELETE_HOST_SUFFIX = "/host/{0}"
 DELETE_MACHINE_SUFFIX = "/machine/{0}"
 
@@ -138,33 +135,27 @@ def delete_machine(machinename):
 def create_host(
     hostname,
     machinename,
-    sandbox,
     firstip,
-    domain,
     osname,
     osversion,
 ):
     logger.info("Attempting to create host for %s ", hostname)
-
-    if domain or sandbox:
-        raise NotImplementedError("Custom domain or sandboxes are not passed through")
-
     config = ConsumerConfig()
 
     default_domain = config.aq_domain
     default_personality = config.aq_personality
     default_archetype = config.aq_archetype
 
-    url = config.aq_url + ADD_HOST_SUFFIX.format(
-        hostname,
-        machinename,
-        sandbox,
-        firstip,
-        default_archetype,
-        default_domain,
-        default_personality,
-        osname,
-        osversion,
+    url = config.aq_url
+    url += (
+        f"/host/{hostname}?"
+        f"machine={machinename}"
+        f"&ip={firstip}"
+        f"&archetype={default_archetype}"
+        f"&domain={default_domain}"
+        f"&personality={default_personality}"
+        f"&osname={osname}"
+        f"&osversion={osversion}"
     )
 
     logger.info(url)

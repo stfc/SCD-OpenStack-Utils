@@ -284,9 +284,7 @@ def test_consume_create_machine_hostnames_good_path(
     aq_api.create_host.assert_called_once_with(
         expected_hostnames[0],
         aq_api.create_machine.return_value,
-        get_metadata.return_value,
         _FAKE_PAYLOAD["fixed_ips"][0].get.return_value,
-        get_metadata.return_value,
         get_metadata.return_value,
         get_metadata.return_value,
     )
@@ -315,7 +313,7 @@ def test_consume_create_machine_hostnames_good_path(
 
     aq_api.aq_manage.assert_has_calls(
         [
-            call(host, "sandbox", get_metadata.return_value)
+            call(host, "domain", app_conf.return_value.aq_domain)
             for host in expected_hostnames
         ]
     )
@@ -426,27 +424,6 @@ def test_consume_update_machine_interface_failure(aq_api, hostname, _, __, ___):
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_create_host_failure(aq_api, hostname, _, __, ___):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    vm_name = "vm-openstack-AbC-123"
-    aq_api.create_host.side_effect = Exception(vm_name)
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-
-    assert "IP Address already exists on" in str(err.value)
-    assert vm_name in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
@@ -464,7 +441,6 @@ def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___)
     openstack.update_metadata.assert_called_with(
         "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
     )
-    assert "Failed to set Aquilon configuration" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -485,7 +461,6 @@ def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
     openstack.update_metadata.assert_called_with(
         "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
     )
-    assert "Failed to set Aquilon configuration" in str(err.value)
 
 
 _DELETE_FAKE_PAYLOAD = {

@@ -182,8 +182,6 @@ def _handle_create_machine(message):
             raise Exception("Failed to update metadata")
         logger.info("Building metadata")
 
-        domain = get_metadata_value(message, "AQ_DOMAIN")
-        sandbox = get_metadata_value(message, "AQ_SANDBOX")
         personality = get_metadata_value(message, "AQ_PERSONALITY")
         osversion = get_metadata_value(message, "AQ_OSVERSION")
         archetype = get_metadata_value(message, "AQ_ARCHETYPE")
@@ -246,52 +244,30 @@ def _handle_create_machine(message):
             raise Exception("Failed to set default interface %s", e)
         logger.info("Creating Host")
 
-        try:
-            aq_api.create_host(
-                hostnames[0],
-                machinename,
-                sandbox,
-                firstip,
-                domain,
-                osname,
-                osversion,
-            )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
-        except Exception as e:
-            logger.error("Failed to create host: %s", e)
-            raise Exception(
-                "IP Address already exists on %s, using that machine instead", e
-            )
-            logger.error(
-                "IP Address already exists on %s, using that machine instead",
-                newmachinename,
-            )
-            raise Exception("Failed to create host: %s", e)
+        aq_api.create_host(
+            hostnames[0],
+            machinename,
+            firstip,
+            osname,
+            osversion,
+        )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
 
         openstack_api.update_metadata(
             project_id, vm_id, {"AQ_MACHINENAME": machinename}
         )
-        logger.info("Domain: %s", domain)
-        logger.info("Sandbox: %s", sandbox)
-        logger.info("Personality: %s", personality)
-        logger.info("OS Version: %s", osversion)
-        logger.info("Archetype: %s", archetype)
-        logger.info("OS Name: %s", osname)
 
         # as the machine may have been assigned more that one ip address,
         # apply the aquilon configuration to all of them
         for host in hostnames:
 
             try:
-                if sandbox:
-                    aq_api.aq_manage(host, "sandbox", sandbox)
-                else:
-                    aq_api.aq_manage(host, "domain", domain)
+                aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
             except Exception as e:
                 logger.error("Failed to manage in Aquilon: %s", e)
                 openstack_api.update_metadata(
                     project_id, vm_id, {"AQ_STATUS": "FAILED"}
                 )
-                raise Exception("Failed to set Aquilon configuration %s", e)
+                raise e
             try:
                 aq_api.aq_make(host, personality, osversion, archetype, osname)
             except Exception as e:
@@ -299,7 +275,7 @@ def _handle_create_machine(message):
                 openstack_api.update_metadata(
                     project_id, vm_id, {"AQ_STATUS": "FAILED"}
                 )
-                raise Exception("Failed to set Aquilon configuration %s", e)
+                raise e
 
         logger.info("Successfully applied Aquilon configuration")
         openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})

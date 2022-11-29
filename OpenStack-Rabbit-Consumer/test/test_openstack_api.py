@@ -75,7 +75,7 @@ def test_update_metadata(auth, requests, config):
 
     assert session.post.call_args == call(
         f"{config.return_value.openstack_compute_url}"
-        "/{project_id}/servers/{instance_id}/metadata",
+        f"/{project_id}/servers/{instance_id}/metadata",
         headers={"Content-type": "application/json", "X-Auth-Token": auth.return_value},
         json={"metadata": metadata},
     )

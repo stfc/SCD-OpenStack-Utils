@@ -282,30 +282,11 @@ def test_aq_create_host(config, setup):
         firstip=first_ip,
         osname=os_name,
         osversion=os_version,
-        # Not used
-        domain="",
-        sandbox="",
     )
 
     setup.assert_called_once()
     expected_url = "https://example.com/host/host_str?machine=machine_str&ip=ip_str&archetype=def_arch_str&domain=def_domain_str&personality=def_pers_str&osname=name_str&osversion=vers_str"
     assert setup.call_args == call(expected_url, "put", mock.ANY)
-
-
-@pytest.mark.parametrize("arg", [("sandbox", ""), ("", "domain"), ("both", "both")])
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
-    with pytest.raises(NotImplementedError):
-        create_host(
-            hostname="",
-            machinename="",
-            firstip="",
-            osname="",
-            osversion="",
-            sandbox=arg[0],
-            domain=arg[1],
-        )
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
