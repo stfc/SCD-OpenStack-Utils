@@ -121,36 +121,21 @@ def _handle_machine_delete(message):
         logger.debug("Username: %s", username)
         logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
 
-        for host in metadata.get("HOSTNAMES").split(","):
-            try:
-                aq_api.delete_host(host)
-            except Exception as e:
-                logger.error("Failed to delete host: %s", e)
-                openstack_api.update_metadata(
-                    project_id, vm_id, {"AQ_STATUS": "FAILED"}
-                )
-                raise Exception("Failed to delete host")
-            try:
-                aq_api.del_machine_interface_address(host, "eth0", machinename)
-            except Exception as e:
-                raise Exception(
-                    "Failed to delete interface address from machine  %s", e
-                )
-
-        try:
-            aq_api.delete_machine(machinename)
-        except Exception as e:
-            raise Exception("Failed to delete machine")
-
         try:
             for host in metadata.get("HOSTNAMES").split(","):
-                aq_api.reset_env(host)
-        except Exception as e:
-            logger.error("Failed to reset Aquilon configuration: %s", e)
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-            raise Exception("Failed to reset Aquilon configuration")
+                logger.debug("Host cleanup: %s", host)
+                aq_api.delete_host(host)
+                aq_api.del_machine_interface_address(host, "eth0", machinename)
 
-        logger.debug("Successfully reset Aquilon configuration")
+            logger.debug("Deleting machine: %s", machinename)
+            aq_api.delete_machine(machinename)
+
+            for host in metadata.get("HOSTNAMES").split(","):
+                logger.debug("Deleting host: %s", host)
+                aq_api.reset_env(host)
+        except Exception as err:
+            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+            raise err
         logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 

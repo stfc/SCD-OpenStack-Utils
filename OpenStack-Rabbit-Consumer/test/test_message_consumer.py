@@ -508,7 +508,7 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
     message.get.side_effect = _message_get_delete
 
     aq_api.delete_host.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
 
     openstack_api.update_metadata.assert_called_with(
@@ -516,7 +516,6 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
         _DELETE_FAKE_PAYLOAD["instance_id"],
         {"AQ_STATUS": "FAILED"},
     )
-    assert "Failed to delete host" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -526,9 +525,8 @@ def test_consume_delete_machine_aq_del_machine_interface_address(aq_api, _):
     message.get.side_effect = _message_get_delete
 
     aq_api.del_machine_interface_address.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
-    assert "Failed to delete interface address" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -538,9 +536,8 @@ def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
     message.get.side_effect = _message_get_delete
 
     aq_api.delete_machine.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
-    assert "Failed to delete machine" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -551,11 +548,10 @@ def test_consume_delete_machine_aq_reset_env_failure(aq_api, openstack_api, _):
     message.get.side_effect = _message_get_delete
 
     aq_api.reset_env.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
     openstack_api.update_metadata.assert_called_with(
         "_context_project_id",
         _DELETE_FAKE_PAYLOAD["instance_id"],
         {"AQ_STATUS": "FAILED"},
     )
-    assert "Failed to reset Aquilon configuration" in str(err.value)
