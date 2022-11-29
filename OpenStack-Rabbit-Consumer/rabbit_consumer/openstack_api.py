@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def authenticate(project_id):
-    logger.info("Attempting to authenticate to Openstack")
+    logger.debug("Attempting to authenticate to Openstack")
 
     session = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
@@ -50,7 +50,7 @@ def authenticate(project_id):
 
 
 def update_metadata(project_id, instance_id, metadata):
-    logger.info(
+    logger.debug(
         "Attempting to set new metadata for VM: %s - %s", instance_id, str(metadata)
     )
 

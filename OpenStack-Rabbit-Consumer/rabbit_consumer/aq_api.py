@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 
 
 def verify_kerberos_ticket():
-    logger.info("Checking for valid Kerberos Ticket")
+    logger.debug("Checking for valid Kerberos Ticket")
 
     if subprocess.call(["klist", "-s"]) == 1:
-        logger.warning("No ticket found / expired. Obtaining new one")
+        logger.info("No ticket found / expired. Obtaining new one")
         kinit_cmd = ["kinit", "-k", f"HTTP/{ConsumerConfig().aq_fqdn}"]
         logger.debug("Running command: %s", kinit_cmd)
 
@@ -45,7 +45,7 @@ def verify_kerberos_ticket():
         if subprocess.call(["klist", "-s"]) == 1:
             raise RuntimeError("Failed to obtain valid Kerberos ticket")
 
-    logger.info("Kerberos ticket success")
+    logger.debug("Kerberos ticket success")
     return True
 
 
@@ -73,13 +73,13 @@ def setup_requests(url, method, desc):
             f"Failed {desc}: {response.status_code} -" "{response.text}"
         )
 
-    logger.info("%s: Success ", desc)
+    logger.debug("Success: %s ", desc)
     logger.debug("Response: %s", response.text)
     return response.text
 
 
 def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=None):
-    logger.info("Attempting to make templates for %s", hostname)
+    logger.debug("Attempting to make templates for %s", hostname)
 
     params = {
         "personality": personality,
@@ -106,7 +106,7 @@ def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=N
 
 
 def aq_manage(hostname, env_type, env_name):
-    logger.info("Attempting to manage %s to %s %s", hostname, env_type, env_name)
+    logger.debug("Attempting to manage %s to %s %s", hostname, env_type, env_name)
 
     url = ConsumerConfig().aq_url + MANAGE_SUFFIX.format(hostname, env_type, env_name)
 
@@ -114,7 +114,7 @@ def aq_manage(hostname, env_type, env_name):
 
 
 def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
-    logger.info("Attempting to create machine for %s ", hostname)
+    logger.debug("Attempting to create machine for %s ", hostname)
 
     url = ConsumerConfig().aq_url + CREATE_MACHINE_SUFFIX.format(
         prefix, MODEL, uuid, vmhost, vcpus, memory
@@ -125,7 +125,7 @@ def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
 
 
 def delete_machine(machinename):
-    logger.info("Attempting to delete machine for %s", machinename)
+    logger.debug("Attempting to delete machine for %s", machinename)
 
     url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machinename)
 
@@ -139,7 +139,7 @@ def create_host(
     osname,
     osversion,
 ):
-    logger.info("Attempting to create host for %s ", hostname)
+    logger.debug("Attempting to create host for %s ", hostname)
     config = ConsumerConfig()
 
     default_domain = config.aq_domain
@@ -158,14 +158,14 @@ def create_host(
         f"&osversion={osversion}"
     )
 
-    logger.info(url)
+    logger.debug(url)
 
     # reset personality etc ...
     setup_requests(url, "put", "Host Create")
 
 
 def delete_host(hostname):
-    logger.info("Attempting to delete host for %s ", hostname)
+    logger.debug("Attempting to delete host for %s ", hostname)
 
     url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
 
@@ -173,7 +173,7 @@ def delete_host(hostname):
 
 
 def add_machine_interface(machinename, macaddr, interfacename):
-    logger.info(
+    logger.debug(
         "Attempting to add interface %s to machine %s ", interfacename, machinename
     )
 
@@ -185,7 +185,7 @@ def add_machine_interface(machinename, macaddr, interfacename):
 
 
 def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
-    logger.info("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
+    logger.debug("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
 
     url = ConsumerConfig().aq_url + ADD_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, ipaddr, hostname
@@ -195,7 +195,7 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
 
 
 def del_machine_interface_address(hostname, interfacename, machinename):
-    logger.info("Attempting to delete address from machine %s ", machinename)
+    logger.debug("Attempting to delete address from machine %s ", machinename)
 
     url = ConsumerConfig().aq_url + DEL_INTERFACE_ADDRESS_SUFFIX.format(
         machinename, interfacename, hostname
@@ -205,7 +205,7 @@ def del_machine_interface_address(hostname, interfacename, machinename):
 
 
 def update_machine_interface(machinename, interfacename):
-    logger.info("Attempting to bootable %s ", machinename)
+    logger.debug("Attempting to bootable %s ", machinename)
 
     url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
         machinename, interfacename
@@ -247,7 +247,7 @@ def reset_env(hostname):
 
 
 def check_host_exists(hostname):
-    logger.info("Attempting to make templates for %s", hostname)
+    logger.debug("Attempting to make templates for %s", hostname)
 
     url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
 

@@ -150,7 +150,7 @@ def _handle_machine_delete(message):
             openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
             raise Exception("Failed to reset Aquilon configuration")
 
-        logger.info("Successfully reset Aquilon configuration")
+        logger.debug("Successfully reset Aquilon configuration")
         logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 
@@ -166,10 +166,10 @@ def _handle_create_machine(message):
 
         hostnames = convert_hostnames(message, vm_name)
 
-        logger.info("Project Name: %s (%s)", project_name, project_id)
-        logger.info("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.info("Username: %s", username)
-        logger.info("Hostnames: " + ", ".join(hostnames))
+        logger.debug("Project Name: %s (%s)", project_name, project_id)
+        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
+        logger.debug("Username: %s", username)
+        logger.debug("Hostnames: " + ", ".join(hostnames))
 
         try:
             # add hostname(s) to metadata for use when capturing delete messages
@@ -180,7 +180,7 @@ def _handle_create_machine(message):
         except Exception as e:
             logger.error("Failed to update metadata: %s", e)
             raise Exception("Failed to update metadata")
-        logger.info("Building metadata")
+        logger.debug("Building metadata")
 
         personality = get_metadata_value(message, "AQ_PERSONALITY")
         osversion = get_metadata_value(message, "AQ_OSVERSION")
@@ -194,7 +194,7 @@ def _handle_create_machine(message):
         vmhost = message.get("payload").get("host")
         firstip = message.get("payload").get("fixed_ips")[0].get("address")
 
-        logger.info("Creating machine")
+        logger.debug("Creating machine")
 
         try:
             machinename = aq_api.create_machine(
@@ -207,7 +207,7 @@ def _handle_create_machine(message):
             )
         except Exception as e:
             raise Exception("Failed to create machine: {0}".format(e))
-        logger.info("Creating Interfaces")
+        logger.debug("Creating Interfaces")
 
         for index, ip in enumerate(message.get("payload").get("fixed_ips")):
             interfacename = "eth" + str(index)
@@ -221,7 +221,7 @@ def _handle_create_machine(message):
             except Exception as e:
                 raise Exception("Failed to add machine interface: %s", e)
                 logger.error("Failed to add machine interface %s", e)
-        logger.info("Creating Interfaces2")
+        logger.debug("Creating Interfaces2")
 
         for index, ip in enumerate(message.get("payload").get("fixed_ips")):
             if index > 0:
@@ -236,13 +236,13 @@ def _handle_create_machine(message):
                     )
                 except Exception as e:
                     raise Exception("Failed to add machine interface address %s", e)
-        logger.info("Updating Interfaces")
+        logger.debug("Updating Interfaces")
 
         try:
             aq_api.update_machine_interface(machinename, "eth0")
         except Exception as e:
             raise Exception("Failed to set default interface %s", e)
-        logger.info("Creating Host")
+        logger.debug("Creating Host")
 
         aq_api.create_host(
             hostnames[0],
@@ -277,7 +277,7 @@ def _handle_create_machine(message):
                 )
                 raise e
 
-        logger.info("Successfully applied Aquilon configuration")
+        logger.debug("Successfully applied Aquilon configuration")
         openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
 
         logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
@@ -316,7 +316,7 @@ def on_message(method, header, raw_body):
 
 
 def initiate_consumer():
-    logger.info("Initiating message consumer")
+    logger.debug("Initiating message consumer")
     # Ensure we have valid creds before trying to contact rabbit
     verify_kerberos_ticket()
 
@@ -332,7 +332,7 @@ def initiate_consumer():
 
     with rabbitpy.Connection(login_str) as conn:
         with conn.channel() as channel:
-            logger.info("Connected to RabbitMQ")
+            logger.debug("Connected to RabbitMQ")
 
             # Durable indicates that the queue will survive a broker restart
             queue = rabbitpy.Queue(channel, name="ral.info", durable=True)
@@ -342,7 +342,7 @@ def initiate_consumer():
 
             # Consume the messages from generator
             message: rabbitpy.Message
-            logger.info("Starting to consume messages")
+            logger.debug("Starting to consume messages")
             for message in queue:
                 on_message(
                     method=message.method,
