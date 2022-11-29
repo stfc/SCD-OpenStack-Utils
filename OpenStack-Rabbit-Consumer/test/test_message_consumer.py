@@ -242,7 +242,7 @@ def _message_get_create(arg_name: str) -> Union[str, Dict]:
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
+@patch("rabbit_consumer.message_consumer.ConsumerConfig")
 def test_consume_create_machine_hostnames_good_path(
     app_conf, aq_api, openstack, hostname, get_metadata, _
 ):
@@ -259,7 +259,7 @@ def test_consume_create_machine_hostnames_good_path(
         _FAKE_PAYLOAD["vcpus"],
         _FAKE_PAYLOAD["memory_mb"],
         expected_hostnames[-1],
-        app_conf.config.get.return_value,
+        app_conf.return_value.aq_prefix,
     )
 
     aq_api.add_machine_interface.assert_has_calls(

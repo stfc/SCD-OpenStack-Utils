@@ -198,10 +198,14 @@ def _handle_create_machine(message):
 
         logger.info("Creating machine")
 
-        prefix = RabbitConsumer.config.get("aquilon", "prefix")
         try:
             machinename = aq_api.create_machine(
-                uuid, vmhost, vcpus, memory_mb, hostnames[-1], prefix
+                uuid,
+                vmhost,
+                vcpus,
+                memory_mb,
+                hostnames[-1],
+                ConsumerConfig().aq_prefix,
             )
         except Exception as e:
             raise Exception("Failed to create machine: {0}".format(e))
