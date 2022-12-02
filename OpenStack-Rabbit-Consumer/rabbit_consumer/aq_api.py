@@ -165,9 +165,7 @@ def create_host(
 
 def delete_host(hostname):
     logger.debug("Attempting to delete host for %s ", hostname)
-
     url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
-
     setup_requests(url, "delete", "Host Delete")
 
 

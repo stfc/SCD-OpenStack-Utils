@@ -125,14 +125,10 @@ def _handle_machine_delete(message):
             for host in metadata.get("HOSTNAMES").split(","):
                 logger.debug("Host cleanup: %s", host)
                 aq_api.delete_host(host)
-                aq_api.del_machine_interface_address(host, "eth0", machinename)
 
             logger.debug("Deleting machine: %s", machinename)
             aq_api.delete_machine(machinename)
 
-            for host in metadata.get("HOSTNAMES").split(","):
-                logger.debug("Deleting host: %s", host)
-                aq_api.reset_env(host)
         except Exception as err:
             openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
             raise err
@@ -311,10 +307,12 @@ def initiate_consumer():
     port = config.rabbit_port
     login_user = config.rabbit_username
     login_pass = config.rabbit_password
-    login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
-
+    logger.debug(
+        "Connecting to rabbit with: amqp://%s:<password>@%s:%s/", login_user, host, port
+    )
     exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
 
+    login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
     with rabbitpy.Connection(login_str) as conn:
         with conn.channel() as channel:
             logger.debug("Connected to RabbitMQ")
