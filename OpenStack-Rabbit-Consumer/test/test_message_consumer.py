@@ -486,18 +486,9 @@ def test_consume_delete_machine_good_path(aq_api, _):
     consume(message)
 
     aq_api.delete_host.assert_has_calls([call("host1"), call("host2")], any_order=True)
-    aq_api.del_machine_interface_address.assert_has_calls(
-        [
-            call("host1", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
-            call("host2", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
-        ]
-    )
-
     aq_api.delete_machine.assert_called_once_with(
         _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]
     )
-
-    aq_api.reset_env.assert_has_calls([call("host1"), call("host2")], any_order=True)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -520,17 +511,6 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_del_machine_interface_address(aq_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.del_machine_interface_address.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception):
-        consume(message)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.aq_api")
 def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
     message = Mock()
     message.get.side_effect = _message_get_delete
@@ -538,20 +518,3 @@ def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
     aq_api.delete_machine.side_effect = Exception("mocked exception")
     with pytest.raises(Exception):
         consume(message)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_reset_env_failure(aq_api, openstack_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.reset_env.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception):
-        consume(message)
-    openstack_api.update_metadata.assert_called_with(
-        "_context_project_id",
-        _DELETE_FAKE_PAYLOAD["instance_id"],
-        {"AQ_STATUS": "FAILED"},
-    )

@@ -6,7 +6,6 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.rabbit_consumer import RabbitConsumer
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 MODEL = "vm-openstack"
@@ -189,14 +188,6 @@ def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
     )
 
     setup_requests(url, "put", "Add Machine Interface Address")
-
-
-def del_machine_interface_address(hostname, interfacename, machinename):
-    logger.debug("Attempting to delete address from machine %s ", machinename)
-
-    url = ConsumerConfig().aq_url
-    url += f"/interface_address?machine={machinename}&interface={interfacename}&fqdn={hostname}"
-    setup_requests(url, "delete", "Del Machine Interface Address")
 
 
 def update_machine_interface(machinename, interfacename):

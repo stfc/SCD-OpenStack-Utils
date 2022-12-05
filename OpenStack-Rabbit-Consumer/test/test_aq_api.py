@@ -13,7 +13,6 @@ from rabbit_consumer.aq_api import (
     create_host,
     delete_host,
     add_machine_interface,
-    del_machine_interface_address,
     update_machine_interface,
     check_host_exists,
     set_env,
@@ -322,23 +321,6 @@ def test_add_machine_interface(config, setup):
         "https://example.com/machine/name_str/interface/iface_name?mac=mac_addr"
     )
     assert setup.call_args == call(expected_url, "put", mock.ANY)
-
-
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_delete_machine_interface(config, setup):
-    host_name = "name_str"
-    machine_name = "machine_str"
-    interface_name = "iface_name"
-
-    config.return_value.aq_url = "https://example.com"
-    del_machine_interface_address(
-        host_name, machinename=machine_name, interfacename=interface_name
-    )
-
-    setup.assert_called_once()
-    expected_url = "https://example.com/interface_address?machine=machine_str&interface=iface_name&fqdn=name_str"
-    assert setup.call_args == call(expected_url, "delete", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
