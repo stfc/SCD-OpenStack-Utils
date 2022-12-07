@@ -74,13 +74,14 @@ def test_get_metadata_value(key_name):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_parses_json(json, _):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_parses_json(json, aq_message, _):
+    message = MagicMock()
+    raw_body = message.body
+    aq_message.return_value = True
 
-    on_message(method, header, raw_body)
+    on_message(message)
     raw_body.decode.assert_called_once_with("utf-8")
 
     decoded_body = json.loads.return_value
@@ -98,26 +99,30 @@ def test_on_message_parses_json(json, _):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_forwards_json_to_consumer(json, consume_mock):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_forwards_json_to_consumer(json, is_aq_message, consume_mock):
+    message = Mock()
+    is_aq_message.return_value = True
 
-    on_message(method, header, raw_body)
+    on_message(message)
+    is_aq_message.assert_called_once_with(json.loads.return_value)
     consume_mock.assert_called_once_with(json.loads.return_value)
+    message.ack.assert_called_once()
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_exception_handling(_, consume_mock):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_ignores_non_aq(json, is_aq_message, consume_mock):
+    message = Mock()
+    is_aq_message.return_value = False
 
-    consume_mock.side_effect = Exception("test")
-    on_message(method, header, raw_body)
-    consume_mock.assert_called_once()
+    on_message(message)
+
+    is_aq_message.assert_called_once_with(json.loads.return_value)
+    consume_mock.assert_not_called()
+    message.ack.assert_not_called()
 
 
 @patch("rabbit_consumer.message_consumer.rabbitpy")
@@ -174,17 +179,7 @@ def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _, __):
 
     initiate_consumer()
 
-    message_mock.assert_has_calls(
-        [
-            call(
-                method=message.method, header=message.properties, raw_body=message.body
-            )
-            for message in queue_messages
-        ]
-    )
-
-    for message in queue_messages:
-        message.ack.assert_called_once()
+    message_mock.assert_has_calls([call(message) for message in queue_messages])
 
 
 @patch("rabbit_consumer.message_consumer.socket")

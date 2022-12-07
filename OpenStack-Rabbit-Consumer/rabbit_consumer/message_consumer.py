@@ -284,16 +284,17 @@ def convert_hostnames(message, vm_name):
     return hostnames
 
 
-def on_message(method, header, raw_body):
+def on_message(message):
+    raw_body = message.body
     logging.debug("Got message: %s", raw_body)
     body = json.loads(raw_body.decode("utf-8"))
-    message = json.loads(body["oslo.message"])
+    decoded = json.loads(body["oslo.message"])
 
-    try:
-        consume(message)
-    except Exception as e:
-        logger.error("Something went wrong parsing the message: %s", e)
-        logger.error(str(message))
+    if not is_aq_message(decoded):
+        return
+
+    consume(decoded)
+    message.ack()
 
 
 def initiate_consumer():
@@ -327,9 +328,4 @@ def initiate_consumer():
             message: rabbitpy.Message
             logger.debug("Starting to consume messages")
             for message in queue:
-                on_message(
-                    method=message.method,
-                    header=message.properties,
-                    raw_body=message.body,
-                )
-                message.ack()
+                on_message(message)
