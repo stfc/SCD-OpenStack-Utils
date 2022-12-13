@@ -18,9 +18,6 @@ def is_aq_message(message):
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-
-    logger.debug("Payload meta: %s" % message.get("payload").get("metadata"))
-
     metadata = message.get("payload").get("metadata")
     if metadata:
         if set(metadata.keys()).intersection(
@@ -47,8 +44,6 @@ def is_aq_message(message):
         ):
             return True
     metadata = message.get("payload").get("image_meta")
-
-    logger.debug("Image meta: %s" % message.get("payload").get("image_meta"))
 
     if metadata:
         if set(metadata.keys()).intersection(
@@ -115,6 +110,12 @@ def _handle_machine_delete(message):
         username = message.get("_context_user_name")
         metadata = message.get("payload").get("metadata")
         machinename = message.get("payload").get("metadata").get("AQ_MACHINENAME")
+        hostnames = metadata.get("HOSTNAMES", "").split(",")
+        hostnames = [i for i in hostnames if "novalocal".casefold() not in i.casefold()]
+
+        if not hostnames:
+            logger.info("Skipping unregistered host (metadata): %s", metadata)
+            return
 
         logger.debug("Project Name: %s (%s)", project_name, project_id)
         logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
@@ -146,6 +147,9 @@ def _handle_create_machine(message):
         username = message.get("_context_user_name")
 
         hostnames = convert_hostnames(message, vm_name)
+        if not hostnames:
+            logger.info("Skipping novalocal only host: %s", vm_name)
+            return
 
         logger.debug("Project Name: %s (%s)", project_name, project_id)
         logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
@@ -277,9 +281,6 @@ def convert_hostnames(message, vm_name):
     #        raise Exception("Problem converting ip to hostname")
     if len(hostnames) > 1:
         logger.warning("There are multiple hostnames assigned to this VM")
-    elif len(hostnames) < 1:
-        hostname = vm_name + ".novalocal"
-        hostnames.append(hostname)
     logger.debug("Hostnames: " + ", ".join(hostnames))
     return hostnames
 
