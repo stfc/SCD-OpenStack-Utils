@@ -286,13 +286,14 @@ def convert_hostnames(message, vm_name):
 
 def on_message(message):
     raw_body = message.body
-    logging.debug("Got message: %s", raw_body)
     body = json.loads(raw_body.decode("utf-8"))
     decoded = json.loads(body["oslo.message"])
 
     if not is_aq_message(decoded):
+        logging.debug("Ignoring message: %s", decoded)
         return
 
+    logging.debug("Got message: %s", raw_body)
     consume(decoded)
     message.ack()
 
