@@ -110,9 +110,17 @@ def _handle_machine_delete(message):
         username = message.get("_context_user_name")
         metadata = message.get("payload").get("metadata")
         machinename = message.get("payload").get("metadata").get("AQ_MACHINENAME")
-        hostnames = metadata.get("HOSTNAMES", "").split(",")
-        hostnames = [i for i in hostnames if "novalocal".casefold() not in i.casefold()]
+        hostnames = metadata.get("HOSTNAMES", None)
 
+        if not hostnames:
+            logger.debug("No hostnames found in metadata, skipping delete")
+            return
+
+        hostnames = [
+            i
+            for i in hostnames.split(",")
+            if "novalocal".casefold() not in i.casefold()
+        ]
         if not hostnames:
             logger.info("Skipping unregistered host (metadata): %s", metadata)
             return
@@ -120,7 +128,7 @@ def _handle_machine_delete(message):
         logger.debug("Project Name: %s (%s)", project_name, project_id)
         logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
         logger.debug("Username: %s", username)
-        logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
+        logger.debug("Hostnames: %s", hostnames)
 
         try:
             for host in metadata.get("HOSTNAMES").split(","):
