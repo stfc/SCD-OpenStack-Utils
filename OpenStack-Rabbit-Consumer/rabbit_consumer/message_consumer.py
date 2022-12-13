@@ -282,10 +282,11 @@ def convert_hostnames(message, vm_name):
         try:
             hostname = socket.gethostbyaddr(ip.get("address"))[0]
             hostnames.append(hostname)
-
+        except socket.herror:
+            logger.info("No hostname found for ip %s", ip.get("address"))
         except Exception as e:
             logger.error("Problem converting ip to hostname", e)
-    #        raise Exception("Problem converting ip to hostname")
+            raise
     if len(hostnames) > 1:
         logger.warning("There are multiple hostnames assigned to this VM")
     logger.debug("Hostnames: " + ", ".join(hostnames))
