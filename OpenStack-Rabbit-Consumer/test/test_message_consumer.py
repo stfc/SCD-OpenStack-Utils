@@ -209,7 +209,7 @@ def test_convert_hostnames_no_ips(_):
 
     vm_name = "mocked_name"
     hostnames = convert_hostnames(message, vm_name)
-    assert hostnames == [vm_name + ".novalocal"]
+    assert hostnames == []
 
 
 _FAKE_PAYLOAD = {
@@ -493,9 +493,8 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
     message = Mock()
     message.get.side_effect = _message_get_delete
 
-    aq_api.delete_host.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception):
-        consume(message)
+    aq_api.delete_host.side_effect = ConnectionError("mocked exception")
+    consume(message)
 
     openstack_api.update_metadata.assert_called_with(
         "_context_project_id",

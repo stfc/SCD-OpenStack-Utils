@@ -129,10 +129,9 @@ def _handle_machine_delete(message):
 
             logger.debug("Deleting machine: %s", machinename)
             aq_api.delete_machine(machinename)
-
-        except Exception as err:
+        except ConnectionError:
             openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-            raise err
+
         logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 
