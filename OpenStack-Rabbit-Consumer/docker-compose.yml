@@ -2,7 +2,7 @@ version: "3"
 services:
   rabbit_consumer:
     build: .
-    restart: "no"
+    restart: "unless-stopped"
     image: stfc/rabbit-consumer:latest
     env_file:
       - .env
