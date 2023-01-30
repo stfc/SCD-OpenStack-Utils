@@ -8,3 +8,7 @@ kerberosSidecar:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: "9.1"
+
+  # This secret is manually created
+  keytabSecretRef: rabbit-consumer-keytab
+  refreshInterval: 2000 # seconds
