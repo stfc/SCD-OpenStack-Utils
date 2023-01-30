@@ -14,12 +14,12 @@ spec:
       annotations:
         # Force pod restart on configmap change
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        kubectl.kubernetes.io/default-logs-container: consumer
+        kubectl.kubernetes.io/default-container: consumer
       labels:
         app: rabbit-consumer
     spec:
       containers:
-        - name: kerberos-sidecar
+        - name: kerberos
           image: "{{ .Values.kerberosSidecar.image.repository }}:{{ .Values.kerberosSidecar.image.tag }}"
           command: ["/bin/sh", "-c", "/etc/entrypoints.d/sidecar-entrypoint.sh"]
           imagePullPolicy: IfNotPresent

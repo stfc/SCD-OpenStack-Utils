@@ -3,6 +3,8 @@
 set -ex
 
 dnf install -y krb5-workstation
-echo "installed"
+
 cat /etc/krb5.conf
+mkdir /shared/krb5cc
+
 sleep infinity
