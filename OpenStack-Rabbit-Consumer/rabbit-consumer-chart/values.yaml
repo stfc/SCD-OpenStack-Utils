@@ -1,0 +1,10 @@
+replicaCount: 1
+
+namespace: rabbit-consumer
+
+kerberosSidecar:
+  image:
+    repository: rockylinux/rockylinux
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "9.1"
