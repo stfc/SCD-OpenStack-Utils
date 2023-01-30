@@ -13,7 +13,6 @@ from rabbit_consumer.aq_api import (
     create_host,
     delete_host,
     add_machine_interface,
-    del_machine_interface_address,
     update_machine_interface,
     check_host_exists,
     set_env,
@@ -29,61 +28,50 @@ def test_verify_kerberos_ticket_valid():
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.RabbitConsumer")
-def test_verify_kerberos_ticket_renew(rabbit_consumer, subprocess):
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_verify_kerberos_ticket_renew(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1, 0, 0]
 
     assert verify_kerberos_ticket()
 
-    rabbit_consumer.config.get.assert_called_once_with(
-        "kerberos", "suffix", fallback=""
-    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
-        call(["kinit", "-k", rabbit_consumer.config.get.return_value]),
+        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
         call(["klist", "-s"]),
     ]
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.RabbitConsumer")
-def test_verify_kerberos_ticket_renew_empty_conf(rabbit_consumer, subprocess):
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1, 0, 0]
-    rabbit_consumer.config.get.return_value = ""
 
     assert verify_kerberos_ticket()
 
-    rabbit_consumer.config.get.assert_called_once_with(
-        "kerberos", "suffix", fallback=""
-    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
-        call(["kinit", "-k"]),
+        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
         call(["klist", "-s"]),
     ]
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.RabbitConsumer")
-def test_verify_kerberos_ticket_raises(rabbit_consumer, subprocess):
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_verify_kerberos_ticket_raises(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 1 (klist -s)
     subprocess.side_effect = [1, 0, 1]
-    rabbit_consumer.config.get.return_value = ""
 
     with pytest.raises(RuntimeError):
         verify_kerberos_ticket()
 
-    rabbit_consumer.config.get.assert_called_once_with(
-        "kerberos", "suffix", fallback=""
-    )
     assert subprocess.call_args_list == [
         call(["klist", "-s"]),
-        call(["kinit", "-k"]),
+        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
         call(["klist", "-s"]),
     ]
 
@@ -293,30 +281,11 @@ def test_aq_create_host(config, setup):
         firstip=first_ip,
         osname=os_name,
         osversion=os_version,
-        # Not used
-        domain="",
-        sandbox="",
     )
 
     setup.assert_called_once()
     expected_url = "https://example.com/host/host_str?machine=machine_str&ip=ip_str&archetype=def_arch_str&domain=def_domain_str&personality=def_pers_str&osname=name_str&osversion=vers_str"
     assert setup.call_args == call(expected_url, "put", mock.ANY)
-
-
-@pytest.mark.parametrize("arg", [("sandbox", ""), ("", "domain"), ("both", "both")])
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_create_machine_throws_domain_or_sandbox(_, __, arg):
-    with pytest.raises(NotImplementedError):
-        create_host(
-            hostname="",
-            machinename="",
-            firstip="",
-            osname="",
-            osversion="",
-            sandbox=arg[0],
-            domain=arg[1],
-        )
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -352,23 +321,6 @@ def test_add_machine_interface(config, setup):
         "https://example.com/machine/name_str/interface/iface_name?mac=mac_addr"
     )
     assert setup.call_args == call(expected_url, "put", mock.ANY)
-
-
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_delete_machine_interface(config, setup):
-    host_name = "name_str"
-    machine_name = "machine_str"
-    interface_name = "iface_name"
-
-    config.return_value.aq_url = "https://example.com"
-    del_machine_interface_address(
-        host_name, machinename=machine_name, interfacename=interface_name
-    )
-
-    setup.assert_called_once()
-    expected_url = "https://example.com/interface_address?machine=machine_str&interface=iface_name&fqdn=name_str"
-    assert setup.call_args == call(expected_url, "delete", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")

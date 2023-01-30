@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def authenticate(project_id):
-    logger.info("Attempting to authenticate to Openstack")
+    logger.debug("Attempting to authenticate to Openstack")
 
     session = requests.Session()
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
@@ -50,7 +50,7 @@ def authenticate(project_id):
 
 
 def update_metadata(project_id, instance_id, metadata):
-    logger.info(
+    logger.debug(
         "Attempting to set new metadata for VM: %s - %s", instance_id, str(metadata)
     )
 
@@ -63,13 +63,15 @@ def update_metadata(project_id, instance_id, metadata):
     headers = {"Content-type": "application/json", "X-Auth-Token": token}
     url = (
         f"{ConsumerConfig().openstack_compute_url}"
-        "/{project_id}/servers/{instance_id}/metadata"
+        f"/{project_id}/servers/{instance_id}/metadata"
     )
 
+    logger.debug("POST: %s", url)
     response = session.post(url, headers=headers, json={"metadata": metadata})
 
     if response.status_code != 200:
         logger.error("Setting metadata failed")
+        logger.error("POST URL: %s", url)
         raise ConnectionAbortedError(f"{response.status_code}: {response.text}")
 
     logger.debug("Setting metadata successful")

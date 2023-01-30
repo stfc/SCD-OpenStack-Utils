@@ -6,6 +6,7 @@ import rabbitpy
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
+from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.rabbit_consumer import RabbitConsumer
 from rabbit_consumer.consumer_config import ConsumerConfig
 
@@ -17,9 +18,6 @@ def is_aq_message(message):
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-
-    logger.debug("Payload meta: %s" % message.get("payload").get("metadata"))
-
     metadata = message.get("payload").get("metadata")
     if metadata:
         if set(metadata.keys()).intersection(
@@ -46,8 +44,6 @@ def is_aq_message(message):
         ):
             return True
     metadata = message.get("payload").get("image_meta")
-
-    logger.debug("Image meta: %s" % message.get("payload").get("image_meta"))
 
     if metadata:
         if set(metadata.keys()).intersection(
@@ -104,6 +100,7 @@ def consume(message):
 
 def _handle_machine_delete(message):
     if is_aq_message(message):
+        logger.debug("Message: %s", message)
         logger.info("=== Received Aquilon VM delete message ===")
 
         project_name = message.get("_context_project_name")
@@ -113,44 +110,36 @@ def _handle_machine_delete(message):
         username = message.get("_context_user_name")
         metadata = message.get("payload").get("metadata")
         machinename = message.get("payload").get("metadata").get("AQ_MACHINENAME")
+        hostnames = metadata.get("HOSTNAMES", None)
 
-        logger.info("Project Name: %s (%s)", project_name, project_id)
-        logger.info("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.info("Username: %s", username)
-        logger.info("Hostnames: %s", metadata.get("HOSTNAMES"))
+        if not hostnames:
+            logger.debug("No hostnames found in metadata, skipping delete")
+            return
 
-        logger.debug("Hostnames: %s" + metadata.get("HOSTNAMES"))
+        hostnames = [
+            i
+            for i in hostnames.split(",")
+            if "novalocal".casefold() not in i.casefold()
+        ]
+        if not hostnames:
+            logger.info("Skipping unregistered host (metadata): %s", metadata)
+            return
 
-        for host in metadata.get("HOSTNAMES").split(","):
-            try:
-                aq_api.delete_host(host)
-            except Exception as e:
-                logger.error("Failed to delete host: %s", e)
-                openstack_api.update_metadata(
-                    project_id, vm_id, {"AQ_STATUS": "FAILED"}
-                )
-                raise Exception("Failed to delete host")
-            try:
-                aq_api.del_machine_interface_address(host, "eth0", machinename)
-            except Exception as e:
-                raise Exception(
-                    "Failed to delete interface address from machine  %s", e
-                )
-
-        try:
-            aq_api.delete_machine(machinename)
-        except Exception as e:
-            raise Exception("Failed to delete machine")
+        logger.debug("Project Name: %s (%s)", project_name, project_id)
+        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
+        logger.debug("Username: %s", username)
+        logger.debug("Hostnames: %s", hostnames)
 
         try:
             for host in metadata.get("HOSTNAMES").split(","):
-                aq_api.reset_env(host)
-        except Exception as e:
-            logger.error("Failed to reset Aquilon configuration: %s", e)
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-            raise Exception("Failed to reset Aquilon configuration")
+                logger.debug("Host cleanup: %s", host)
+                aq_api.delete_host(host)
 
-        logger.info("Successfully reset Aquilon configuration")
+            logger.debug("Deleting machine: %s", machinename)
+            aq_api.delete_machine(machinename)
+        except ConnectionError:
+            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+
         logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 
@@ -165,11 +154,14 @@ def _handle_create_machine(message):
         username = message.get("_context_user_name")
 
         hostnames = convert_hostnames(message, vm_name)
+        if not hostnames:
+            logger.info("Skipping novalocal only host: %s", vm_name)
+            return
 
-        logger.info("Project Name: %s (%s)", project_name, project_id)
-        logger.info("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.info("Username: %s", username)
-        logger.info("Hostnames: " + ", ".join(hostnames))
+        logger.debug("Project Name: %s (%s)", project_name, project_id)
+        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
+        logger.debug("Username: %s", username)
+        logger.debug("Hostnames: " + ", ".join(hostnames))
 
         try:
             # add hostname(s) to metadata for use when capturing delete messages
@@ -180,10 +172,8 @@ def _handle_create_machine(message):
         except Exception as e:
             logger.error("Failed to update metadata: %s", e)
             raise Exception("Failed to update metadata")
-        logger.info("Building metadata")
+        logger.debug("Building metadata")
 
-        domain = get_metadata_value(message, "AQ_DOMAIN")
-        sandbox = get_metadata_value(message, "AQ_SANDBOX")
         personality = get_metadata_value(message, "AQ_PERSONALITY")
         osversion = get_metadata_value(message, "AQ_OSVERSION")
         archetype = get_metadata_value(message, "AQ_ARCHETYPE")
@@ -196,16 +186,20 @@ def _handle_create_machine(message):
         vmhost = message.get("payload").get("host")
         firstip = message.get("payload").get("fixed_ips")[0].get("address")
 
-        logger.info("Creating machine")
+        logger.debug("Creating machine")
 
-        prefix = RabbitConsumer.config.get("aquilon", "prefix")
         try:
             machinename = aq_api.create_machine(
-                uuid, vmhost, vcpus, memory_mb, hostnames[-1], prefix
+                uuid,
+                vmhost,
+                vcpus,
+                memory_mb,
+                hostnames[-1],
+                ConsumerConfig().aq_prefix,
             )
         except Exception as e:
             raise Exception("Failed to create machine: {0}".format(e))
-        logger.info("Creating Interfaces")
+        logger.debug("Creating Interfaces")
 
         for index, ip in enumerate(message.get("payload").get("fixed_ips")):
             interfacename = "eth" + str(index)
@@ -219,7 +213,7 @@ def _handle_create_machine(message):
             except Exception as e:
                 raise Exception("Failed to add machine interface: %s", e)
                 logger.error("Failed to add machine interface %s", e)
-        logger.info("Creating Interfaces2")
+        logger.debug("Creating Interfaces2")
 
         for index, ip in enumerate(message.get("payload").get("fixed_ips")):
             if index > 0:
@@ -234,62 +228,38 @@ def _handle_create_machine(message):
                     )
                 except Exception as e:
                     raise Exception("Failed to add machine interface address %s", e)
-        logger.info("Updating Interfaces")
+        logger.debug("Updating Interfaces")
 
         try:
             aq_api.update_machine_interface(machinename, "eth0")
         except Exception as e:
             raise Exception("Failed to set default interface %s", e)
-        logger.info("Creating Host")
+        logger.debug("Creating Host")
 
-        try:
-            aq_api.create_host(
-                hostnames[0],
-                machinename,
-                sandbox,
-                firstip,
-                archetype,
-                domain,
-                personality,
-                osname,
-                osversion,
-            )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
-        except Exception as e:
-            logger.error("Failed to create host: %s", e)
-            raise Exception(
-                "IP Address already exists on %s, using that machine instead", e
-            )
-            logger.error(
-                "IP Address already exists on %s, using that machine instead",
-                newmachinename,
-            )
-            raise Exception("Failed to create host: %s", e)
+        aq_api.create_host(
+            hostnames[0],
+            machinename,
+            firstip,
+            osname,
+            osversion,
+        )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
 
         openstack_api.update_metadata(
             project_id, vm_id, {"AQ_MACHINENAME": machinename}
         )
-        logger.info("Domain: %s", domain)
-        logger.info("Sandbox: %s", sandbox)
-        logger.info("Personality: %s", personality)
-        logger.info("OS Version: %s", osversion)
-        logger.info("Archetype: %s", archetype)
-        logger.info("OS Name: %s", osname)
 
         # as the machine may have been assigned more that one ip address,
         # apply the aquilon configuration to all of them
         for host in hostnames:
 
             try:
-                if sandbox:
-                    aq_api.aq_manage(host, "sandbox", sandbox)
-                else:
-                    aq_api.aq_manage(host, "domain", domain)
+                aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
             except Exception as e:
                 logger.error("Failed to manage in Aquilon: %s", e)
                 openstack_api.update_metadata(
                     project_id, vm_id, {"AQ_STATUS": "FAILED"}
                 )
-                raise Exception("Failed to set Aquilon configuration %s", e)
+                raise e
             try:
                 aq_api.aq_make(host, personality, osversion, archetype, osname)
             except Exception as e:
@@ -297,9 +267,9 @@ def _handle_create_machine(message):
                 openstack_api.update_metadata(
                     project_id, vm_id, {"AQ_STATUS": "FAILED"}
                 )
-                raise Exception("Failed to set Aquilon configuration %s", e)
+                raise e
 
-        logger.info("Successfully applied Aquilon configuration")
+        logger.debug("Successfully applied Aquilon configuration")
         openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
 
         logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
@@ -312,33 +282,35 @@ def convert_hostnames(message, vm_name):
         try:
             hostname = socket.gethostbyaddr(ip.get("address"))[0]
             hostnames.append(hostname)
-
+        except socket.herror:
+            logger.info("No hostname found for ip %s", ip.get("address"))
         except Exception as e:
             logger.error("Problem converting ip to hostname", e)
-    #        raise Exception("Problem converting ip to hostname")
+            raise
     if len(hostnames) > 1:
         logger.warning("There are multiple hostnames assigned to this VM")
-    elif len(hostnames) < 1:
-        hostname = vm_name + ".novalocal"
-        hostnames.append(hostname)
     logger.debug("Hostnames: " + ", ".join(hostnames))
     return hostnames
 
 
-def on_message(method, header, raw_body):
-    logging.debug("Got message: %s", raw_body)
+def on_message(message):
+    raw_body = message.body
     body = json.loads(raw_body.decode("utf-8"))
-    message = json.loads(body["oslo.message"])
+    decoded = json.loads(body["oslo.message"])
 
-    try:
-        consume(message)
-    except Exception as e:
-        logger.error("Something went wrong parsing the message: %s", e)
-        logger.error(str(message))
+    if not is_aq_message(decoded):
+        logging.debug("Ignoring message: %s", decoded)
+        return
+
+    logging.debug("Got message: %s", raw_body)
+    consume(decoded)
+    message.ack()
 
 
 def initiate_consumer():
-    logger.info("Initiating message consumer")
+    logger.debug("Initiating message consumer")
+    # Ensure we have valid creds before trying to contact rabbit
+    verify_kerberos_ticket()
 
     config = ConsumerConfig()
 
@@ -346,13 +318,15 @@ def initiate_consumer():
     port = config.rabbit_port
     login_user = config.rabbit_username
     login_pass = config.rabbit_password
-    login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
-
+    logger.debug(
+        "Connecting to rabbit with: amqp://%s:<password>@%s:%s/", login_user, host, port
+    )
     exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
 
+    login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
     with rabbitpy.Connection(login_str) as conn:
         with conn.channel() as channel:
-            logger.info("Connected to RabbitMQ")
+            logger.debug("Connected to RabbitMQ")
 
             # Durable indicates that the queue will survive a broker restart
             queue = rabbitpy.Queue(channel, name="ral.info", durable=True)
@@ -362,11 +336,6 @@ def initiate_consumer():
 
             # Consume the messages from generator
             message: rabbitpy.Message
-            logger.info("Starting to consume messages")
+            logger.debug("Starting to consume messages")
             for message in queue:
-                on_message(
-                    method=message.method,
-                    header=message.properties,
-                    raw_body=message.body,
-                )
-                message.ack()
+                on_message(message)

@@ -74,13 +74,14 @@ def test_get_metadata_value(key_name):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_parses_json(json, _):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_parses_json(json, aq_message, _):
+    message = MagicMock()
+    raw_body = message.body
+    aq_message.return_value = True
 
-    on_message(method, header, raw_body)
+    on_message(message)
     raw_body.decode.assert_called_once_with("utf-8")
 
     decoded_body = json.loads.return_value
@@ -98,32 +99,38 @@ def test_on_message_parses_json(json, _):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_forwards_json_to_consumer(json, consume_mock):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_forwards_json_to_consumer(json, is_aq_message, consume_mock):
+    message = Mock()
+    is_aq_message.return_value = True
 
-    on_message(method, header, raw_body)
+    on_message(message)
+    is_aq_message.assert_called_once_with(json.loads.return_value)
     consume_mock.assert_called_once_with(json.loads.return_value)
+    message.ack.assert_called_once()
 
 
 @patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_exception_handling(_, consume_mock):
-    method = Mock()
-    header = Mock()
-    raw_body = Mock()
+def test_on_message_ignores_non_aq(json, is_aq_message, consume_mock):
+    message = Mock()
+    is_aq_message.return_value = False
 
-    consume_mock.side_effect = Exception("test")
-    on_message(method, header, raw_body)
-    consume_mock.assert_called_once()
+    on_message(message)
+
+    is_aq_message.assert_called_once_with(json.loads.return_value)
+    consume_mock.assert_not_called()
+    message.ack.assert_not_called()
 
 
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_config_elements(rabbit_conf, _):
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
+def test_initiate_consumer_config_elements(kerb, rabbit_conf, _):
     initiate_consumer()
+    kerb.assert_called_once()
     rabbit_conf.config.get.assert_called_once_with("rabbit", "exchanges")
 
 
@@ -134,9 +141,10 @@ class MockedConfig(ConsumerConfig):
     rabbit_password = "rabbit_password"
 
 
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy):
+def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy, _):
     exchanges = ["ex1", "ex2"]
     rabbit_conf.config.get.return_value.split.return_value = exchanges
     mocked_config = MockedConfig()
@@ -160,27 +168,18 @@ def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy):
     )
 
 
+@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.on_message")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
-def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
+def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _, __):
     queue_messages = [NonCallableMock(), NonCallableMock()]
     # We need our mocked queue to act like a generator
     rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
 
     initiate_consumer()
 
-    message_mock.assert_has_calls(
-        [
-            call(
-                method=message.method, header=message.properties, raw_body=message.body
-            )
-            for message in queue_messages
-        ]
-    )
-
-    for message in queue_messages:
-        message.ack.assert_called_once()
+    message_mock.assert_has_calls([call(message) for message in queue_messages])
 
 
 @patch("rabbit_consumer.message_consumer.socket")
@@ -210,7 +209,7 @@ def test_convert_hostnames_no_ips(_):
 
     vm_name = "mocked_name"
     hostnames = convert_hostnames(message, vm_name)
-    assert hostnames == [vm_name + ".novalocal"]
+    assert hostnames == []
 
 
 _FAKE_PAYLOAD = {
@@ -238,7 +237,7 @@ def _message_get_create(arg_name: str) -> Union[str, Dict]:
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
+@patch("rabbit_consumer.message_consumer.ConsumerConfig")
 def test_consume_create_machine_hostnames_good_path(
     app_conf, aq_api, openstack, hostname, get_metadata, _
 ):
@@ -255,7 +254,7 @@ def test_consume_create_machine_hostnames_good_path(
         _FAKE_PAYLOAD["vcpus"],
         _FAKE_PAYLOAD["memory_mb"],
         expected_hostnames[-1],
-        app_conf.config.get.return_value,
+        app_conf.return_value.aq_prefix,
     )
 
     aq_api.add_machine_interface.assert_has_calls(
@@ -280,11 +279,7 @@ def test_consume_create_machine_hostnames_good_path(
     aq_api.create_host.assert_called_once_with(
         expected_hostnames[0],
         aq_api.create_machine.return_value,
-        get_metadata.return_value,
         _FAKE_PAYLOAD["fixed_ips"][0].get.return_value,
-        get_metadata.return_value,
-        get_metadata.return_value,
-        get_metadata.return_value,
         get_metadata.return_value,
         get_metadata.return_value,
     )
@@ -313,7 +308,7 @@ def test_consume_create_machine_hostnames_good_path(
 
     aq_api.aq_manage.assert_has_calls(
         [
-            call(host, "sandbox", get_metadata.return_value)
+            call(host, "domain", app_conf.return_value.aq_domain)
             for host in expected_hostnames
         ]
     )
@@ -424,27 +419,6 @@ def test_consume_update_machine_interface_failure(aq_api, hostname, _, __, ___):
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_create_host_failure(aq_api, hostname, _, __, ___):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    vm_name = "vm-openstack-AbC-123"
-    aq_api.create_host.side_effect = Exception(vm_name)
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-
-    assert "IP Address already exists on" in str(err.value)
-    assert vm_name in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
@@ -462,7 +436,6 @@ def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___)
     openstack.update_metadata.assert_called_with(
         "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
     )
-    assert "Failed to set Aquilon configuration" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -483,7 +456,6 @@ def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
     openstack.update_metadata.assert_called_with(
         "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
     )
-    assert "Failed to set Aquilon configuration" in str(err.value)
 
 
 _DELETE_FAKE_PAYLOAD = {
@@ -509,18 +481,9 @@ def test_consume_delete_machine_good_path(aq_api, _):
     consume(message)
 
     aq_api.delete_host.assert_has_calls([call("host1"), call("host2")], any_order=True)
-    aq_api.del_machine_interface_address.assert_has_calls(
-        [
-            call("host1", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
-            call("host2", "eth0", _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]),
-        ]
-    )
-
     aq_api.delete_machine.assert_called_once_with(
         _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]
     )
-
-    aq_api.reset_env.assert_has_calls([call("host1"), call("host2")], any_order=True)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -530,28 +493,14 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
     message = Mock()
     message.get.side_effect = _message_get_delete
 
-    aq_api.delete_host.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
-        consume(message)
+    aq_api.delete_host.side_effect = ConnectionError("mocked exception")
+    consume(message)
 
     openstack_api.update_metadata.assert_called_with(
         "_context_project_id",
         _DELETE_FAKE_PAYLOAD["instance_id"],
         {"AQ_STATUS": "FAILED"},
     )
-    assert "Failed to delete host" in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_del_machine_interface_address(aq_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.del_machine_interface_address.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert "Failed to delete interface address" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -561,24 +510,5 @@ def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
     message.get.side_effect = _message_get_delete
 
     aq_api.delete_machine.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
-    assert "Failed to delete machine" in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_reset_env_failure(aq_api, openstack_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.reset_env.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception) as err:
-        consume(message)
-    openstack_api.update_metadata.assert_called_with(
-        "_context_project_id",
-        _DELETE_FAKE_PAYLOAD["instance_id"],
-        {"AQ_STATUS": "FAILED"},
-    )
-    assert "Failed to reset Aquilon configuration" in str(err.value)
