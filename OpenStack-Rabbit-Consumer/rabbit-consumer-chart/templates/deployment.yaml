@@ -11,6 +11,9 @@ spec:
       app: rabbit-consumer
   template:
     metadata:
+      annotations:
+        # Force pod restart on configmap change
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         app: rabbit-consumer
     spec:
@@ -22,8 +25,14 @@ spec:
           volumeMounts:
             - name: entrypoints
               mountPath: /etc/entrypoints.d
+            - name: krb5-conf
+              mountPath: /etc/krb5.conf
+              subPath: krb5.conf
       volumes:
         - name: entrypoints
           configMap:
             name: {{ .Release.Name }}-entrypoints
             defaultMode: 0744
+        - name: krb5-conf
+          configMap:
+            name: {{ .Release.Name }}-kerberos

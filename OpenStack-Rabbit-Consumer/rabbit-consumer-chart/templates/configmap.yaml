@@ -1,6 +1,16 @@
+# Entrypoint scripts
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-entrypoints
 data:
-{{ (.Files.Glob "scripts/sidecar-entrypoint.sh").AsConfig | indent 2 }}
+{{ (.Files.Glob "include/sidecar-entrypoint.sh").AsConfig | indent 2 }}
+
+# Kerberos configuration for sidecar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-kerberos
+data:
+{{ (.Files.Glob "include/krb5.conf").AsConfig | indent 2 }}
