@@ -4,6 +4,7 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-entrypoints
 data:
+{{ (.Files.Glob "include/consumer-entrypoint.sh").AsConfig | indent 2 }}
 {{ (.Files.Glob "include/sidecar-entrypoint.sh").AsConfig | indent 2 }}
 
 # Kerberos configuration for sidecar

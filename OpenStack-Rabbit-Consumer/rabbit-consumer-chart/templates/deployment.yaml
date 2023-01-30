@@ -14,6 +14,7 @@ spec:
       annotations:
         # Force pod restart on configmap change
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-logs-container: consumer
       labels:
         app: rabbit-consumer
     spec:
@@ -28,6 +29,18 @@ spec:
             - name: krb5-conf
               mountPath: /etc/krb5.conf
               subPath: krb5.conf
+            - name: shared
+              mountPath: /shared
+
+        - name: consumer
+          image: python:3.10
+          command: ["/bin/sh", "-c", "/etc/entrypoints.d/consumer-entrypoint.sh"]
+          volumeMounts:
+            - name: entrypoints
+              mountPath: /etc/entrypoints.d
+            - name: shared
+              mountPath: /shared
+      
       volumes:
         - name: entrypoints
           configMap:
@@ -36,3 +49,5 @@ spec:
         - name: krb5-conf
           configMap:
             name: {{ .Release.Name }}-kerberos
+        - name: shared
+          emptyDir: {}
