@@ -12,7 +12,4 @@ su --preserve-environment -c '/etc/entrypoints.d/kinit.sh' krb5user
 
 # We should never get here
 echo "ERROR: Exited while loop"
-sleep infinity
-
-#TODO
-# exit 1
+exit 1
