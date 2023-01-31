@@ -258,8 +258,8 @@ def test_aq_create_machine(config, setup):
     payload_dict["vcpus"] = "vcpus_mock"
     payload_dict["memory_mb"] = "memory_mock"
     payload_dict["host"] = "vmhost_mock"
-    uuid, prefix = "uuid_mock", "prefix_mock"
 
+    prefix = "prefix_mock"
     hostname = "hostname_mock"
     config.return_value.aq_url = "https://example.com"
     returned = create_machine(message, hostname, prefix)

@@ -3,6 +3,7 @@ from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
+from rabbit_consumer.aq_fields import AqFields
 from rabbit_consumer.message_consumer import (
     is_aq_message,
     get_metadata_value,
@@ -312,17 +313,18 @@ def test_consume_create_machine_hostnames_good_path(
             for host in expected_hostnames
         ]
     )
+
+    expected_fields = AqFields(
+        archetype=get_metadata.return_value,
+        hostnames=expected_hostnames,
+        osname=get_metadata.return_value,
+        osversion=get_metadata.return_value,
+        personality=get_metadata.return_value,
+        project_id="_context_project_id",
+    )
+
     aq_api.aq_make.assert_has_calls(
-        [
-            call(
-                host,
-                get_metadata.return_value,
-                get_metadata.return_value,
-                get_metadata.return_value,
-                get_metadata.return_value,
-            )
-            for host in expected_hostnames
-        ]
+        [call(host, expected_fields) for host in expected_hostnames]
     )
 
 
