@@ -215,21 +215,6 @@ def set_env(aq_details: AqFields, domain: str, hostname: str, sandbox: str = Non
     aq_make(hostname, aq_details)
 
 
-def reset_env(hostname):
-    # manage the host back to prod
-    try:
-        aq_manage(hostname, "domain", "prod_cloud")
-    except Exception as err:
-        raise Exception(f"Aquilon reset env failed: {err}") from err
-
-    # reset personality etc ...
-    try:
-        # TODO this is SL6, are we using this?
-        aq_make(hostname, "nubesvms", "6x-x86_64", "ral-tier1", "sl")
-    except Exception as err:
-        raise Exception(f"Aquilon reset personality: {err}") from err
-
-
 def check_host_exists(hostname):
     logger.debug("Attempting to make templates for %s", hostname)
 
