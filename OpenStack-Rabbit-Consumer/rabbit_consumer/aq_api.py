@@ -50,7 +50,7 @@ def verify_kerberos_ticket():
 def setup_requests(url, method, desc):
     verify_kerberos_ticket()
 
-    logging.debug("%s: %s", (method, url))
+    logging.debug("%s: %s", method, url)
 
     session = requests.Session()
     session.verify = "/etc/grid-security/certificates/"

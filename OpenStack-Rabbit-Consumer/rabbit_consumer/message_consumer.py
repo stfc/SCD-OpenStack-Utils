@@ -153,7 +153,7 @@ def _handle_create_machine(message):
         vm_name = message.get("payload").get("display_name")
         username = message.get("_context_user_name")
 
-        hostnames = convert_hostnames(message, vm_name)
+        hostnames = convert_hostnames(message)
         if not hostnames:
             logger.info("Skipping novalocal only host: %s", vm_name)
             return
@@ -231,19 +231,19 @@ def _aq_update_machine_nic(machinename):
     try:
         aq_api.update_machine_interface(machinename, "eth0")
     except Exception as err:
-        raise Exception("Failed to set default interface %s", err) from err
+        raise Exception("Failed to set default interface") from err
     logger.debug("Creating Host")
 
 
 def _aq_add_optional_nics(hostnames, machinename, message):
     logger.debug("Creating Interfaces2")
-    for index, ip in enumerate(message.get("payload").get("fixed_ips")):
+    for index, ip_addr in enumerate(message.get("payload").get("fixed_ips")):
         if index > 0:
             interfacename = "eth" + str(index)
             try:
                 aq_api.add_machine_interface_address(
                     machinename,
-                    ip.get("address"),
+                    ip_addr.get("address"),
                     interfacename,
                     # socket.gethostbyaddr(ip.get("address"))[0])
                     hostnames[0],
@@ -300,21 +300,21 @@ def _add_hostname_to_metadata(hostnames, project_id, vm_id):
     logger.debug("Building metadata")
 
 
-def convert_hostnames(message, vm_name):
+def convert_hostnames(message):
     # convert VM ip address(es) into hostnames
     hostnames = []
-    for ip in message.get("payload").get("fixed_ips"):
+    for ip_addr in message.get("payload").get("fixed_ips"):
         try:
-            hostname = socket.gethostbyaddr(ip.get("address"))[0]
+            hostname = socket.gethostbyaddr(ip_addr.get("address"))[0]
             hostnames.append(hostname)
         except socket.herror:
-            logger.info("No hostname found for ip %s", ip.get("address"))
-        except Exception as e:
-            logger.error("Problem converting ip to hostname", e)
+            logger.info("No hostname found for ip %s", ip_addr.get("address"))
+        except Exception:
+            logger.error("Problem converting ip to hostname")
             raise
     if len(hostnames) > 1:
         logger.warning("There are multiple hostnames assigned to this VM")
-    logger.debug("Hostnames: " + ", ".join(hostnames))
+    logger.debug("Hostnames: %s", hostnames)
     return hostnames
 
 

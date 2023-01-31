@@ -48,9 +48,8 @@ def test_authenticate(requests, config):
     )
 
 
-@patch("rabbit_consumer.openstack_api.RabbitConsumer")
 @patch("rabbit_consumer.openstack_api.requests")
-def test_authenticate_throws(requests, _):
+def test_authenticate_throws(requests):
     session = requests.Session.return_value
     session.post.return_value.status_code = 500
 
@@ -81,10 +80,9 @@ def test_update_metadata(auth, requests, config):
     )
 
 
-@patch("rabbit_consumer.openstack_api.RabbitConsumer")
 @patch("rabbit_consumer.openstack_api.authenticate")
 @patch("rabbit_consumer.openstack_api.requests")
-def test_update_metadata_throws_exception(_, __, requests):
+def test_update_metadata_throws_exception(_, requests):
     session = requests.Session.return_value
     session.post.return_value.status_code = 500
 

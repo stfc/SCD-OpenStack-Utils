@@ -55,5 +55,3 @@ class ConsumerConfig(_AqFields, _OpenstackFields, _RabbitFields):
     """
     Mix-in class for all known config elements
     """
-
-    pass
