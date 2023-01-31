@@ -163,116 +163,144 @@ def _handle_create_machine(message):
         logger.debug("Username: %s", username)
         logger.debug("Hostnames: " + ", ".join(hostnames))
 
-        try:
-            # add hostname(s) to metadata for use when capturing delete messages
-            # as these messages do not contain ip information
-            openstack_api.update_metadata(
-                project_id, vm_id, {"HOSTNAMES": ", ".join(hostnames)}
-            )
-        except Exception as e:
-            logger.error("Failed to update metadata: %s", e)
-            raise Exception("Failed to update metadata")
-        logger.debug("Building metadata")
+        _add_hostname_to_metadata(hostnames, project_id, vm_id)
 
         personality = get_metadata_value(message, "AQ_PERSONALITY")
         osversion = get_metadata_value(message, "AQ_OSVERSION")
         archetype = get_metadata_value(message, "AQ_ARCHETYPE")
         osname = get_metadata_value(message, "AQ_OS")
 
-        vcpus = message.get("payload").get("vcpus")
-        root_gb = message.get("payload").get("root_gb")
-        memory_mb = message.get("payload").get("memory_mb")
-        uuid = message.get("payload").get("instance_id")
-        vmhost = message.get("payload").get("host")
-        firstip = message.get("payload").get("fixed_ips")[0].get("address")
+        firstip, machinename = _aq_create_machine(hostnames, message)
 
-        logger.debug("Creating machine")
+        _aq_add_first_nic(machinename, message)
 
-        try:
-            machinename = aq_api.create_machine(
-                uuid,
-                vmhost,
-                vcpus,
-                memory_mb,
-                hostnames[-1],
-                ConsumerConfig().aq_prefix,
-            )
-        except Exception as e:
-            raise Exception("Failed to create machine: {0}".format(e))
-        logger.debug("Creating Interfaces")
+        _aq_add_optional_nics(hostnames, machinename, message)
 
-        for index, ip in enumerate(message.get("payload").get("fixed_ips")):
-            interfacename = "eth" + str(index)
-            try:
-                aq_api.add_machine_interface(
-                    machinename,
-                    ip.get("vif_mac"),
-                    interfacename,
-                    # socket.gethostbyaddr(ip.get("address"))[0])
-                )
-            except Exception as e:
-                raise Exception("Failed to add machine interface: %s", e)
-                logger.error("Failed to add machine interface %s", e)
-        logger.debug("Creating Interfaces2")
+        _aq_update_machine_nic(machinename)
 
-        for index, ip in enumerate(message.get("payload").get("fixed_ips")):
-            if index > 0:
-                interfacename = "eth" + str(index)
-                try:
-                    aq_api.add_machine_interface_address(
-                        machinename,
-                        ip.get("address"),
-                        interfacename,
-                        # socket.gethostbyaddr(ip.get("address"))[0])
-                        hostnames[0],
-                    )
-                except Exception as e:
-                    raise Exception("Failed to add machine interface address %s", e)
-        logger.debug("Updating Interfaces")
-
-        try:
-            aq_api.update_machine_interface(machinename, "eth0")
-        except Exception as e:
-            raise Exception("Failed to set default interface %s", e)
-        logger.debug("Creating Host")
-
-        aq_api.create_host(
-            hostnames[0],
-            machinename,
-            firstip,
-            osname,
-            osversion,
-        )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
-
-        openstack_api.update_metadata(
-            project_id, vm_id, {"AQ_MACHINENAME": machinename}
+        _aq_create_host(
+            firstip, hostnames, machinename, osname, osversion, project_id, vm_id
         )
 
         # as the machine may have been assigned more that one ip address,
         # apply the aquilon configuration to all of them
-        for host in hostnames:
-
-            try:
-                aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
-            except Exception as e:
-                logger.error("Failed to manage in Aquilon: %s", e)
-                openstack_api.update_metadata(
-                    project_id, vm_id, {"AQ_STATUS": "FAILED"}
-                )
-                raise e
-            try:
-                aq_api.aq_make(host, personality, osversion, archetype, osname)
-            except Exception as e:
-                logger.error("Failed to make in Aquilon: %s", e)
-                openstack_api.update_metadata(
-                    project_id, vm_id, {"AQ_STATUS": "FAILED"}
-                )
-                raise e
+        _aq_make_machines(
+            archetype, hostnames, osname, osversion, personality, project_id, vm_id
+        )
 
         logger.debug("Successfully applied Aquilon configuration")
         openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
 
         logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
+
+
+def _aq_make_machines(
+    archetype, hostnames, osname, osversion, personality, project_id, vm_id
+):
+    for host in hostnames:
+
+        try:
+            aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
+        except Exception as e:
+            logger.error("Failed to manage in Aquilon: %s", e)
+            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+            raise e
+        try:
+            aq_api.aq_make(host, personality, osversion, archetype, osname)
+        except Exception as e:
+            logger.error("Failed to make in Aquilon: %s", e)
+            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+            raise e
+
+
+def _aq_create_host(
+    firstip, hostnames, machinename, osname, osversion, project_id, vm_id
+):
+    aq_api.create_host(
+        hostnames[0],
+        machinename,
+        firstip,
+        osname,
+        osversion,
+    )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
+    openstack_api.update_metadata(project_id, vm_id, {"AQ_MACHINENAME": machinename})
+
+
+def _aq_update_machine_nic(machinename):
+    logger.debug("Updating Interfaces")
+    try:
+        aq_api.update_machine_interface(machinename, "eth0")
+    except Exception as e:
+        raise Exception("Failed to set default interface %s", e)
+    logger.debug("Creating Host")
+
+
+def _aq_add_optional_nics(hostnames, machinename, message):
+    logger.debug("Creating Interfaces2")
+    for index, ip in enumerate(message.get("payload").get("fixed_ips")):
+        if index > 0:
+            interfacename = "eth" + str(index)
+            try:
+                aq_api.add_machine_interface_address(
+                    machinename,
+                    ip.get("address"),
+                    interfacename,
+                    # socket.gethostbyaddr(ip.get("address"))[0])
+                    hostnames[0],
+                )
+            except Exception as e:
+                raise Exception("Failed to add machine interface address %s", e)
+
+
+def _aq_add_first_nic(machinename, message):
+    for index, ip in enumerate(message.get("payload").get("fixed_ips")):
+        interfacename = "eth" + str(index)
+        try:
+            aq_api.add_machine_interface(
+                machinename,
+                ip.get("vif_mac"),
+                interfacename,
+                # socket.gethostbyaddr(ip.get("address"))[0])
+            )
+        except Exception as e:
+            raise Exception("Failed to add machine interface: %s", e)
+            logger.error("Failed to add machine interface %s", e)
+
+
+def _aq_create_machine(hostnames, message):
+    vcpus = message.get("payload").get("vcpus")
+    root_gb = message.get("payload").get("root_gb")
+    memory_mb = message.get("payload").get("memory_mb")
+    uuid = message.get("payload").get("instance_id")
+    vmhost = message.get("payload").get("host")
+    firstip = message.get("payload").get("fixed_ips")[0].get("address")
+    logger.debug("Creating machine")
+    try:
+        machinename = aq_api.create_machine(
+            uuid,
+            vmhost,
+            vcpus,
+            memory_mb,
+            hostnames[-1],
+            ConsumerConfig().aq_prefix,
+        )
+    except Exception as e:
+        raise Exception("Failed to create machine: {0}".format(e))
+    logger.debug("Creating Interfaces")
+    return firstip, machinename
+
+
+def _add_hostname_to_metadata(hostnames, project_id, vm_id):
+    try:
+        # add hostname(s) to metadata for use when capturing delete messages
+        # as these messages do not contain ip information
+        openstack_api.update_metadata(
+            project_id, vm_id, {"HOSTNAMES": ", ".join(hostnames)}
+        )
+    except Exception as e:
+        logger.error("Failed to update metadata: %s", e)
+        raise Exception("Failed to update metadata")
+    logger.debug("Building metadata")
 
 
 def convert_hostnames(message, vm_name):
