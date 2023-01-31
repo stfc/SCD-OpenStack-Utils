@@ -1,9 +1,9 @@
 from typing import List, Union, Dict
-from unittest import mock
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
+from rabbit_consumer.aq_fields import AqFields
 from rabbit_consumer.message_consumer import (
     is_aq_message,
     get_metadata_value,
@@ -101,12 +101,12 @@ def test_on_message_parses_json(json, aq_message, _):
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_forwards_json_to_consumer(json, is_aq_message, consume_mock):
+def test_on_message_forwards_json_to_consumer(json, aq_message_mock, consume_mock):
     message = Mock()
-    is_aq_message.return_value = True
+    aq_message_mock.return_value = True
 
     on_message(message)
-    is_aq_message.assert_called_once_with(json.loads.return_value)
+    aq_message_mock.assert_called_once_with(json.loads.return_value)
     consume_mock.assert_called_once_with(json.loads.return_value)
     message.ack.assert_called_once()
 
@@ -114,13 +114,13 @@ def test_on_message_forwards_json_to_consumer(json, is_aq_message, consume_mock)
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_ignores_non_aq(json, is_aq_message, consume_mock):
+def test_on_message_ignores_non_aq(json, aq_message_mock, consume_mock):
     message = Mock()
-    is_aq_message.return_value = False
+    aq_message_mock.return_value = False
 
     on_message(message)
 
-    is_aq_message.assert_called_once_with(json.loads.return_value)
+    aq_message_mock.assert_called_once_with(json.loads.return_value)
     consume_mock.assert_not_called()
     message.ack.assert_not_called()
 
@@ -134,7 +134,12 @@ def test_initiate_consumer_config_elements(kerb, rabbit_conf, _):
     rabbit_conf.config.get.assert_called_once_with("rabbit", "exchanges")
 
 
+# pylint: disable=too-few-public-methods
 class MockedConfig(ConsumerConfig):
+    """
+    Provides a mocked input config for the consumer
+    """
+
     rabbit_host = "rabbit_host"
     rabbit_port = 1234
     rabbit_username = "rabbit_username"
@@ -188,7 +193,7 @@ def test_convert_hostnames_multiple(socket):
     message.get.return_value = {"fixed_ips": [Mock(), Mock()]}
     socket.gethostbyaddr.side_effect = [["host1"], ["host2"]]
 
-    hostnames = convert_hostnames(message, "")
+    hostnames = convert_hostnames(message)
     assert hostnames == ["host1", "host2"]
 
 
@@ -198,7 +203,7 @@ def test_convert_hostnames_single(socket):
     message.get.return_value = {"fixed_ips": [Mock()]}
     socket.gethostbyaddr.side_effect = [["host1"]]
 
-    hostnames = convert_hostnames(message, "")
+    hostnames = convert_hostnames(message)
     assert hostnames == ["host1"]
 
 
@@ -207,9 +212,8 @@ def test_convert_hostnames_no_ips(_):
     message = Mock()
     message.get.return_value = {"fixed_ips": []}
 
-    vm_name = "mocked_name"
-    hostnames = convert_hostnames(message, vm_name)
-    assert hostnames == []
+    hostnames = convert_hostnames(message)
+    assert not hostnames
 
 
 _FAKE_PAYLOAD = {
@@ -249,10 +253,7 @@ def test_consume_create_machine_hostnames_good_path(
 
     consume(message)
     aq_api.create_machine.assert_called_once_with(
-        _FAKE_PAYLOAD["instance_id"],
-        _FAKE_PAYLOAD["host"],
-        _FAKE_PAYLOAD["vcpus"],
-        _FAKE_PAYLOAD["memory_mb"],
+        message,
         expected_hostnames[-1],
         app_conf.return_value.aq_prefix,
     )
@@ -312,17 +313,18 @@ def test_consume_create_machine_hostnames_good_path(
             for host in expected_hostnames
         ]
     )
+
+    expected_fields = AqFields(
+        archetype=get_metadata.return_value,
+        hostnames=expected_hostnames,
+        osname=get_metadata.return_value,
+        osversion=get_metadata.return_value,
+        personality=get_metadata.return_value,
+        project_id="_context_project_id",
+    )
+
     aq_api.aq_make.assert_has_calls(
-        [
-            call(
-                host,
-                get_metadata.return_value,
-                get_metadata.return_value,
-                get_metadata.return_value,
-                get_metadata.return_value,
-            )
-            for host in expected_hostnames
-        ]
+        [call(host, expected_fields) for host in expected_hostnames]
     )
 
 
@@ -358,7 +360,7 @@ def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __, ___):
 
     with pytest.raises(Exception) as err:
         consume(message)
-    assert str(err.value) == "Failed to create machine: mocked exception"
+    assert str(err.value) == "Failed to create machine"
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -377,7 +379,6 @@ def test_consume_add_machine_interface_failure(aq_api, hostname, _, __, ___):
     with pytest.raises(Exception) as err:
         consume(message)
     assert "Failed to add machine interface" in str(err.value)
-    assert "mocked exception" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -396,7 +397,6 @@ def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __, 
     with pytest.raises(Exception) as err:
         consume(message)
     assert "Failed to add machine interface address" in str(err.value)
-    assert "mocked exception" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -415,7 +415,6 @@ def test_consume_update_machine_interface_failure(aq_api, hostname, _, __, ___):
     with pytest.raises(Exception) as err:
         consume(message)
     assert "Failed to set default interface" in str(err.value)
-    assert "mocked exception" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -430,7 +429,7 @@ def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___)
     message.get.side_effect = _message_get_create
     aq_api.aq_manage.side_effect = Exception("mocked_exception")
 
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
 
     openstack.update_metadata.assert_called_with(
@@ -450,7 +449,7 @@ def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
     message.get.side_effect = _message_get_create
     aq_api.aq_make.side_effect = Exception("mocked_exception")
 
-    with pytest.raises(Exception) as err:
+    with pytest.raises(Exception):
         consume(message)
 
     openstack.update_metadata.assert_called_with(

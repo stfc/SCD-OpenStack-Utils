@@ -17,6 +17,7 @@ from rabbit_consumer.aq_api import (
     check_host_exists,
     set_env,
 )
+from rabbit_consumer.aq_fields import AqFields
 
 
 def test_verify_kerberos_ticket_valid():
@@ -150,18 +151,23 @@ def test_setup_requests_get(_, kerb_auth, requests):
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make(config, setup):
     hostname = "host"
-    personality = "pers"
-    os_version = "osvers"
-    archetype = "arch"
-    os_name = "name"
     domain = "domain"
+
+    fields = AqFields(
+        personality="pers",
+        osversion="osvers",
+        archetype="arch",
+        osname="name",
+        hostnames=[hostname],
+        project_id="project",
+    )
 
     config.return_value.aq_url = domain
 
-    aq_make(hostname, personality, os_version, archetype, os_name)
+    aq_make(hostname, fields)
     setup.assert_called_once()
 
-    expected_url = f"{domain}/host/{hostname}/command/make?personality={personality}&osversion={os_version}&archetype={archetype}&osname={os_name}"
+    expected_url = f"{domain}/host/{hostname}/command/make?personality={fields.personality}&osversion={fields.osversion}&archetype={fields.archetype}&osname={fields.osname}"
     assert setup.call_args == call(expected_url, "post", mock.ANY)
 
 
@@ -169,18 +175,23 @@ def test_aq_make(config, setup):
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make_whitespace(config, setup):
     hostname = "host"
-    personality = " "
-    os_version = "  "
-    archetype = ""
-    os_name = "name"
     domain = "https://example.com"
+
+    aq_fields = AqFields(
+        personality=" ",
+        osversion="  ",
+        archetype="",
+        osname="name",
+        hostnames=[hostname],
+        project_id="project",
+    )
 
     config.return_value.aq_url = domain
 
-    aq_make(hostname, personality, os_version, archetype, os_name)
+    aq_make(hostname, aq_fields)
     setup.assert_called_once()
 
-    expected_url = f"{domain}/host/{hostname}/command/make?osname={os_name}"
+    expected_url = f"{domain}/host/{hostname}/command/make?osname={aq_fields.osname}"
     assert setup.call_args == call(expected_url, "post", mock.ANY)
 
 
@@ -188,15 +199,20 @@ def test_aq_make_whitespace(config, setup):
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make_none(config, setup):
     hostname = "my_host_name"
-    personality = " "
-    os_version = None
-    archetype = ""
-    os_name = None
     domain = "https://example.com"
+
+    aq_fields = AqFields(
+        personality=" ",
+        osversion=None,
+        archetype="",
+        osname=None,
+        hostnames=[hostname],
+        project_id="project",
+    )
 
     config.return_value.aq_url = domain
 
-    aq_make(hostname, personality, os_version, archetype, os_name)
+    aq_make(hostname, aq_fields)
     setup.assert_called_once()
 
     expected_url = f"{domain}/host/{hostname}/command/make"
@@ -213,7 +229,7 @@ def test_aq_make_none_hostname(config, setup, hostname):
     config.return_value.aq_url = domain
 
     with pytest.raises(ValueError):
-        aq_make(hostname)
+        aq_make(hostname, NonCallableMock())
 
     setup.assert_not_called()
 
@@ -235,12 +251,18 @@ def test_aq_manage(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_create_machine(config, setup):
-    uuid, prefix = "uuid_mock", "prefix_mock"
-    vmhost, vcpus = "vmhost_mock", "vcpus_mock"
-    memory, hostname = "memory_mock", "hostname_mock"
+    message = {"payload": {}}
+    payload_dict = message["payload"]
 
+    payload_dict["instance_id"] = "uuid_mock"
+    payload_dict["vcpus"] = "vcpus_mock"
+    payload_dict["memory_mb"] = "memory_mock"
+    payload_dict["host"] = "vmhost_mock"
+
+    prefix = "prefix_mock"
+    hostname = "hostname_mock"
     config.return_value.aq_url = "https://example.com"
-    returned = create_machine(uuid, vmhost, vcpus, memory, hostname, prefix)
+    returned = create_machine(message, hostname, prefix)
 
     setup.assert_called_once()
     assert returned == setup.return_value
@@ -357,7 +379,7 @@ def test_set_env_selects_domain_or_sandbox(_, manage, domain):
     sandbox = NonCallableMock()
 
     # TODO we should check if sandbox is actually set
-    set_env(hostname, domain=domain, sandbox=sandbox)
+    set_env(NonCallableMock(), domain=domain, hostname=hostname, sandbox=sandbox)
 
     selected_method = "domain" if domain else "sandbox"
     selected_obj = domain if domain else sandbox
@@ -367,11 +389,11 @@ def test_set_env_selects_domain_or_sandbox(_, manage, domain):
 @patch("rabbit_consumer.aq_api.aq_manage")
 @patch("rabbit_consumer.aq_api.aq_make")
 def test_set_env_calls_make(make, _):
-    host, domain = NonCallableMock(), NonCallableMock()
-    sandbox, personality = NonCallableMock(), NonCallableMock()
-    os_version, os_name = NonCallableMock(), NonCallableMock()
-    arch = NonCallableMock()
+    aq_details = NonCallableMock()
+    domain = NonCallableMock()
+    hostname = NonCallableMock()
+    sandbox = NonCallableMock()
 
-    set_env(host, domain, sandbox, personality, os_version, arch, os_name)
+    set_env(aq_details, domain=domain, hostname=hostname, sandbox=sandbox)
 
-    make.assert_called_once_with(host, personality, os_version, arch, os_name)
+    make.assert_called_once_with(hostname, aq_details)
