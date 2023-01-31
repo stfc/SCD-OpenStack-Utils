@@ -9,6 +9,7 @@ from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.rabbit_consumer import RabbitConsumer
 from rabbit_consumer.consumer_config import ConsumerConfig
+from rabbit_consumer.aq_fields import AqFields
 
 logger = logging.getLogger(__name__)
 
@@ -148,82 +149,79 @@ def _handle_create_machine(message):
         logger.info("=== Received Aquilon VM create message ===")
 
         project_name = message.get("_context_project_name")
-        project_id = message.get("_context_project_id")
         vm_id = message.get("payload").get("instance_id")
         vm_name = message.get("payload").get("display_name")
         username = message.get("_context_user_name")
 
-        hostnames = convert_hostnames(message)
-        if not hostnames:
+        aq_details = AqFields(
+            archetype=get_metadata_value(message, "AQ_ARCHETYPE"),
+            hostnames=convert_hostnames(message),
+            osname=get_metadata_value(message, "AQ_OS"),
+            osversion=get_metadata_value(message, "AQ_OSVERSION"),
+            personality=get_metadata_value(message, "AQ_PERSONALITY"),
+            project_id=message.get("_context_project_id"),
+        )
+
+        if not aq_details.hostnames:
             logger.info("Skipping novalocal only host: %s", vm_name)
             return
 
-        logger.debug("Project Name: %s (%s)", project_name, project_id)
+        logger.debug("Project Name: %s (%s)", project_name, aq_details.project_id)
         logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
         logger.debug("Username: %s", username)
-        logger.debug("Hostnames: %s", hostnames)
+        logger.debug("Hostnames: %s", aq_details.hostnames)
 
-        _add_hostname_to_metadata(hostnames, project_id, vm_id)
-
-        personality = get_metadata_value(message, "AQ_PERSONALITY")
-        osversion = get_metadata_value(message, "AQ_OSVERSION")
-        archetype = get_metadata_value(message, "AQ_ARCHETYPE")
-        osname = get_metadata_value(message, "AQ_OS")
-
-        firstip, machinename = _aq_create_machine(hostnames, message)
-
+        _add_hostname_to_metadata(aq_details, vm_id)
+        firstip, machinename = _aq_create_machine(aq_details.hostnames, message)
         _aq_add_first_nic(machinename, message)
-
-        _aq_add_optional_nics(hostnames, machinename, message)
-
+        _aq_add_optional_nics(aq_details.hostnames, machinename, message)
         _aq_update_machine_nic(machinename)
-
-        _aq_create_host(
-            firstip, hostnames, machinename, osname, osversion, project_id, vm_id
-        )
+        _aq_create_host(firstip, machinename, vm_id, aq_details)
 
         # as the machine may have been assigned more that one ip address,
         # apply the aquilon configuration to all of them
-        _aq_make_machines(
-            archetype, hostnames, osname, osversion, personality, project_id, vm_id
-        )
+        _aq_make_machines(aq_details, vm_id)
 
         logger.debug("Successfully applied Aquilon configuration")
-        openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
+        openstack_api.update_metadata(
+            aq_details.project_id, vm_id, {"AQ_STATUS": "SUCCESS"}
+        )
 
         logger.info("=== Finished Aquilon creation hook for VM %s ===", vm_name)
 
 
-def _aq_make_machines(
-    archetype, hostnames, osname, osversion, personality, project_id, vm_id
-):
-    for host in hostnames:
+def _aq_make_machines(fields: AqFields, vm_id: str):
+    for host in fields.hostnames:
 
         try:
             aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
         except Exception as err:
             logger.error("Failed to manage in Aquilon: %s", err)
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+            openstack_api.update_metadata(
+                fields.project_id, vm_id, {"AQ_STATUS": "FAILED"}
+            )
             raise err
         try:
-            aq_api.aq_make(host, personality, osversion, archetype, osname)
+            aq_api.aq_make(host, fields)
         except Exception as err:
             logger.error("Failed to make in Aquilon: %s", err)
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
+            openstack_api.update_metadata(
+                fields.project_id, vm_id, {"AQ_STATUS": "FAILED"}
+            )
             raise err
 
 
-def _aq_create_host(
-    firstip, hostnames, machinename, osname, osversion, project_id, vm_id
-):
+def _aq_create_host(firstip, machinename, vm_id: str, fields: AqFields):
     aq_api.create_host(
-        hostnames[0],
+        fields.hostnames[0],
         machinename,
         firstip,
-        osname,
-        osversion,
+        fields.osname,
+        fields.osversion,
     )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
-    openstack_api.update_metadata(project_id, vm_id, {"AQ_MACHINENAME": machinename})
+    openstack_api.update_metadata(
+        fields.project_id, vm_id, {"AQ_MACHINENAME": machinename}
+    )
 
 
 def _aq_update_machine_nic(machinename):
@@ -268,32 +266,26 @@ def _aq_add_first_nic(machinename, message):
 
 
 def _aq_create_machine(hostnames, message):
-    vcpus = message.get("payload").get("vcpus")
-    memory_mb = message.get("payload").get("memory_mb")
-    uuid = message.get("payload").get("instance_id")
-    vmhost = message.get("payload").get("host")
-    firstip = message.get("payload").get("fixed_ips")[0].get("address")
     logger.debug("Creating machine")
     try:
-        machinename = aq_api.create_machine(
-            uuid,
-            vmhost,
-            vcpus,
-            memory_mb,
+        machine_name = aq_api.create_machine(
+            message,
             hostnames[-1],
             ConsumerConfig().aq_prefix,
         )
     except Exception as err:
         raise Exception("Failed to create machine") from err
-    return firstip, machinename
+
+    first_ip = message.get("payload").get("fixed_ips")[0].get("address")
+    return first_ip, machine_name
 
 
-def _add_hostname_to_metadata(hostnames, project_id, vm_id):
+def _add_hostname_to_metadata(fields: AqFields, vm_id):
     try:
         # add hostname(s) to metadata for use when capturing delete messages
         # as these messages do not contain ip information
         openstack_api.update_metadata(
-            project_id, vm_id, {"HOSTNAMES": ", ".join(hostnames)}
+            fields.project_id, vm_id, {"HOSTNAMES": ", ".join(fields.hostnames)}
         )
     except Exception as err:
         raise Exception("Failed to update metadata") from err

@@ -6,6 +6,7 @@ from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
+from rabbit_consumer.aq_fields import AqFields
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 MODEL = "vm-openstack"
@@ -76,14 +77,14 @@ def setup_requests(url, method, desc):
     return response.text
 
 
-def aq_make(hostname, personality=None, osversion=None, archetype=None, osname=None):
+def aq_make(hostname: str, aq_fields: AqFields):
     logger.debug("Attempting to make templates for %s", hostname)
 
     params = {
-        "personality": personality,
-        "osversion": osversion,
-        "archetype": archetype,
-        "osname": osname,
+        "personality": aq_fields.personality,
+        "osversion": aq_fields.osversion,
+        "archetype": aq_fields.archetype,
+        "osname": aq_fields.osname,
     }
     # Remove empty values or whitespace values
     params = {k: v for k, v in params.items() if v and str(v).strip()}
@@ -111,11 +112,16 @@ def aq_manage(hostname, env_type, env_name):
     setup_requests(url, "post", "Manage Host")
 
 
-def create_machine(uuid, vmhost, vcpus, memory, hostname, prefix):
+def create_machine(message, hostname, prefix):
     logger.debug("Attempting to create machine for %s ", hostname)
 
+    vcpus = message.get("payload").get("vcpus")
+    memory_mb = message.get("payload").get("memory_mb")
+    uuid = message.get("payload").get("instance_id")
+    vmhost = message.get("payload").get("host")
+
     url = ConsumerConfig().aq_url + CREATE_MACHINE_SUFFIX.format(
-        prefix, MODEL, uuid, vmhost, vcpus, memory
+        prefix, MODEL, uuid, vmhost, vcpus, memory_mb
     )
 
     response = setup_requests(url, "put", "Create Machine")
@@ -200,21 +206,13 @@ def update_machine_interface(machinename, interfacename):
     setup_requests(url, "post", "Update Machine Interface")
 
 
-def set_env(
-    hostname,
-    domain=None,
-    sandbox=None,
-    personality=None,
-    osversion=None,
-    archetype=None,
-    osname=None,
-):
+def set_env(aq_details: AqFields, domain: str, hostname: str, sandbox: str = None):
     if domain:
         aq_manage(hostname, "domain", domain)
     else:
         aq_manage(hostname, "sandbox", sandbox)
 
-    aq_make(hostname, personality, osversion, archetype, osname)
+    aq_make(hostname, aq_details)
 
 
 def reset_env(hostname):

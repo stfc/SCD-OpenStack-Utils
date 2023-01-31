@@ -1,5 +1,4 @@
 from typing import List, Union, Dict
-from unittest import mock
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
@@ -253,10 +252,7 @@ def test_consume_create_machine_hostnames_good_path(
 
     consume(message)
     aq_api.create_machine.assert_called_once_with(
-        _FAKE_PAYLOAD["instance_id"],
-        _FAKE_PAYLOAD["host"],
-        _FAKE_PAYLOAD["vcpus"],
-        _FAKE_PAYLOAD["memory_mb"],
+        message,
         expected_hostnames[-1],
         app_conf.return_value.aq_prefix,
     )
