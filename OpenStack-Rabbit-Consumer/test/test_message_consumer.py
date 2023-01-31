@@ -358,7 +358,7 @@ def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __, ___):
 
     with pytest.raises(Exception) as err:
         consume(message)
-    assert str(err.value) == "Failed to create machine: mocked exception"
+    assert str(err.value) == "Failed to create machine"
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -377,7 +377,6 @@ def test_consume_add_machine_interface_failure(aq_api, hostname, _, __, ___):
     with pytest.raises(Exception) as err:
         consume(message)
     assert "Failed to add machine interface" in str(err.value)
-    assert "mocked exception" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
@@ -396,7 +395,6 @@ def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __, 
     with pytest.raises(Exception) as err:
         consume(message)
     assert "Failed to add machine interface address" in str(err.value)
-    assert "mocked exception" in str(err.value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")

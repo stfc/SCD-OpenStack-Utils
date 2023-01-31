@@ -161,7 +161,7 @@ def _handle_create_machine(message):
         logger.debug("Project Name: %s (%s)", project_name, project_id)
         logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
         logger.debug("Username: %s", username)
-        logger.debug("Hostnames: " + ", ".join(hostnames))
+        logger.debug("Hostnames: %s", hostnames)
 
         _add_hostname_to_metadata(hostnames, project_id, vm_id)
 
@@ -191,7 +191,7 @@ def _handle_create_machine(message):
         logger.debug("Successfully applied Aquilon configuration")
         openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "SUCCESS"})
 
-        logger.info("=== Finished Aquilon creation hook for VM " + vm_name + " ===")
+        logger.info("=== Finished Aquilon creation hook for VM %s ===", vm_name)
 
 
 def _aq_make_machines(
@@ -201,16 +201,16 @@ def _aq_make_machines(
 
         try:
             aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
-        except Exception as e:
-            logger.error("Failed to manage in Aquilon: %s", e)
+        except Exception as err:
+            logger.error("Failed to manage in Aquilon: %s", err)
             openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-            raise e
+            raise err
         try:
             aq_api.aq_make(host, personality, osversion, archetype, osname)
-        except Exception as e:
-            logger.error("Failed to make in Aquilon: %s", e)
+        except Exception as err:
+            logger.error("Failed to make in Aquilon: %s", err)
             openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-            raise e
+            raise err
 
 
 def _aq_create_host(
@@ -230,8 +230,8 @@ def _aq_update_machine_nic(machinename):
     logger.debug("Updating Interfaces")
     try:
         aq_api.update_machine_interface(machinename, "eth0")
-    except Exception as e:
-        raise Exception("Failed to set default interface %s", e)
+    except Exception as err:
+        raise Exception("Failed to set default interface %s", err) from err
     logger.debug("Creating Host")
 
 
@@ -248,28 +248,27 @@ def _aq_add_optional_nics(hostnames, machinename, message):
                     # socket.gethostbyaddr(ip.get("address"))[0])
                     hostnames[0],
                 )
-            except Exception as e:
-                raise Exception("Failed to add machine interface address %s", e)
+            except Exception as err:
+                raise Exception("Failed to add machine interface address") from err
 
 
 def _aq_add_first_nic(machinename, message):
-    for index, ip in enumerate(message.get("payload").get("fixed_ips")):
+    logger.debug("Creating Interfaces")
+    for index, ip_addr in enumerate(message.get("payload").get("fixed_ips")):
         interfacename = "eth" + str(index)
         try:
             aq_api.add_machine_interface(
                 machinename,
-                ip.get("vif_mac"),
+                ip_addr.get("vif_mac"),
                 interfacename,
                 # socket.gethostbyaddr(ip.get("address"))[0])
             )
-        except Exception as e:
-            raise Exception("Failed to add machine interface: %s", e)
-            logger.error("Failed to add machine interface %s", e)
+        except Exception as err:
+            raise Exception("Failed to add machine interface") from err
 
 
 def _aq_create_machine(hostnames, message):
     vcpus = message.get("payload").get("vcpus")
-    root_gb = message.get("payload").get("root_gb")
     memory_mb = message.get("payload").get("memory_mb")
     uuid = message.get("payload").get("instance_id")
     vmhost = message.get("payload").get("host")
@@ -284,9 +283,8 @@ def _aq_create_machine(hostnames, message):
             hostnames[-1],
             ConsumerConfig().aq_prefix,
         )
-    except Exception as e:
-        raise Exception("Failed to create machine: {0}".format(e))
-    logger.debug("Creating Interfaces")
+    except Exception as err:
+        raise Exception("Failed to create machine") from err
     return firstip, machinename
 
 
@@ -297,9 +295,8 @@ def _add_hostname_to_metadata(hostnames, project_id, vm_id):
         openstack_api.update_metadata(
             project_id, vm_id, {"HOSTNAMES": ", ".join(hostnames)}
         )
-    except Exception as e:
-        logger.error("Failed to update metadata: %s", e)
-        raise Exception("Failed to update metadata")
+    except Exception as err:
+        raise Exception("Failed to update metadata") from err
     logger.debug("Building metadata")
 
 
