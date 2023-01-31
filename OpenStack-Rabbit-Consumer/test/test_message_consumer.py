@@ -125,15 +125,6 @@ def test_on_message_ignores_non_aq(json, aq_message_mock, consume_mock):
     message.ack.assert_not_called()
 
 
-@patch("rabbit_consumer.message_consumer.rabbitpy")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
-def test_initiate_consumer_config_elements(kerb, rabbit_conf, _):
-    initiate_consumer()
-    kerb.assert_called_once()
-    rabbit_conf.config.get.assert_called_once_with("rabbit", "exchanges")
-
-
 # pylint: disable=too-few-public-methods
 class MockedConfig(ConsumerConfig):
     """
@@ -148,10 +139,7 @@ class MockedConfig(ConsumerConfig):
 
 @patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
-def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy, _):
-    exchanges = ["ex1", "ex2"]
-    rabbit_conf.config.get.return_value.split.return_value = exchanges
+def test_initiate_consumer_channel_setup(rabbitpy, _):
     mocked_config = MockedConfig()
 
     with patch("rabbit_consumer.message_consumer.ConsumerConfig") as config:
@@ -168,16 +156,13 @@ def test_initiate_consumer_channel_setup(rabbit_conf, rabbitpy, _):
 
     rabbitpy.Queue.assert_called_once_with(channel, name="ral.info", durable=True)
     queue = rabbitpy.Queue.return_value
-    queue.bind.assert_has_calls(
-        [call(exchange, routing_key="ral.info") for exchange in exchanges]
-    )
+    queue.bind.assert_called_once_with("nova", routing_key="ral.info")
 
 
 @patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.on_message")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
-def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _, __):
+def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
     queue_messages = [NonCallableMock(), NonCallableMock()]
     # We need our mocked queue to act like a generator
     rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
@@ -328,11 +313,10 @@ def test_consume_create_machine_hostnames_good_path(
     )
 
 
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_consume_create_machine_update_metadata_failure(openstack, hostname, _, __):
+def test_consume_create_machine_update_metadata_failure(openstack, hostname, _):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -347,10 +331,9 @@ def test_consume_create_machine_update_metadata_failure(openstack, hostname, _, 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __, ___):
+def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -365,10 +348,9 @@ def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __, ___):
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_add_machine_interface_failure(aq_api, hostname, _, __, ___):
+def test_consume_add_machine_interface_failure(aq_api, hostname, _, __):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -383,10 +365,9 @@ def test_consume_add_machine_interface_failure(aq_api, hostname, _, __, ___):
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __, ___):
+def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -401,10 +382,9 @@ def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __, 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_update_machine_interface_failure(aq_api, hostname, _, __, ___):
+def test_consume_update_machine_interface_failure(aq_api, hostname, _, __):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -418,11 +398,10 @@ def test_consume_update_machine_interface_failure(aq_api, hostname, _, __, ___):
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
+def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()
@@ -438,11 +417,10 @@ def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_message")
-@patch("rabbit_consumer.message_consumer.RabbitConsumer")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
-def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, __, ___):
+def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, _):
     hostname.return_value = ["host1", "host2"]
 
     message = Mock()

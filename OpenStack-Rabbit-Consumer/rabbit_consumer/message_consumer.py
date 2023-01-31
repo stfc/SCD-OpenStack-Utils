@@ -7,7 +7,6 @@ import rabbitpy
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
-from rabbit_consumer.rabbit_consumer import RabbitConsumer
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.aq_fields import AqFields
 
@@ -192,7 +191,6 @@ def _handle_create_machine(message):
 
 def _aq_make_machines(fields: AqFields, vm_id: str):
     for host in fields.hostnames:
-
         try:
             aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
         except Exception as err:
@@ -338,7 +336,7 @@ def initiate_consumer():
     logger.debug(
         "Connecting to rabbit with: amqp://%s:<password>@%s:%s/", login_user, host, port
     )
-    exchanges = RabbitConsumer.config.get("rabbit", "exchanges").split(",")
+    exchanges = ["nova"]
 
     login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
     with rabbitpy.Connection(login_str) as conn:
