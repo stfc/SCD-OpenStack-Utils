@@ -1,0 +1,2 @@
+kerberosSidecar:
+  principle: "HTTP/dev-service1.nubes.rl.ac.uk"

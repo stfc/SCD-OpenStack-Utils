@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: rabbit-consumer
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: rabbit-consumer
+  template:
+    metadata:
+      annotations:
+        # Force pod restart on configmap change
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: consumer
+      labels:
+        app: rabbit-consumer
+    spec:
+      containers:
+        - name: kerberos
+          image: "{{ .Values.kerberosSidecar.image.repository }}:{{ .Values.kerberosSidecar.image.tag }}"
+          command: ["/bin/sh", "-c", "/etc/entrypoints.d/sidecar-entrypoint.sh"]
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: KRB5_PRINCIPLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-env
+                  key: principle
+
+            - name: PERIOD_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-env
+                  key: refreshInterval
+
+          volumeMounts:
+            - name: entrypoints
+              mountPath: /etc/entrypoints.d
+            - name: shared
+              mountPath: /shared
+            # Kerberos related
+            - name: kerberos-conf-files
+              mountPath: /etc/krb5.conf
+              subPath: krb5.conf
+            - name: kerberos-keytab
+              mountPath: /etc/krb5.keytab
+              subPath: krb5.keytab
+              readOnly: true
+
+
+
+        - name: consumer
+          image: python:3.10
+          command: ["/bin/sh", "-c", "/etc/entrypoints.d/consumer-entrypoint.sh"]
+          volumeMounts:
+            - name: entrypoints
+              mountPath: /etc/entrypoints.d
+            - name: shared
+              mountPath: /shared
+      
+      volumes:
+        - name: entrypoints
+          configMap:
+            name: {{ .Release.Name }}-entrypoints
+            defaultMode: 0755
+        - name: kerberos-conf-files
+          configMap:
+            name: {{ .Release.Name }}-kerberos-files
+        - name: kerberos-keytab
+          secret:
+            secretName: {{ .Values.kerberosSidecar.keytabSecretRef }}
+            optional: false
+
+        - name: shared
+          emptyDir: {}
