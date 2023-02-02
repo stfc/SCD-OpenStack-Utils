@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-entrypoints
+  namespace: {{ .Release.Namespace }}
 data:
 {{ (.Files.Glob "include/kinit.sh").AsConfig | indent 2 }}
 {{ (.Files.Glob "include/sidecar-entrypoint.sh").AsConfig | indent 2 }}
@@ -13,6 +14,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-kerberos-files
+  namespace: {{ .Release.Namespace }}
 data:
 {{ (.Files.Glob "include/krb5.conf").AsConfig | indent 2 }}
 
@@ -22,6 +24,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-kerberos-env
+  namespace: {{ .Release.Namespace }}
 data:
   PERIOD_SECONDS: "{{ .Values.kerberosSidecar.refreshInterval }}"
   KRB5_PRINCIPLE: {{ .Values.kerberosSidecar.principle }}
@@ -31,6 +34,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-consumer-env
+  namespace: {{ .Release.Namespace }}
 data:
   LOG_LEVEL: {{ .Values.consumer.logLevel }}
 
