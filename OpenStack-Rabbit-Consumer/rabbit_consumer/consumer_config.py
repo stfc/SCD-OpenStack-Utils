@@ -18,9 +18,6 @@ class _OpenstackFields:
     openstack_auth_url: str = field(
         default_factory=partial(os.getenv, "OPENSTACK_AUTH_URL")
     )
-    openstack_ca_cert: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_CA_CERT")
-    )
     openstack_compute_url: str = field(
         default_factory=partial(os.getenv, "OPENSTACK_COMPUTE_URL")
     )
