@@ -227,7 +227,7 @@ def _aq_update_machine_nic(machinename):
     try:
         aq_api.update_machine_interface(machinename, "eth0")
     except Exception as err:
-        raise Exception("Failed to set default interface") from err
+        raise RuntimeError("Failed to set default interface") from err
     logger.debug("Creating Host")
 
 
@@ -245,7 +245,7 @@ def _aq_add_optional_nics(hostnames, machinename, message):
                     hostnames[0],
                 )
             except Exception as err:
-                raise Exception("Failed to add machine interface address") from err
+                raise RuntimeError("Failed to add machine interface address") from err
 
 
 def _aq_add_first_nic(machinename, message):
@@ -260,7 +260,7 @@ def _aq_add_first_nic(machinename, message):
                 # socket.gethostbyaddr(ip.get("address"))[0])
             )
         except Exception as err:
-            raise Exception("Failed to add machine interface") from err
+            raise RuntimeError("Failed to add machine interface") from err
 
 
 def _aq_create_machine(hostnames, message):
@@ -272,7 +272,7 @@ def _aq_create_machine(hostnames, message):
             ConsumerConfig().aq_prefix,
         )
     except Exception as err:
-        raise Exception("Failed to create machine") from err
+        raise RuntimeError("Failed to create machine") from err
 
     first_ip = message.get("payload").get("fixed_ips")[0].get("address")
     return first_ip, machine_name
@@ -286,7 +286,7 @@ def _add_hostname_to_metadata(fields: AqFields, vm_id):
             fields.project_id, vm_id, {"HOSTNAMES": ", ".join(fields.hostnames)}
         )
     except Exception as err:
-        raise Exception("Failed to update metadata") from err
+        raise RuntimeError("Failed to update metadata") from err
     logger.debug("Building metadata")
 
 
