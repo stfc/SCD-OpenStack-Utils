@@ -32,6 +32,8 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-consumer-env
 data:
+  LOG_LEVEL: {{ .Values.consumer.logLevel }}
+
   AQ_ARCHETYPE: {{ .Values.consumer.aquilon.defaultArchetype }}
   AQ_DOMAIN: {{ .Values.consumer.aquilon.defaultDomain }}
   AQ_PERSONALITY: {{ .Values.consumer.aquilon.defaultPersonality }}

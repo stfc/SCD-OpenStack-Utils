@@ -1,4 +1,6 @@
 consumer:
+  logLevel: DEBUG
+
   image:
     repository: harbor.stfc.ac.uk/stfc-cloud-staging/openstack-rabbit-consumer
     tag: "latest"
