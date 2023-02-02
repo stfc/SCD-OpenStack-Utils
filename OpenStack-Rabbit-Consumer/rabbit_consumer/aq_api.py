@@ -47,7 +47,7 @@ def setup_requests(url, method, desc):
     logging.debug("%s: %s", method, url)
 
     session = requests.Session()
-    session.verify = "/etc/grid-security/certificates/"
+    session.verify = "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":

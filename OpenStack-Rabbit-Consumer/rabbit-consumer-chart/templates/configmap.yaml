@@ -18,6 +18,15 @@ metadata:
 data:
 {{ (.Files.Glob "include/krb5.conf").AsConfig | indent 2 }}
 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-trusted-certs
+  namespace: {{ .Release.Namespace }}
+data:
+{{ (.Files.Glob "include/aquilon-gridpp-rl-ac-uk-chain.pem").AsConfig | indent 2 }}
+
 # Env configuration
 ---
 apiVersion: v1
