@@ -5,10 +5,11 @@ from rabbit_consumer.consumer_config import ConsumerConfig
 AQ_FIELDS = [
     ("aq_archetype", "AQ_ARCHETYPE"),
     ("aq_domain", "AQ_DOMAIN"),
-    ("aq_fqdn", "AQ_FQDN"),
+    ("KRB5_PRINCIPLE", "KRB5_PRINCIPLE"),
     ("aq_personality", "AQ_PERSONALITY"),
     ("aq_prefix", "AQ_PREFIX"),
     ("aq_url", "AQ_URL"),
+    ("krb5_principal", "KRB5_PRINCIPLE"),
 ]
 
 OPENSTACK_FIELDS = [

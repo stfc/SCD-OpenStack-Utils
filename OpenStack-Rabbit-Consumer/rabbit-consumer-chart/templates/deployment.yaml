@@ -27,6 +27,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-consumer-env
+            - configMapRef:
+                name: {{ .Release.Name }}-kerberos-env
             - secretRef:
                 name: {{ .Values.consumer.rabbitmq.secretRef }}
             - secretRef:
@@ -35,23 +37,18 @@ spec:
           volumeMounts:
             - name: shared
               mountPath: /shared
+            - name: kerberos-conf-files
+              mountPath: /etc/krb5.conf
+              subPath: krb5.conf
 
         - name: kerberos
           image: "{{ .Values.kerberosSidecar.image.repository }}:{{ .Values.kerberosSidecar.image.tag }}"
           command: ["/bin/sh", "-c", "/etc/entrypoints.d/sidecar-entrypoint.sh"]
           imagePullPolicy: Always
 
-          env:
-            - name: KRB5_PRINCIPLE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-sidecar-env
-                  key: krb5.principle
-            - name: PERIOD_SECONDS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-sidecar-env
-                  key: krb5.refreshInterval
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-kerberos-env
 
           volumeMounts:
             - name: entrypoints

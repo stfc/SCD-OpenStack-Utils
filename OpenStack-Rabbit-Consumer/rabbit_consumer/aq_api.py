@@ -35,14 +35,7 @@ def verify_kerberos_ticket():
     logger.debug("Checking for valid Kerberos Ticket")
 
     if subprocess.call(["klist", "-s"]) == 1:
-        logger.info("No ticket found / expired. Obtaining new one")
-        kinit_cmd = ["kinit", "-k", f"HTTP/{ConsumerConfig().aq_fqdn}"]
-        logger.debug("Running command: %s", kinit_cmd)
-
-        subprocess.call(kinit_cmd)
-
-        if subprocess.call(["klist", "-s"]) == 1:
-            raise RuntimeError("Failed to obtain valid Kerberos ticket")
+        raise RuntimeError("No shared Kerberos ticket found.")
 
     logger.debug("Kerberos ticket success")
     return True

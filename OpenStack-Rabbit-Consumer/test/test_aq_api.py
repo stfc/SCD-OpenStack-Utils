@@ -33,48 +33,12 @@ def test_verify_kerberos_ticket_valid():
 def test_verify_kerberos_ticket_renew(config, subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
-    subprocess.side_effect = [1, 0, 0]
-
-    assert verify_kerberos_ticket()
-
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
-
-
-@patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
-    # Exit code 1 - i.e. invalid ticket
-    # Then 0 (kinit), 0 (klist -s)
-    subprocess.side_effect = [1, 0, 0]
-
-    assert verify_kerberos_ticket()
-
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
-
-
-@patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_raises(config, subprocess):
-    # Exit code 1 - i.e. invalid ticket
-    # Then 0 (kinit), 1 (klist -s)
-    subprocess.side_effect = [1, 0, 1]
+    subprocess.side_effect = [1]
 
     with pytest.raises(RuntimeError):
         verify_kerberos_ticket()
 
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
+    subprocess.assert_called_once_with(["klist", "-s"])
 
 
 @patch("rabbit_consumer.aq_api.requests")

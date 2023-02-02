@@ -20,7 +20,7 @@ metadata:
   name: openstack-credentials
   namespace: rabbit-consumer  
 type: Opaque
-data:
+stringData:
   OPENSTACK_USERNAME:
   OPENSTACK_PASSWORD:
 ---
@@ -30,7 +30,7 @@ metadata:
   name: rabbit-credentials
   namespace: rabbit-consumer
 type: Opaque
-data:
+stringData:
   RABBIT_USERNAME:
   RABBIT_PASSWORD:
 ```

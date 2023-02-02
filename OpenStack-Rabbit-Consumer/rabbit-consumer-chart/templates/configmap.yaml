@@ -21,10 +21,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-sidecar-env
+  name: {{ .Release.Name }}-kerberos-env
 data:
-  krb5.refreshInterval: "{{ .Values.kerberosSidecar.refreshInterval }}"
-  krb5.principle: {{ .Values.kerberosSidecar.principle }}
+  PERIOD_SECONDS: "{{ .Values.kerberosSidecar.refreshInterval }}"
+  KRB5_PRINCIPLE: {{ .Values.kerberosSidecar.principle }}
+  KRB5CCNAME: "/shared/krb5cc"
 ---
 apiVersion: v1
 kind: ConfigMap
