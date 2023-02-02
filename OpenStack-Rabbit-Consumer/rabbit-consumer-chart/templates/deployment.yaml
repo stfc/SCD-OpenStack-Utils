@@ -46,12 +46,12 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Release.Name }}-sidecar-env
-                  key: principle
+                  key: krb5.principle
             - name: PERIOD_SECONDS
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Release.Name }}-sidecar-env
-                  key: refreshInterval
+                  key: krb5.refreshInterval
 
           volumeMounts:
             - name: entrypoints
@@ -66,7 +66,13 @@ spec:
               mountPath: /etc/krb5.keytab
               subPath: krb5.keytab
               readOnly: true
-      
+
+      hostAliases:
+      # Logon 04
+      - ip: "130.246.132.94"
+        hostnames:
+          - "fed.cclrc.ac.uk"
+
       volumes:
         - name: entrypoints
           configMap:

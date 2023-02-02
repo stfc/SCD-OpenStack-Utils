@@ -38,7 +38,7 @@ data:
   AQ_URL: {{ .Values.consumer.aquilon.url }}
 
   RABBIT_HOST: {{ .Values.consumer.rabbitmq.host }}
-  RABBIT_PORT: {{ .Values.consumer.rabbitmq.port }}
+  RABBIT_PORT: "{{ .Values.consumer.rabbitmq.port }}"
 
   OPENSTACK_AUTH_URL: {{ .Values.consumer.openstack.authUrl }}
   OPENSTACK_COMPUTE_URL: {{ .Values.consumer.openstack.computeUrl }}
