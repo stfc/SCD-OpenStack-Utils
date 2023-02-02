@@ -13,7 +13,6 @@ AQ_FIELDS = [
 
 OPENSTACK_FIELDS = [
     ("openstack_auth_url", "OPENSTACK_AUTH_URL"),
-    ("openstack_ca_cert", "OPENSTACK_CA_CERT"),
     ("openstack_compute_url", "OPENSTACK_COMPUTE_URL"),
     ("openstack_domain_name", "OPENSTACK_DOMAIN_NAME"),
     ("openstack_project_id", "OPENSTACK_PROJECT_ID"),
