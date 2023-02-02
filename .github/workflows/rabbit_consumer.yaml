@@ -40,4 +40,4 @@ jobs:
       - name: Lint Helm Chart
         # Note --strict=true != --strict with the former being stricter
         run: |
-          helm lint OpenStack-Rabbit-Consumer/rabbit-consumer-chart --values OpenStack-Rabbit-Consumer/rabbit-consumer-chart/shared-values.yaml --values OpenStack-Rabbit-Consumer/rabbit-consumer-chart/dev-values.yaml --strict=true
+          helm lint OpenStack-Rabbit-Consumer/rabbit-consumer-chart --values OpenStack-Rabbit-Consumer/rabbit-consumer-chart/values.yaml --values OpenStack-Rabbit-Consumer/rabbit-consumer-chart/dev-values.yaml --strict=true
