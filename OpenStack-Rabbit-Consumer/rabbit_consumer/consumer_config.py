@@ -7,11 +7,9 @@ from functools import partial
 class _AqFields:
     aq_archetype: str = field(default_factory=partial(os.getenv, "AQ_ARCHETYPE"))
     aq_domain: str = field(default_factory=partial(os.getenv, "AQ_DOMAIN"))
-    KRB5_PRINCIPLE: str = field(default_factory=partial(os.getenv, "KRB5_PRINCIPLE"))
     aq_personality: str = field(default_factory=partial(os.getenv, "AQ_PERSONALITY"))
     aq_prefix: str = field(default_factory=partial(os.getenv, "AQ_PREFIX"))
     aq_url: str = field(default_factory=partial(os.getenv, "AQ_URL"))
-    krb5_principal: str = field(default_factory=partial(os.getenv, "KRB5_PRINCIPLE"))
 
 
 @dataclass

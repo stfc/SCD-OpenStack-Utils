@@ -29,8 +29,7 @@ def test_verify_kerberos_ticket_valid():
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_renew(config, subprocess):
+def test_verify_kerberos_ticket_invalid(subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1]
