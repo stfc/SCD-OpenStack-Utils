@@ -6,8 +6,7 @@ consumer:
 
   image:
     repository: harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer
-    tag: "prod"
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   aquilon:
     defaultArchetype: cloud

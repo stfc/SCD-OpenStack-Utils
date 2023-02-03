@@ -1,0 +1,14 @@
+consumer:
+  aquilon:
+    defaultPrefix: vm-openstack-Prod-
+
+  rabbitmq:
+    host: openstack.stfc.ac.uk
+
+  openstack:
+    authUrl: https://openstack.stfc.ac.uk:5000/v3
+    computeUrl: https://openstack.stfc.ac.uk:8774/v2.1
+    projectId: 4de86830e89b4a46b590536571b6ccd4
+
+kerberosSidecar:
+  principle: "HTTP/service1.nubes.rl.ac.uk"
