@@ -29,52 +29,15 @@ def test_verify_kerberos_ticket_valid():
 
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_renew(config, subprocess):
+def test_verify_kerberos_ticket_invalid(subprocess):
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
-    subprocess.side_effect = [1, 0, 0]
-
-    assert verify_kerberos_ticket()
-
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
-
-
-@patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_renew_empty_conf(config, subprocess):
-    # Exit code 1 - i.e. invalid ticket
-    # Then 0 (kinit), 0 (klist -s)
-    subprocess.side_effect = [1, 0, 0]
-
-    assert verify_kerberos_ticket()
-
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
-
-
-@patch("rabbit_consumer.aq_api.subprocess.call")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_verify_kerberos_ticket_raises(config, subprocess):
-    # Exit code 1 - i.e. invalid ticket
-    # Then 0 (kinit), 1 (klist -s)
-    subprocess.side_effect = [1, 0, 1]
+    subprocess.side_effect = [1]
 
     with pytest.raises(RuntimeError):
         verify_kerberos_ticket()
 
-    assert subprocess.call_args_list == [
-        call(["klist", "-s"]),
-        call(["kinit", "-k", f"HTTP/{config.return_value.aq_fqdn}"]),
-        call(["klist", "-s"]),
-    ]
+    subprocess.assert_called_once_with(["klist", "-s"])
 
 
 @patch("rabbit_consumer.aq_api.requests")
@@ -87,7 +50,10 @@ def test_setup_requests(verify_kerb, adapter, retry, requests):
     response.status_code = 200
 
     setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
-    assert session.verify == "/etc/grid-security/certificates/"
+    assert (
+        session.verify
+        == "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
+    )
 
     verify_kerb.assert_called_once()
     retry.assert_called_once_with(total=5, backoff_factor=0.1, status_forcelist=[503])
@@ -107,7 +73,10 @@ def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests)
     with pytest.raises(ConnectionError):
         setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
 
-    assert session.verify == "/etc/grid-security/certificates/"
+    assert (
+        session.verify
+        == "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
+    )
 
     verify_kerb.assert_called_once()
     retry.assert_called_once_with(total=5, backoff_factor=0.1, status_forcelist=[503])

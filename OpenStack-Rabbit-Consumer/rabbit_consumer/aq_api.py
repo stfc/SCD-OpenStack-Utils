@@ -35,14 +35,7 @@ def verify_kerberos_ticket():
     logger.debug("Checking for valid Kerberos Ticket")
 
     if subprocess.call(["klist", "-s"]) == 1:
-        logger.info("No ticket found / expired. Obtaining new one")
-        kinit_cmd = ["kinit", "-k", f"HTTP/{ConsumerConfig().aq_fqdn}"]
-        logger.debug("Running command: %s", kinit_cmd)
-
-        subprocess.call(kinit_cmd)
-
-        if subprocess.call(["klist", "-s"]) == 1:
-            raise RuntimeError("Failed to obtain valid Kerberos ticket")
+        raise RuntimeError("No shared Kerberos ticket found.")
 
     logger.debug("Kerberos ticket success")
     return True
@@ -54,7 +47,7 @@ def setup_requests(url, method, desc):
     logging.debug("%s: %s", method, url)
 
     session = requests.Session()
-    session.verify = "/etc/grid-security/certificates/"
+    session.verify = "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":
