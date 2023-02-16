@@ -21,6 +21,14 @@ class GitOps:
         )
         return self.repo
 
+    def set_git_username(self, username: str):
+        """Set the username for the git repo."""
+        self.repo.config_writer().set_value("user", "name", username).release()
+
+    def set_git_email(self, email: str):
+        """Set the email for the git repo."""
+        self.repo.config_writer().set_value("user", "email", email).release()
+
     @staticmethod
     def _validate_protocol(repo_url):
         if not repo_url.startswith("git@"):

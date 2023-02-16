@@ -34,6 +34,30 @@ def test_git_clone_ssh(clone):
     )
 
 
+def test_git_set_username():
+    ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
+    ops.repo = mock.Mock()
+
+    mock_username = mock.NonCallableMock()
+    ops.set_git_username(mock_username)
+    ops.repo.config_writer().set_value.assert_called_once_with(
+        "user", "name", mock_username
+    )
+    ops.repo.config_writer().set_value().release.assert_called_once()
+
+
+def test_git_set_email():
+    ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
+    ops.repo = mock.Mock()
+
+    mock_email = mock.NonCallableMock()
+    ops.set_git_email(mock_email)
+    ops.repo.config_writer().set_value.assert_called_once_with(
+        "user", "email", mock_email
+    )
+    ops.repo.config_writer().set_value().release.assert_called_once()
+
+
 @pytest.fixture(scope="session")
 def _prepared_repo(tmp_path_factory) -> GitOps:
     path = tmp_path_factory.mktemp("git_env")
@@ -86,6 +110,9 @@ def test_git_rebase_real(_prepared_repo):
         _prepared_repo.repo.git.branch(
             "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
         )
+
+    _prepared_repo.set_git_username("ci-test")
+    _prepared_repo.set_git_email("test@example.com")
 
     _prepared_repo.git_fetch_upstream()
     _prepared_repo.git_rebase_upstream()
