@@ -1,12 +1,18 @@
 name: Black formatter
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: psf/black@stable
+      - name: Rabbit Consumer
+        uses: psf/black@stable
         with:
           src: "OpenStack-Rabbit-Consumer"
+
+      - name: CAPI Image Builder
+        uses: psf/black@stable
+        with:
+          src: "capi_image_builder"
