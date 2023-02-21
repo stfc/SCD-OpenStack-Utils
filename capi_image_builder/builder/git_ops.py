@@ -13,7 +13,7 @@ class GitOps:
         self.ssh_key_path = ssh_key_path
         self.repo: Optional[Repo] = None
 
-    def git_clone(self, repo_url, target_dir) -> Repo:
+    def git_clone(self, repo_url, target_dir: Path) -> Repo:
         """Clone a git repo to a target directory."""
         self._validate_protocol(repo_url)
         self.repo = Repo.clone_from(
