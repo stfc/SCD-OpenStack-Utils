@@ -2,13 +2,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import openstack.connection
-import semver as semver
+import semver
 from openstack.image.v2.image import Image
 
 from builder.args import Args
 
 
 def get_image_version(output_file: Path) -> semver.VersionInfo:
+    """
+    Gets the Kubectl version based on the filename
+    """
     filename = output_file.name
     if "ubuntu" not in filename:
         raise RuntimeError("Expected image filename to contain 'ubuntu'.")
@@ -27,6 +30,10 @@ def get_image_version(output_file: Path) -> semver.VersionInfo:
 
 @dataclass
 class ImageDetails:
+    """
+    Holds details of a newly built image
+    """
+
     kube_version: semver.VersionInfo
     image_path: Path
     is_public: bool
@@ -34,13 +41,21 @@ class ImageDetails:
 
 
 def upload_output_image(image_details: ImageDetails) -> Image:
+    """
+    Uploads a given image to Openstack and returns the resulting image object
+    provided by the Openstack SDK
+    """
+    visibility = "public" if image_details.is_public else "private"
+    print(f"Uploading image {image_details.image_path} to Openstack")
+    print(f"Image visibility: {visibility}")
+
     conn = openstack.connect("openstack")
     return conn.image.create_image(
         name=f"capi-ubuntu-{image_details.os_version}-kube-v{image_details.kube_version}",
         filename=image_details.image_path.as_posix(),
         disk_format="qcow2",
         container_format="bare",
-        visibility="public" if image_details.is_public else "private",
+        visibility=visibility,
     )
 
 

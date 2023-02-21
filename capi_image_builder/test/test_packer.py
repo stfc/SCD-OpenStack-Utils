@@ -127,9 +127,9 @@ def test_get_image_path(tmp_path):
     output_subdir.mkdir()
 
     output_file = output_subdir / "ubuntu-2004-kube-v1.23.10"
-    with open(output_file, "wb") as f:
+    with open(output_file, "wb") as file_handle:
         # 1GB file to pass the size check
-        f.truncate(1024 * 1024 * 1024)
+        file_handle.truncate(1024 * 1024 * 1024)
 
     assert get_image_path(tmp_path) == output_file
 
@@ -164,9 +164,9 @@ def test_get_image_path_small_file(tmp_path):
     output_subdir.mkdir()
 
     output_file = output_subdir / "ubuntu-2004-kube-v1.23.10"
-    with open(output_file, "wb") as f:
+    with open(output_file, "wb") as file_handle:
         # 1GB - 1 byte file to fail the size check
-        f.truncate(1024 * 1024 * 1024 - 1)
+        file_handle.truncate(1024 * 1024 * 1024 - 1)
 
     with pytest.raises(RuntimeError) as error:
         get_image_path(tmp_path)

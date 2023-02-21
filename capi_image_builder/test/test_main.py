@@ -4,6 +4,9 @@ from main import main
 
 
 def test_main(tmp_path):
+    """
+    Tests the main steps, which consist of very high level goals.
+    """
     args = NonCallableMock()
     args.target_dir = tmp_path.as_posix()
 

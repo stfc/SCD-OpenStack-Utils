@@ -46,5 +46,8 @@ class GitOps:
     def git_rebase_upstream(
         self, remote_name: str = "upstream", branch: str = "master"
     ):
+        """
+        Rebase the current branch onto the upstream branch to bring fork into sync.
+        """
         print(f"Rebasing {remote_name}/{branch} onto current branch")
         self.repo.git.rebase(f"{remote_name}/{branch}")

@@ -47,6 +47,10 @@ def run_packer_build(packer_dir: Path, ubuntu_version: str):
 
 
 def get_image_path(packer_dir: Path) -> Path:
+    """
+    Returns the path to the image file that was built from
+    the CAPI packer directory
+    """
     output_dir = packer_dir / "output"
     output_files = [file for file in output_dir.rglob("*") if file.is_file()]
 

@@ -14,4 +14,5 @@ class Args:
     make_image_public: bool = False
     os_version: str = "2004"
 
-    _is_tmp_dir: bool = False
+    # Set during runtime
+    is_tmp_dir: bool = False

@@ -14,15 +14,22 @@ from builder.git_steps import (
 
 
 def test_new_temp_directory_generated():
+    """
+    Test that a new temporary directory is generated if one is not provided.
+    """
     args = Args(target_dir=None, ssh_key_path="test", push_to_github=False)
     args = populate_temp_dir(args)
 
     assert args.target_dir is not None
-    assert args._is_tmp_dir
+    assert args.is_tmp_dir
     Path(args.target_dir).exists()
 
 
 def test_existing_path_not_overwritten(tmp_path):
+    """
+    Test that an existing path is not overwritten and the
+    destination directory is created.
+    """
     expected_dir = tmp_path / "existing_path"
     args = Args(
         target_dir=expected_dir.as_posix(), ssh_key_path="test", push_to_github=False
@@ -30,7 +37,7 @@ def test_existing_path_not_overwritten(tmp_path):
 
     assert not expected_dir.exists()
     args = populate_temp_dir(args)
-    assert not args._is_tmp_dir
+    assert not args.is_tmp_dir
     assert args.target_dir == expected_dir.as_posix()
     assert expected_dir.exists()
 
@@ -76,6 +83,9 @@ def test_update_repo():
 
 
 def test_prepare_image_repo():
+    """
+    Test that the repo is cloned and rebased as expected
+    """
     arg_mock = NonCallableMock()
     with patch("builder.git_steps.clone_repo") as clone_mock:
         with patch("builder.git_steps.update_repo") as update_mock:

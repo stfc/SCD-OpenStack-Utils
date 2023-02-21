@@ -14,7 +14,7 @@ def populate_temp_dir(arg: Args) -> Args:
     the target directory exists.
     """
     if arg.target_dir is None:
-        arg._is_tmp_dir = True
+        arg.is_tmp_dir = True
         arg.target_dir = mkdtemp()
         print(f"Using temporary directory: {arg.target_dir}")
 
