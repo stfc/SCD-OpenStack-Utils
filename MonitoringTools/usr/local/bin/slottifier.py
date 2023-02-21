@@ -69,8 +69,8 @@ for aggregateGroup in aggregateGroupsListPre:
     aggregateGroupDetails = json.loads(command_line("openstack aggregate show " + aggregateGroup["Name"] + " -f json"))
  #   print aggregateGroup["Name"]
 #    if "hosttype" in aggregateGroup["Properties"]:
- #       print aggregateGroup["Properties"]["hosttype"]   
-    
+ #       print aggregateGroup["Properties"]["hosttype"]
+
     # calculate vcpu's
     uphosts = []
     for host in aggregateGroupDetails["hosts"]:
@@ -91,15 +91,26 @@ for aggregateGroup in aggregateGroupsListPre:
                         totalCoresAvailable += hv["vCPUs"]
                         totalCoresUsed += hv["vCPUs Used"]
 
-		        for flavor in flavorListPre:
+                        for flavor in flavorListPre:
                            if ("hosttype" in aggregateGroup["Properties"]) and ("aggregate_instance_extra_specs:hosttype" in flavor["Properties"]) and ("aggregate_instance_extra_specs:hosttype='" + aggregateGroup["Properties"]["hosttype"] +"'" in flavor["Properties"]):
-   #                            print flavor["Name"]
-    #                           print (coresAvailable //flavor["VCPUs"])
-                               if (coresAvailable // flavor["VCPUs"]) <= (memAvailable //flavor["RAM"]):
-                                   slotdict[flavor["Name"]] += (coresAvailable //flavor["VCPUs"])
+                               if ("local-storage-type" in flavor["Properties"]) :
+                                   if ("local-storage-type" in aggregateGroup["Properties"]) and ("local-storage-type='" + aggregateGroup["Properties"]["local-storage-type"] +"'" in flavor["Properties"]):
+                                       if (coresAvailable // flavor["VCPUs"]) <= (memAvailable //flavor["RAM"]):
+                                            slotsAvailable = (coresAvailable //flavor["VCPUs"])
+                                       else:
+                                            slotsAvailable= (memAvailable //flavor["RAM"])
+
                                else:
-                                   slotdict[flavor["Name"]] += (memAvailable //flavor["RAM"])
-                            	
+                                   if (coresAvailable // flavor["VCPUs"]) <= (memAvailable //flavor["RAM"]):
+                                       slotsAvailable = (coresAvailable //flavor["VCPUs"])
+                                   else:
+                                       slotsAvailable= (memAvailable //flavor["RAM"])
+                               if "g-" in flavor["Name"] :
+                                   gpuSlotsAvailable = coresAvailable // flavor["VCPUs"]
+                                   slotsAvailable = gpuSlotsAvailable
+                               slotdict[flavor["Name"]] += slotsAvailable
+
+
 
 
 print slotdict
