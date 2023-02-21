@@ -1,16 +1,10 @@
-# Clone repo
-# Rebase
-# Remove old files
-# Build
-# Push to OpenStack
-# Push to GitHub with new tag
+# TODO Push to GitHub with new tag
 import argparse
-from pathlib import Path
 
-from builder.git_steps import prepare_image_repo
 from builder.args import Args
+from builder.git_steps import prepare_image_repo
 from builder.image_ops import push_new_image
-from builder.packer import run_packer_build, build_image
+from builder.packer import build_image
 
 
 def _parse_args() -> Args:

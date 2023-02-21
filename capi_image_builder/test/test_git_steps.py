@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch, Mock, call, create_autospec, NonCallableMock
 
+from builder.args import Args
 from builder.git_ops import GitOps
 from builder.git_steps import (
     populate_temp_dir,
@@ -10,7 +11,6 @@ from builder.git_steps import (
     UPSTREAM_URL,
     prepare_image_repo,
 )
-from builder.args import Args
 
 
 def test_new_temp_directory_generated():

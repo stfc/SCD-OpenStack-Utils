@@ -1,6 +1,6 @@
-import os.path
 from dataclasses import dataclass
 from pathlib import Path
+
 import openstack.connection
 import semver as semver
 from openstack.image.v2.image import Image
