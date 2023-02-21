@@ -1,13 +1,14 @@
 from pathlib import Path
-from unittest.mock import patch, ANY
+from unittest.mock import patch, ANY, NonCallableMock
 
 import pytest
 
 from builder.packer import (
     prepare_env,
-    run_packer,
+    run_packer_build,
     get_packer_dir_from_repo_root,
     clear_output_directory,
+    build_image,
 )
 
 
@@ -48,7 +49,7 @@ def test_run_packer(mock_popen):
 
     with patch("builder.packer.prepare_env") as mock_prepare_env:
         mock_prepare_env.return_value = expected_env
-        run_packer(tmp_path, "1234")
+        run_packer_build(tmp_path, "1234")
 
     mock_popen.assert_called_once_with(
         ["make", "build-qemu-ubuntu-1234"],
@@ -77,7 +78,7 @@ def test_run_packer_error(mock_popen):
     with patch("builder.packer.prepare_env") as mock_prepare_env:
         mock_prepare_env.return_value = expected_env
         with pytest.raises(RuntimeError):
-            run_packer(tmp_path, "1234")
+            run_packer_build(tmp_path, "1234")
 
     mock_popen.assert_called_once_with(
         ["make", "build-qemu-ubuntu-1234"],
@@ -113,3 +114,26 @@ def test_clear_output_directory(tmp_path):
     for path in fake_ubuntu_paths:
         assert not path.exists()
     assert not output_dir.exists()
+
+
+def test_build_image():
+    """
+    Test that the build_image function calls the correct functions in
+    the correct order.
+    """
+    repo_root, ubuntu_version = NonCallableMock(), NonCallableMock()
+
+    with patch(
+        "builder.packer.get_packer_dir_from_repo_root"
+    ) as mock_get_packer_dir_from_repo_root, patch(
+        "builder.packer.clear_output_directory"
+    ) as mock_clear_output_directory, patch(
+        "builder.packer.run_packer_build"
+    ) as mock_run_packer_build:
+
+        build_image(repo_root, ubuntu_version)
+
+    mock_get_packer_dir_from_repo_root.assert_called_once_with(repo_root)
+    packer_dir = mock_get_packer_dir_from_repo_root.return_value
+    mock_clear_output_directory.assert_called_once_with(packer_dir)
+    mock_run_packer_build.assert_called_once_with(packer_dir, ubuntu_version)

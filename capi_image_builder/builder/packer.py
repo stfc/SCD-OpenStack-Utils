@@ -22,7 +22,7 @@ def prepare_env(packer_dir: Path) -> dict:
     return current_env
 
 
-def run_packer(packer_dir: Path, ubuntu_version: str):
+def run_packer_build(packer_dir: Path, ubuntu_version: str):
     """Run packer to build a target."""
     with subprocess.Popen(
         ["make", f"build-qemu-ubuntu-{ubuntu_version}"],
@@ -41,6 +41,13 @@ def run_packer(packer_dir: Path, ubuntu_version: str):
 
         if proc.returncode != 0:
             raise RuntimeError("Packer build failed")
+
+
+def build_image(repo_root: Path, ubuntu_version: str):
+    """Builds an update image"""
+    packer_dir = get_packer_dir_from_repo_root(repo_root)
+    clear_output_directory(packer_dir)
+    run_packer_build(packer_dir, ubuntu_version)
 
 
 def clear_output_directory(packer_dir: Path):
