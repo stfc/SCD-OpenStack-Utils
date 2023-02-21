@@ -3,7 +3,23 @@ from unittest.mock import patch, ANY
 
 import pytest
 
-from builder.packer import prepare_env, run_packer
+from builder.packer import (
+    prepare_env,
+    run_packer,
+    get_packer_dir_from_repo_root,
+    clear_output_directory,
+)
+
+
+def test_get_packer_dir_from_repo_root(tmp_path):
+    """
+    Test that the get_packer_dir_from_repo_root function returns the
+    correct path.
+    """
+    repo_root = tmp_path / "repo_root"
+    packer_dir = repo_root / "images" / "capi"
+
+    assert get_packer_dir_from_repo_root(repo_root) == packer_dir
 
 
 def test_prepare_env():
@@ -73,3 +89,27 @@ def test_run_packer_error(mock_popen):
     )
 
     proc.wait.assert_called_once_with()
+
+
+def test_clear_output_directory(tmp_path):
+    """
+    Test that the clear_output_directory function deletes all files
+    from the output directory.
+    """
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    fake_ubuntu_paths = [
+        output_dir / "ubuntu-2004-kube-v1.23.10",
+        output_dir / "ubuntu-2004-kube-v1.24.99",
+        output_dir / "other-arch",
+    ]
+
+    for path in fake_ubuntu_paths:
+        path.mkdir()
+
+    clear_output_directory(tmp_path)
+
+    for path in fake_ubuntu_paths:
+        assert not path.exists()
+    assert not output_dir.exists()

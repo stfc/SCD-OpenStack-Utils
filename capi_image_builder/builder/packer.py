@@ -1,9 +1,15 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 # Relative dir of STFC vars from capi dir
 PACKER_VARS_FILE = "packer/config/stfc.json"
+
+
+def get_packer_dir_from_repo_root(repo_root: Path) -> Path:
+    """Get the path to the packer dir from the repo root."""
+    return repo_root / "images" / "capi"
 
 
 def prepare_env(packer_dir: Path) -> dict:
@@ -35,3 +41,9 @@ def run_packer(packer_dir: Path, ubuntu_version: str):
 
         if proc.returncode != 0:
             raise RuntimeError("Packer build failed")
+
+
+def clear_output_directory(packer_dir: Path):
+    output_dir = packer_dir / "output"
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
