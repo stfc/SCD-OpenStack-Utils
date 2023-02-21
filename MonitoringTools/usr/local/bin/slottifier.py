@@ -106,8 +106,18 @@ for aggregateGroup in aggregateGroupsListPre:
                                    else:
                                        slotsAvailable= (memAvailable //flavor["RAM"])
                                if "g-" in flavor["Name"] :
+                                   cpuTest = hv["vCPUs"] // flavor["VCPUs"]
+                                   gpunum = int(aggregateGroup["Properties"]["gpunum"])
+                                   if (gpunum < cpuTest):
+                                       if (gpunum * flavor["VCPUs"]) <= hv["vCPUs"]:
+                                           coresAvailable = (flavor["VCPUs"] * gpunum) - hv["vCPUs Used"]
+                                   if coresAvailable <= 0:
+                                      coresAvailable = 0
                                    gpuSlotsAvailable = coresAvailable // flavor["VCPUs"]
-                                   slotsAvailable = gpuSlotsAvailable
+                                   if gpuSlotsAvailable > aggregateGroup["Properties"]["gpunum"]:
+                                       slotsAvailable = aggregateGroup["Properties"]["gpunum"]
+                                   else:
+                                       slotsAvailable = gpuSlotsAvailable
                                slotdict[flavor["Name"]] += slotsAvailable
 
 
