@@ -16,6 +16,7 @@ class GitOps:
     def git_clone(self, repo_url, target_dir: Path) -> Repo:
         """Clone a git repo to a target directory."""
         self._validate_protocol(repo_url)
+        print(f"Cloning {repo_url} to {target_dir}")
         self.repo = Repo.clone_from(
             repo_url, target_dir, env={"GIT_SSH_COMMAND": f"ssh -i {self.ssh_key_path}"}
         )
@@ -45,4 +46,5 @@ class GitOps:
     def git_rebase_upstream(
         self, remote_name: str = "upstream", branch: str = "master"
     ):
+        print(f"Rebasing {remote_name}/{branch} onto current branch")
         self.repo.git.rebase(f"{remote_name}/{branch}")

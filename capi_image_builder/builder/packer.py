@@ -26,6 +26,7 @@ def prepare_env(packer_dir: Path) -> dict:
 
 def run_packer_build(packer_dir: Path, ubuntu_version: str):
     """Run packer to build a target."""
+    print(f"Running packer build in {packer_dir}...")
     with subprocess.Popen(
         ["make", f"build-qemu-ubuntu-{ubuntu_version}"],
         cwd=packer_dir,

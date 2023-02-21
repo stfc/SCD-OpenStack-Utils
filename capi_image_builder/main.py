@@ -1,4 +1,5 @@
 # TODO Push to GitHub with new tag
+# TODO cleanup the temporary directory
 import argparse
 
 from builder.args import Args
@@ -21,7 +22,19 @@ def _parse_args() -> Args:
         "If not set this will use a temporary directory.",
     )
     parser.add_argument(
-        "--push-to-github", action="store_true", help="Push the new image to Github."
+        "--push-to-github",
+        action="store_true",
+        help="Push the new image to Github. Default: False",
+    )
+    parser.add_argument(
+        "--make_image_public",
+        action="store_true",
+        help="Make the new image public. Default: False",
+    )
+    parser.add_argument(
+        "--os_version",
+        default="2004",
+        help="The Ubuntu version to build. Default: 2004",
     )
 
     args = parser.parse_args()
