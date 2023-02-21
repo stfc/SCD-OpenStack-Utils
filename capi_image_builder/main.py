@@ -5,7 +5,12 @@
 # Push to OpenStack
 # Push to GitHub with new tag
 import argparse
-from builder.git_steps import Args, prepare_image_repo
+from pathlib import Path
+
+from builder.git_steps import prepare_image_repo
+from builder.args import Args
+from builder.image_ops import push_new_image
+from builder.packer import run_packer_build, build_image
 
 
 def _parse_args() -> Args:
@@ -31,6 +36,10 @@ def _parse_args() -> Args:
 
 def main(args: Args):
     prepare_image_repo(args)
+    # Hardcode the Ubuntu version for now
+    image_path = build_image(args)
+    openstack_image = push_new_image(image_path, args)
+    print(openstack_image)
 
 
 if __name__ == "__main__":

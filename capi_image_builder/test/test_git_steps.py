@@ -3,7 +3,6 @@ from unittest.mock import patch, Mock, call, create_autospec, NonCallableMock
 
 from builder.git_ops import GitOps
 from builder.git_steps import (
-    Args,
     populate_temp_dir,
     clone_repo,
     K8S_FORK_URL,
@@ -11,6 +10,7 @@ from builder.git_steps import (
     UPSTREAM_URL,
     prepare_image_repo,
 )
+from builder.args import Args
 
 
 def test_new_temp_directory_generated():

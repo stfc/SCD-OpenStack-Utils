@@ -1,24 +1,11 @@
-from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Optional
 
+from builder.args import Args
 from builder.git_ops import GitOps
 
 K8S_FORK_URL = "git@github.com:stfc/k8s-image-builder.git"
 UPSTREAM_URL = "https://github.com/kubernetes-sigs/image-builder.git"
-
-
-@dataclass
-class Args:
-    """
-    The arguments related to Git operations.
-    """
-
-    target_dir: Optional[str]
-    ssh_key_path: str
-    push_to_github: bool
-    _is_tmp_dir: bool = False
 
 
 def populate_temp_dir(arg: Args) -> Args:

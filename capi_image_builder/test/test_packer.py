@@ -9,6 +9,7 @@ from builder.packer import (
     get_packer_dir_from_repo_root,
     clear_output_directory,
     build_image,
+    get_image_path,
 )
 
 
@@ -116,12 +117,72 @@ def test_clear_output_directory(tmp_path):
     assert not output_dir.exists()
 
 
-def test_build_image():
+def test_get_image_path(tmp_path):
+    """
+    Test that the get_image_path function returns the correct path.
+    """
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    output_subdir = output_dir / "ubuntu-2004-kube-v1.23.10"
+    output_subdir.mkdir()
+
+    output_file = output_subdir / "ubuntu-2004-kube-v1.23.10"
+    with open(output_file, "wb") as f:
+        # 1GB file to pass the size check
+        f.truncate(1024 * 1024 * 1024)
+
+    assert get_image_path(tmp_path) == output_file
+
+
+def test_get_image_path_multiple_files(tmp_path):
+    """
+    Test that the get_image_path function raises an error if there
+    are multiple files in the output directory.
+    """
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    output_subdir = output_dir / "ubuntu-2004-kube-v1.23.10"
+    output_subdir.mkdir()
+
+    (output_subdir / "ubuntu-2004-kube-v1.23.10").touch()
+    (output_subdir / "extra-file").touch()
+
+    with pytest.raises(RuntimeError) as error:
+        get_image_path(tmp_path)
+
+    assert "Expected exactly one file in the output directory." in str(error.value)
+
+
+def test_get_image_path_small_file(tmp_path):
+    """
+    Test that the get_image_path function raises an error if the
+    output file is less than 1GB.
+    """
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    output_subdir = output_dir / "ubuntu-2004-kube-v1.23.10"
+    output_subdir.mkdir()
+
+    output_file = output_subdir / "ubuntu-2004-kube-v1.23.10"
+    with open(output_file, "wb") as f:
+        # 1GB - 1 byte file to fail the size check
+        f.truncate(1024 * 1024 * 1024 - 1)
+
+    with pytest.raises(RuntimeError) as error:
+        get_image_path(tmp_path)
+
+    assert "Output file is less than 1GB. This is probably not an image." in str(
+        error.value
+    )
+
+
+def test_build_image(tmp_path):
     """
     Test that the build_image function calls the correct functions in
     the correct order.
     """
-    repo_root, ubuntu_version = NonCallableMock(), NonCallableMock()
+    args = NonCallableMock()
+    args.target_dir = tmp_path.as_posix()
 
     with patch(
         "builder.packer.get_packer_dir_from_repo_root"
@@ -129,11 +190,16 @@ def test_build_image():
         "builder.packer.clear_output_directory"
     ) as mock_clear_output_directory, patch(
         "builder.packer.run_packer_build"
-    ) as mock_run_packer_build:
+    ) as mock_run_packer_build, patch(
+        "builder.packer.get_image_path"
+    ) as mock_get_image_path:
+        returned = build_image(args)
 
-        build_image(repo_root, ubuntu_version)
-
-    mock_get_packer_dir_from_repo_root.assert_called_once_with(repo_root)
+    mock_get_packer_dir_from_repo_root.assert_called_once_with(tmp_path)
     packer_dir = mock_get_packer_dir_from_repo_root.return_value
+
     mock_clear_output_directory.assert_called_once_with(packer_dir)
-    mock_run_packer_build.assert_called_once_with(packer_dir, ubuntu_version)
+    mock_run_packer_build.assert_called_once_with(packer_dir, args.os_version)
+    mock_get_image_path.assert_called_once_with(packer_dir)
+
+    assert returned == mock_get_image_path.return_value

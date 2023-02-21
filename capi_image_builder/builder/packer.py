@@ -3,6 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from builder.args import Args
+
 # Relative dir of STFC vars from capi dir
 PACKER_VARS_FILE = "packer/config/stfc.json"
 
@@ -43,14 +45,39 @@ def run_packer_build(packer_dir: Path, ubuntu_version: str):
             raise RuntimeError("Packer build failed")
 
 
-def build_image(repo_root: Path, ubuntu_version: str):
-    """Builds an update image"""
-    packer_dir = get_packer_dir_from_repo_root(repo_root)
-    clear_output_directory(packer_dir)
-    run_packer_build(packer_dir, ubuntu_version)
+def get_image_path(packer_dir: Path) -> Path:
+    output_dir = packer_dir / "output"
+    output_files = [file for file in output_dir.rglob("*") if file.is_file()]
+
+    # Do some basic checks
+    if len(output_files) != 1:
+        raise RuntimeError("Expected exactly one file in the output directory.")
+
+    output_file = output_files[0]
+    gigabyte = 1024 * 1024 * 1024  # bytes
+    if os.path.getsize(output_file) < gigabyte:
+        raise RuntimeError(
+            "Output file is less than 1GB. This is probably not an image."
+        )
+
+    return output_file
 
 
 def clear_output_directory(packer_dir: Path):
+    """
+    Clears the output directory of any existing files.
+    """
     output_dir = packer_dir / "output"
     if output_dir.exists():
         shutil.rmtree(output_dir)
+
+
+def build_image(args: Args) -> Path:
+    """
+    Builds an updated image and returns the path to the
+    resulting image file path
+    """
+    packer_dir = get_packer_dir_from_repo_root(Path(args.target_dir))
+    clear_output_directory(packer_dir)
+    run_packer_build(packer_dir, args.os_version)
+    return get_image_path(packer_dir)
