@@ -110,16 +110,16 @@ def test_git_fetch_upstream_mock():
     ops.repo.remotes["upstream_fetch"].fetch.assert_called_once_with()
 
 
-def test_git_rebase_mock():
+def test_git_merge_mock():
     """
-    Tests that the rebase upstream method is called correctly.
+    Tests that the merge upstream method is called correctly.
     """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     # Patch rebase to not actually rebase
     ops.repo = mock.MagicMock()
 
-    ops.git_rebase_upstream("upstream_rebase", "master")
-    ops.repo.git.rebase.assert_called_once_with("upstream_rebase/master")
+    ops.git_merge_upstream("upstream_rebase", "master")
+    ops.repo.git.merge.assert_called_once_with("upstream_rebase/master")
 
 
 def test_git_rebase_real(_prepared_repo):
@@ -146,7 +146,7 @@ def test_git_rebase_real(_prepared_repo):
     _prepared_repo.set_git_email("test@example.com")
 
     _prepared_repo.git_fetch_upstream()
-    _prepared_repo.git_rebase_upstream()
+    _prepared_repo.git_merge_upstream()
 
     assert _prepared_repo.repo.git.branch(
         "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"

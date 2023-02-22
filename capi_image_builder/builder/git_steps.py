@@ -41,7 +41,7 @@ def update_repo(ops: GitOps, push: bool):
     """
     ops.git_add_upstream(UPSTREAM_URL)
     ops.git_fetch_upstream()
-    ops.git_rebase_upstream()
+    ops.git_merge_upstream()
     if push:
         ops.git_push()
 

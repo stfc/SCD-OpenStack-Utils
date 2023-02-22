@@ -32,6 +32,12 @@ def _parse_args() -> Args:
         help="Make the new image public. Default: False",
     )
     parser.add_argument(
+        "--openstack-cloud",
+        default="openstack",
+        help="The OpenStack cloud to upload the image to from clouds.yaml."
+        " Default: openstack",
+    )
+    parser.add_argument(
         "--os_version",
         default="2004",
         help="The Ubuntu version to build. Default: 2004",

@@ -40,7 +40,7 @@ class ImageDetails:
     os_version: str
 
 
-def upload_output_image(image_details: ImageDetails) -> Image:
+def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Image:
     """
     Uploads a given image to Openstack and returns the resulting image object
     provided by the Openstack SDK
@@ -70,4 +70,4 @@ def push_new_image(image_path: Path, args: Args) -> Image:
         is_public=args.make_image_public,
         os_version=args.os_version,
     )
-    return upload_output_image(image_details)
+    return upload_output_image(image_details, args.openstack_cloud)

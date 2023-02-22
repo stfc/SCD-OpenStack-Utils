@@ -75,7 +75,7 @@ def test_update_repo():
     update_repo(ops, push=False)
     ops.git_add_upstream.assert_called_once_with(UPSTREAM_URL)
     ops.git_fetch_upstream.assert_called_once_with()
-    ops.git_rebase_upstream.assert_called_once_with()
+    ops.git_merge_upstream.assert_called_once_with()
 
     # These should be pre-set on the system
     ops.set_git_username.assert_not_called()
