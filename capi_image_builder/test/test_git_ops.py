@@ -3,7 +3,6 @@ from unittest import mock
 from unittest.mock import patch, NonCallableMock
 
 import pytest
-from git import GitCommandError
 
 from builder.git_ops import GitOps
 
