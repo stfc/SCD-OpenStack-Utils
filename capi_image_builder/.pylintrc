@@ -410,7 +410,6 @@ confidence=HIGH,
 # --disable=W".
 disable=line-too-long,
         missing-module-docstring,
-        missing-function-docstring,
         fixme
 
 # Enable the message, report, category or checker with the given id(s). You can

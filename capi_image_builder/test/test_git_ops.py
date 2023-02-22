@@ -12,14 +12,22 @@ UPSTREAM_URL = "https://github.com/kubernetes-sigs/image-builder.git"
 
 
 def test_git_clone_validates_protocol_ssh():
+    """
+    Test that the git clone method validates the protocol is
+    only SSH, so that we can later push to the repo.
+    """
     with pytest.raises(ValueError):
         GitOps(ssh_key_path=Path("/tmp/id_rsa")).git_clone(
-            "https://example.com", "/tmp/target"
+            "https://example.com", Path("/tmp/target")
         )
 
 
 @patch("builder.git_ops.Repo.clone_from")
 def test_git_clone_ssh(clone):
+    """
+    Test that the git clone method is called with the correct
+    arguments.
+    """
     keypair_mock = mock.NonCallableMock()
     expected_url = mock.NonCallableMock()
     expected_dir = mock.NonCallableMock()
@@ -35,6 +43,9 @@ def test_git_clone_ssh(clone):
 
 
 def test_git_set_username():
+    """
+    Test that the git username is set correctly.
+    """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     ops.repo = mock.Mock()
 
@@ -47,6 +58,9 @@ def test_git_set_username():
 
 
 def test_git_set_email():
+    """
+    Test that the git email is set correctly.
+    """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     ops.repo = mock.Mock()
 
@@ -60,6 +74,9 @@ def test_git_set_email():
 
 @pytest.fixture(scope="session")
 def _prepared_repo(tmp_path_factory) -> GitOps:
+    """
+    Fixture to return a pre-cloned repo for testing.
+    """
     path = tmp_path_factory.mktemp("git_env")
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
 
@@ -71,6 +88,9 @@ def _prepared_repo(tmp_path_factory) -> GitOps:
 
 
 def test_git_upstream_add():
+    """
+    Tests that the correct upstream repo is added.
+    """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     ops.repo = mock.MagicMock()
 
@@ -79,6 +99,9 @@ def test_git_upstream_add():
 
 
 def test_git_fetch_upstream_mock():
+    """
+    Tests that the fetch upstream method is called correctly.
+    """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     # Patch fetch to not actually fetch
     ops.repo = mock.MagicMock()
@@ -88,6 +111,9 @@ def test_git_fetch_upstream_mock():
 
 
 def test_git_rebase_mock():
+    """
+    Tests that the rebase upstream method is called correctly.
+    """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
     # Patch rebase to not actually rebase
     ops.repo = mock.MagicMock()
@@ -97,15 +123,20 @@ def test_git_rebase_mock():
 
 
 def test_git_rebase_real(_prepared_repo):
+    """
+    Tests that the rebase upstream method is called correctly
+    using a real repo and the commit tree updates as expected.
+    """
     _prepared_repo.git_add_upstream(UPSTREAM_URL)
     assert "upstream" in _prepared_repo.repo.remotes
 
-    # Manually checkout to a known starting commit to rebase from
+    # Manually checkout to a known starting commit to rebase
+    # from our image builder fork.
     _prepared_repo.repo.git.checkout("8e2d88942e66afc89aeb21e5e27e562f184fc08d")
 
     # dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a
     # is the next merge commit upstream, so this should be
-    # present after the rebase
+    # present after the rebase but not before.
     with pytest.raises(GitCommandError):
         _prepared_repo.repo.git.branch(
             "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"

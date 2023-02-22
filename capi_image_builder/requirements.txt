@@ -1,3 +1,5 @@
 gitpython
+semver
 pytest
 pylint
+openstacksdk
