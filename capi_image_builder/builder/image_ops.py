@@ -5,7 +5,7 @@ import openstack.connection
 import semver
 from openstack.image.v2.image import Image
 
-from builder.args import Args
+from args import Args
 
 
 def get_image_version(output_file: Path) -> semver.VersionInfo:

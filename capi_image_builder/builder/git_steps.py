@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import mkdtemp
 
-from builder.args import Args
+from args import Args
 from builder.git_ops import GitOps
 
 K8S_FORK_URL = "git@github.com:stfc/k8s-image-builder.git"

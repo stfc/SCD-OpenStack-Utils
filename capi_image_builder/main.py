@@ -2,7 +2,7 @@
 # TODO cleanup the temporary directory
 import argparse
 
-from builder.args import Args
+from args import Args
 from builder.git_steps import prepare_image_repo
 from builder.image_ops import push_new_image
 from builder.packer import build_image
