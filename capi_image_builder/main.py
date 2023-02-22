@@ -27,7 +27,7 @@ def _parse_args() -> Args:
         help="Push the new image to Github. Default: False",
     )
     parser.add_argument(
-        "--make_image_public",
+        "--make-image-public",
         action="store_true",
         help="Make the new image public. Default: False",
     )

@@ -51,3 +51,8 @@ class GitOps:
         """
         print(f"Rebasing {remote_name}/{branch} onto current branch")
         self.repo.git.rebase(f"{remote_name}/{branch}")
+
+    def git_push(self, remote_name: str = "origin", branch: str = "master"):
+        """Push the current branch to the remote."""
+        print(f"Pushing current branch to {remote_name}/{branch}")
+        self.repo.git.push(remote_name, branch)

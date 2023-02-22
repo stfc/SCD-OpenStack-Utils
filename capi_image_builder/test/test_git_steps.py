@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch, Mock, create_autospec, NonCallableMock
+from unittest.mock import patch, Mock, create_autospec, NonCallableMock, call
 
 from args import Args
 from builder.git_ops import GitOps
@@ -72,7 +72,7 @@ def test_update_repo():
     Test that the repo is updated with the upstream fork.
     """
     ops = create_autospec(GitOps)
-    update_repo(ops)
+    update_repo(ops, push=False)
     ops.git_add_upstream.assert_called_once_with(UPSTREAM_URL)
     ops.git_fetch_upstream.assert_called_once_with()
     ops.git_rebase_upstream.assert_called_once_with()
@@ -92,4 +92,24 @@ def test_prepare_image_repo():
             prepare_image_repo(arg_mock)
 
     clone_mock.assert_called_once_with(arg_mock)
-    update_mock.assert_called_once_with(clone_mock.return_value)
+    update_mock.assert_called_once_with(
+        clone_mock.return_value, arg_mock.push_to_github
+    )
+
+
+def test_git_push_disabled():
+    """
+    Test that the repo is not pushed to the remote if the push flag is not set.
+    """
+    ops = create_autospec(GitOps)
+    update_repo(ops, push=False)
+    ops.git_push.assert_not_called()
+
+
+def test_git_push_enabled():
+    """
+    Test that the repo is pushed to the remote if the push flag is set.
+    """
+    ops = create_autospec(GitOps)
+    update_repo(ops, push=True)
+    ops.git_push.assert_called_once_with()

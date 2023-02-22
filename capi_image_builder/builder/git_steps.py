@@ -35,13 +35,15 @@ def clone_repo(args: Args) -> GitOps:
     return ops
 
 
-def update_repo(ops: GitOps):
+def update_repo(ops: GitOps, push: bool):
     """
     Clones and rebases the repo to sync upstream updates.
     """
     ops.git_add_upstream(UPSTREAM_URL)
     ops.git_fetch_upstream()
     ops.git_rebase_upstream()
+    if push:
+        ops.git_push()
 
 
 def prepare_image_repo(args: Args):
@@ -50,4 +52,4 @@ def prepare_image_repo(args: Args):
     rebasing it to sync with upstream changes.
     """
     ops = clone_repo(args)
-    update_repo(ops)
+    update_repo(ops, args.push_to_github)

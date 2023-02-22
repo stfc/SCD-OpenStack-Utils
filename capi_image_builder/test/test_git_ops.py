@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, NonCallableMock
 
 import pytest
 from git import GitCommandError
@@ -151,3 +151,17 @@ def test_git_rebase_real(_prepared_repo):
     assert _prepared_repo.repo.git.branch(
         "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
     )
+
+
+def test_git_push_mock():
+    """
+    Tests that the push upstream method is called correctly.
+    """
+    ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
+    # Patch push to not actually push
+    ops.repo = mock.MagicMock()
+
+    remote, branch = NonCallableMock(), NonCallableMock()
+
+    ops.git_push(remote, branch)
+    ops.repo.git.push.assert_called_once_with(remote, branch)
