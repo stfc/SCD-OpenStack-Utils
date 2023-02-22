@@ -80,9 +80,10 @@ def test_upload_image(mock_openstack, tmp_path):
         expected = "public" if visibility else "private"
 
         mock_openstack.reset_mock()
-        upload_output_image(details)
+        mock_cloud = NonCallableMock()
+        upload_output_image(details, mock_cloud)
 
-        mock_openstack.connect.assert_called_once_with("openstack")
+        mock_openstack.connect.assert_called_once_with(mock_cloud)
         conn = mock_openstack.connect.return_value
         conn.image.create_image.assert_called_once_with(
             name="capi-ubuntu-2004-kube-v1.2.3",
@@ -113,6 +114,7 @@ def test_push_new_image():
             os_version=args.os_version,
             image_path=image_path,
             is_public=args.make_image_public,
-        )
+        ),
+        args.openstack_cloud,
     )
     assert image == mock_upload_image.return_value

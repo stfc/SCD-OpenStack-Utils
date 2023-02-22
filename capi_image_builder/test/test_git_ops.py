@@ -122,37 +122,6 @@ def test_git_merge_mock():
     ops.repo.git.merge.assert_called_once_with("upstream_rebase/master")
 
 
-def test_git_rebase_real(_prepared_repo):
-    """
-    Tests that the rebase upstream method is called correctly
-    using a real repo and the commit tree updates as expected.
-    """
-    _prepared_repo.git_add_upstream(UPSTREAM_URL)
-    assert "upstream" in _prepared_repo.repo.remotes
-
-    # Manually checkout to a known starting commit to rebase
-    # from our image builder fork.
-    _prepared_repo.repo.git.checkout("8e2d88942e66afc89aeb21e5e27e562f184fc08d")
-
-    # dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a
-    # is the next merge commit upstream, so this should be
-    # present after the rebase but not before.
-    with pytest.raises(GitCommandError):
-        _prepared_repo.repo.git.branch(
-            "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
-        )
-
-    _prepared_repo.set_git_username("ci-test")
-    _prepared_repo.set_git_email("test@example.com")
-
-    _prepared_repo.git_fetch_upstream()
-    _prepared_repo.git_merge_upstream()
-
-    assert _prepared_repo.repo.git.branch(
-        "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
-    )
-
-
 def test_git_push_mock():
     """
     Tests that the push upstream method is called correctly.

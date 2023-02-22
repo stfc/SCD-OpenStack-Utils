@@ -49,7 +49,7 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
     print(f"Uploading image {image_details.image_path} to Openstack")
     print(f"Image visibility: {visibility}")
 
-    conn = openstack.connect("openstack")
+    conn = openstack.connect(clouds_account)
     return conn.image.create_image(
         name=f"capi-ubuntu-{image_details.os_version}-kube-v{image_details.kube_version}",
         filename=image_details.image_path.as_posix(),
