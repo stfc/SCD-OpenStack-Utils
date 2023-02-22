@@ -130,7 +130,8 @@ def test_git_rebase_real(_prepared_repo):
     _prepared_repo.git_add_upstream(UPSTREAM_URL)
     assert "upstream" in _prepared_repo.repo.remotes
 
-    # Manually checkout to a known starting commit to rebase from
+    # Manually checkout to a known starting commit to rebase
+    # from our image builder fork.
     _prepared_repo.repo.git.checkout("8e2d88942e66afc89aeb21e5e27e562f184fc08d")
 
     # dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a
