@@ -2,7 +2,7 @@
 # TODO cleanup the temporary directory
 import argparse
 
-from builder.args import Args
+from args import Args
 from builder.git_steps import prepare_image_repo
 from builder.image_ops import push_new_image
 from builder.packer import build_image
@@ -27,9 +27,15 @@ def _parse_args() -> Args:
         help="Push the new image to Github. Default: False",
     )
     parser.add_argument(
-        "--make_image_public",
+        "--make-image-public",
         action="store_true",
         help="Make the new image public. Default: False",
+    )
+    parser.add_argument(
+        "--openstack-cloud",
+        default="openstack",
+        help="The OpenStack cloud to upload the image to from clouds.yaml."
+        " Default: openstack",
     )
     parser.add_argument(
         "--os_version",
@@ -44,7 +50,7 @@ def _parse_args() -> Args:
 def main(args: Args):
     """
     The main entry point for the program.
-    Clones, rebases and builds a new image then
+    Clones, merges and builds a new image then
     uploads it to OpenStack and (optionally) pushes the changes to Github.
     """
     prepare_image_repo(args)

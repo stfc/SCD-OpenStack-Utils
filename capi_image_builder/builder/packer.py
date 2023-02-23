@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from builder.args import Args
+from args import Args
 
 # Relative dir of STFC vars from capi dir
 PACKER_VARS_FILE = "packer/config/stfc.json"

@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import mkdtemp
 
-from builder.args import Args
+from args import Args
 from builder.git_ops import GitOps
 
 K8S_FORK_URL = "git@github.com:stfc/k8s-image-builder.git"
@@ -35,19 +35,21 @@ def clone_repo(args: Args) -> GitOps:
     return ops
 
 
-def update_repo(ops: GitOps):
+def update_repo(ops: GitOps, push: bool):
     """
-    Clones and rebases the repo to sync upstream updates.
+    Clones and merges the repo to sync upstream updates.
     """
     ops.git_add_upstream(UPSTREAM_URL)
     ops.git_fetch_upstream()
-    ops.git_rebase_upstream()
+    ops.git_merge_upstream()
+    if push:
+        ops.git_push()
 
 
 def prepare_image_repo(args: Args):
     """
     Prepares the image repo for building, this includes cloning the repo and
-    rebasing it to sync with upstream changes.
+    merging it to sync with upstream changes.
     """
     ops = clone_repo(args)
-    update_repo(ops)
+    update_repo(ops, args.push_to_github)

@@ -1,9 +1,8 @@
 from pathlib import Path
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, NonCallableMock
 
 import pytest
-from git import GitCommandError
 
 from builder.git_ops import GitOps
 
@@ -110,44 +109,27 @@ def test_git_fetch_upstream_mock():
     ops.repo.remotes["upstream_fetch"].fetch.assert_called_once_with()
 
 
-def test_git_rebase_mock():
+def test_git_merge_mock():
     """
-    Tests that the rebase upstream method is called correctly.
+    Tests that the merge upstream method is called correctly.
     """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
-    # Patch rebase to not actually rebase
+    # Patch merge to not actually merge
     ops.repo = mock.MagicMock()
 
-    ops.git_rebase_upstream("upstream_rebase", "master")
-    ops.repo.git.rebase.assert_called_once_with("upstream_rebase/master")
+    ops.git_merge_upstream("upstream_merge", "master")
+    ops.repo.git.merge.assert_called_once_with("upstream_merge/master")
 
 
-def test_git_rebase_real(_prepared_repo):
+def test_git_push_mock():
     """
-    Tests that the rebase upstream method is called correctly
-    using a real repo and the commit tree updates as expected.
+    Tests that the push upstream method is called correctly.
     """
-    _prepared_repo.git_add_upstream(UPSTREAM_URL)
-    assert "upstream" in _prepared_repo.repo.remotes
+    ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
+    # Patch push to not actually push
+    ops.repo = mock.MagicMock()
 
-    # Manually checkout to a known starting commit to rebase
-    # from our image builder fork.
-    _prepared_repo.repo.git.checkout("8e2d88942e66afc89aeb21e5e27e562f184fc08d")
+    remote, branch = NonCallableMock(), NonCallableMock()
 
-    # dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a
-    # is the next merge commit upstream, so this should be
-    # present after the rebase but not before.
-    with pytest.raises(GitCommandError):
-        _prepared_repo.repo.git.branch(
-            "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
-        )
-
-    _prepared_repo.set_git_username("ci-test")
-    _prepared_repo.set_git_email("test@example.com")
-
-    _prepared_repo.git_fetch_upstream()
-    _prepared_repo.git_rebase_upstream()
-
-    assert _prepared_repo.repo.git.branch(
-        "--contains", "dfbd4fc1dbb2ee1808b17a8fb4d0a5b03417fb5a"
-    )
+    ops.git_push(remote, branch)
+    ops.repo.git.push.assert_called_once_with(remote, branch)

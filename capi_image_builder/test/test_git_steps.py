@@ -1,7 +1,7 @@
 from pathlib import Path
-from unittest.mock import patch, Mock, call, create_autospec, NonCallableMock
+from unittest.mock import patch, Mock, create_autospec, NonCallableMock, call
 
-from builder.args import Args
+from args import Args
 from builder.git_ops import GitOps
 from builder.git_steps import (
     populate_temp_dir,
@@ -17,7 +17,9 @@ def test_new_temp_directory_generated():
     """
     Test that a new temporary directory is generated if one is not provided.
     """
-    args = Args(target_dir=None, ssh_key_path="test", push_to_github=False)
+    args = Args(
+        target_dir=None, ssh_key_path="test", push_to_github=False, openstack_cloud=""
+    )
     args = populate_temp_dir(args)
 
     assert args.target_dir is not None
@@ -32,7 +34,10 @@ def test_existing_path_not_overwritten(tmp_path):
     """
     expected_dir = tmp_path / "existing_path"
     args = Args(
-        target_dir=expected_dir.as_posix(), ssh_key_path="test", push_to_github=False
+        target_dir=expected_dir.as_posix(),
+        ssh_key_path="test",
+        push_to_github=False,
+        openstack_cloud="",
     )
 
     assert not expected_dir.exists()
@@ -72,10 +77,10 @@ def test_update_repo():
     Test that the repo is updated with the upstream fork.
     """
     ops = create_autospec(GitOps)
-    update_repo(ops)
+    update_repo(ops, push=False)
     ops.git_add_upstream.assert_called_once_with(UPSTREAM_URL)
     ops.git_fetch_upstream.assert_called_once_with()
-    ops.git_rebase_upstream.assert_called_once_with()
+    ops.git_merge_upstream.assert_called_once_with()
 
     # These should be pre-set on the system
     ops.set_git_username.assert_not_called()
@@ -84,7 +89,7 @@ def test_update_repo():
 
 def test_prepare_image_repo():
     """
-    Test that the repo is cloned and rebased as expected
+    Test that the repo is cloned and merged as expected
     """
     arg_mock = NonCallableMock()
     with patch("builder.git_steps.clone_repo") as clone_mock:
@@ -92,4 +97,24 @@ def test_prepare_image_repo():
             prepare_image_repo(arg_mock)
 
     clone_mock.assert_called_once_with(arg_mock)
-    update_mock.assert_called_once_with(clone_mock.return_value)
+    update_mock.assert_called_once_with(
+        clone_mock.return_value, arg_mock.push_to_github
+    )
+
+
+def test_git_push_disabled():
+    """
+    Test that the repo is not pushed to the remote if the push flag is not set.
+    """
+    ops = create_autospec(GitOps)
+    update_repo(ops, push=False)
+    ops.git_push.assert_not_called()
+
+
+def test_git_push_enabled():
+    """
+    Test that the repo is pushed to the remote if the push flag is set.
+    """
+    ops = create_autospec(GitOps)
+    update_repo(ops, push=True)
+    ops.git_push.assert_called_once_with()

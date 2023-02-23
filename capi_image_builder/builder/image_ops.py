@@ -5,7 +5,7 @@ import openstack.connection
 import semver
 from openstack.image.v2.image import Image
 
-from builder.args import Args
+from args import Args
 
 
 def get_image_version(output_file: Path) -> semver.VersionInfo:
@@ -40,7 +40,7 @@ class ImageDetails:
     os_version: str
 
 
-def upload_output_image(image_details: ImageDetails) -> Image:
+def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Image:
     """
     Uploads a given image to Openstack and returns the resulting image object
     provided by the Openstack SDK
@@ -49,7 +49,7 @@ def upload_output_image(image_details: ImageDetails) -> Image:
     print(f"Uploading image {image_details.image_path} to Openstack")
     print(f"Image visibility: {visibility}")
 
-    conn = openstack.connect("openstack")
+    conn = openstack.connect(clouds_account)
     return conn.image.create_image(
         name=f"capi-ubuntu-{image_details.os_version}-kube-v{image_details.kube_version}",
         filename=image_details.image_path.as_posix(),
@@ -70,4 +70,4 @@ def push_new_image(image_path: Path, args: Args) -> Image:
         is_public=args.make_image_public,
         os_version=args.os_version,
     )
-    return upload_output_image(image_details)
+    return upload_output_image(image_details, args.openstack_cloud)
