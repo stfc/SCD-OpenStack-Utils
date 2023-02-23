@@ -89,7 +89,7 @@ def test_update_repo():
 
 def test_prepare_image_repo():
     """
-    Test that the repo is cloned and rebased as expected
+    Test that the repo is cloned and merged as expected
     """
     arg_mock = NonCallableMock()
     with patch("builder.git_steps.clone_repo") as clone_mock:

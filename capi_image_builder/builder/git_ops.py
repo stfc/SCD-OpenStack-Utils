@@ -45,7 +45,7 @@ class GitOps:
 
     def git_merge_upstream(self, remote_name: str = "upstream", branch: str = "master"):
         """
-        Rebase the current branch onto the upstream branch to bring fork into sync.
+        Merge the current branch onto the upstream branch to bring fork into sync.
         """
         print(f"Merging {remote_name}/{branch} into current branch")
         self.repo.git.merge(f"{remote_name}/{branch}")

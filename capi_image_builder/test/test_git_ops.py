@@ -114,11 +114,11 @@ def test_git_merge_mock():
     Tests that the merge upstream method is called correctly.
     """
     ops = GitOps(ssh_key_path=Path("/tmp/id_rsa"))
-    # Patch rebase to not actually rebase
+    # Patch merge to not actually merge
     ops.repo = mock.MagicMock()
 
-    ops.git_merge_upstream("upstream_rebase", "master")
-    ops.repo.git.merge.assert_called_once_with("upstream_rebase/master")
+    ops.git_merge_upstream("upstream_merge", "master")
+    ops.repo.git.merge.assert_called_once_with("upstream_merge/master")
 
 
 def test_git_push_mock():

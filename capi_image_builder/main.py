@@ -50,7 +50,7 @@ def _parse_args() -> Args:
 def main(args: Args):
     """
     The main entry point for the program.
-    Clones, rebases and builds a new image then
+    Clones, merges and builds a new image then
     uploads it to OpenStack and (optionally) pushes the changes to Github.
     """
     prepare_image_repo(args)
