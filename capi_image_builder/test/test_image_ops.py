@@ -1,4 +1,4 @@
-from unittest.mock import patch, NonCallableMock
+from unittest.mock import patch, NonCallableMock, Mock, call
 
 import pytest
 import semver
@@ -7,7 +7,9 @@ from builder.image_ops import (
     get_image_version,
     upload_output_image,
     ImageDetails,
-    push_new_image,
+    get_existing_image_names,
+    archive_images,
+    get_image_details,
 )
 
 
@@ -107,27 +109,98 @@ def test_upload_image(mock_openstack, tmp_path):
         )
 
 
-def test_push_new_image():
+def test_get_image_details():
     """
-    Test that the push_new_image function builds and
-    pushes the correct image
+    Test that the get_image_details function returns
+    the correct ImageDetails object
     """
     image_path = NonCallableMock()
     args = NonCallableMock()
 
-    with patch("builder.image_ops.get_image_version") as mock_get_image_version, patch(
-        "builder.image_ops.upload_output_image"
-    ) as mock_upload_image:
-        image = push_new_image(image_path, args)
+    with patch("builder.image_ops.get_image_version") as mock_get_image_version:
+        details = get_image_details(image_path, args)
 
     mock_get_image_version.assert_called_once_with(image_path)
-    mock_upload_image.assert_called_once_with(
-        ImageDetails(
-            kube_version=mock_get_image_version.return_value,
-            os_version=args.os_version,
-            image_path=image_path,
-            is_public=args.make_image_public,
-        ),
-        args.openstack_cloud,
+    assert details == ImageDetails(
+        kube_version=mock_get_image_version.return_value,
+        os_version=args.os_version,
+        image_path=image_path,
+        is_public=args.make_image_public,
     )
-    assert image == mock_upload_image.return_value
+
+
+def test_get_existing_image_names():
+    """
+    Test that the check_existing_image function returns
+    if an image exists with the target name
+    """
+    expected_return = [NonCallableMock(), NonCallableMock()]
+    image_details = Mock()
+    expected_cloud_account = "test_cloud_account"
+    with patch("builder.image_ops.openstack") as mock_openstack:
+        images_api = mock_openstack.connect.return_value.image.images
+        images_api.return_value = expected_return
+        returned = get_existing_image_names(
+            image_details, clouds_account=expected_cloud_account
+        )
+
+    mock_openstack.connect.assert_called_once_with(expected_cloud_account)
+    images_api.assert_called_once_with(name=image_details.get_image_name())
+    assert returned == expected_return
+
+
+def test_archive_images_single_image():
+    """
+    Test that the archive_images function returns
+    if an image exists with the target name
+    """
+    images = [NonCallableMock()]
+    expected_cloud_account = "test_cloud_account"
+
+    with patch("builder.image_ops.openstack") as mock_openstack, patch(
+        "builder.image_ops.datetime"
+    ) as mock_datetime:
+        archive_images(images, clouds_account=expected_cloud_account)
+
+    mock_openstack.connect.assert_called_once_with(expected_cloud_account)
+    update_api = mock_openstack.connect.return_value.image.update_image
+
+    # Check YYYY-MM-DD format was used
+    mock_datetime.utcnow.assert_called_once()
+    mock_datetime.utcnow.return_value.strftime.assert_called_once_with("%Y-%m-%d")
+    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
+
+    update_api.assert_has_calls(
+        [
+            call(images[0], deactivate=True),
+            call(images[0], name=f"warehoused-{images[0].name}-{expected_date}"),
+        ]
+    )
+
+
+def test_archive_images_multiple_images():
+    """
+    Test that the archive_images function returns
+    if an image exists with the target name
+    """
+    images = [NonCallableMock(), NonCallableMock()]
+    expected_cloud_account = "test_cloud_account"
+
+    with patch("builder.image_ops.openstack") as mock_openstack, patch(
+        "builder.image_ops.datetime"
+    ) as mock_datetime:
+        archive_images(images, clouds_account=expected_cloud_account)
+
+    mock_openstack.connect.assert_called_once_with(expected_cloud_account)
+    update_api = mock_openstack.connect.return_value.image.update_image
+
+    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
+
+    expected_calls = [call(i, deactivate=True) for i in images]
+    expected_calls.extend(
+        [
+            call(i, name=f"warehoused-{i.name}-{expected_date}-{num}")
+            for num, i in enumerate(images)
+        ]
+    )
+    update_api.assert_has_calls(expected_calls, any_order=True)
