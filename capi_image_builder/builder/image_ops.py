@@ -92,7 +92,7 @@ def archive_images(old_images: List[Image], clouds_account: str) -> None:
             new_name = f"{new_name}-{i}"
 
         print(f"Archiving image {image.name} to {new_name}")
-        conn.image.update_image(image, deactivate=True)
+        conn.image.deactivate_image(image)
         conn.image.update_image(image, name=new_name)
 
 

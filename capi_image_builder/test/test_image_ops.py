@@ -178,18 +178,18 @@ def test_archive_images_single_image():
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
-    update_api = mock_openstack.connect.return_value.image.update_image
 
     # Check YYYY-MM-DD format was used
     mock_datetime.utcnow.assert_called_once()
     mock_datetime.utcnow.return_value.strftime.assert_called_once_with("%Y-%m-%d")
     expected_date = mock_datetime.utcnow.return_value.strftime.return_value
 
-    update_api.assert_has_calls(
-        [
-            call(images[0], deactivate=True),
-            call(images[0], name=f"warehoused-{images[0].name}-{expected_date}"),
-        ]
+    deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
+    deactivate_api.assert_called_once_with(images[0])
+
+    update_api = mock_openstack.connect.return_value.image.update_image
+    update_api.assert_called_once_with(
+        images[0], name=f"warehoused-{images[0].name}-{expected_date}"
     )
 
 
@@ -207,15 +207,15 @@ def test_archive_images_multiple_images():
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
-    update_api = mock_openstack.connect.return_value.image.update_image
+    deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
+    deactivate_api.assert_has_calls([call(image) for image in images], any_order=True)
 
     expected_date = mock_datetime.utcnow.return_value.strftime.return_value
-
-    expected_calls = [call(i, deactivate=True) for i in images]
-    expected_calls.extend(
+    update_api = mock_openstack.connect.return_value.image.update_image
+    update_api.assert_has_calls(
         [
-            call(i, name=f"warehoused-{i.name}-{expected_date}-{num}")
-            for num, i in enumerate(images)
-        ]
+            call(image, name=f"warehoused-{image.name}-{expected_date}-{i}")
+            for i, image in enumerate(images)
+        ],
+        any_order=True,
     )
-    update_api.assert_has_calls(expected_calls, any_order=True)
