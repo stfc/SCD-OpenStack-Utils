@@ -39,6 +39,12 @@ class ImageDetails:
     is_public: bool
     os_version: str
 
+    def get_image_name(self) -> str:
+        """
+        Returns the name of the image based on the image details
+        """
+        return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}"
+
 
 def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Image:
     """
@@ -51,7 +57,7 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
 
     conn = openstack.connect(clouds_account)
     return conn.image.create_image(
-        name=f"capi-ubuntu-{image_details.os_version}-kube-v{image_details.kube_version}",
+        name=image_details.get_image_name(),
         filename=image_details.image_path.as_posix(),
         disk_format="qcow2",
         container_format="bare",

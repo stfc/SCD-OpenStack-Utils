@@ -65,6 +65,19 @@ def test_get_image_version_missing_trailing_version(tmp_path):
     assert "1.2 is not valid SemVer string" in str(error.value)
 
 
+def test_get_image_name():
+    """
+    Tests that the get_image_name function returns the correct name
+    """
+    details = ImageDetails(
+        kube_version=semver.VersionInfo(major=1, minor=2, patch=3),
+        os_version="2004",
+        image_path=NonCallableMock(),
+        is_public=True,
+    )
+    assert details.get_image_name() == "capi-ubuntu-2004-kube-v1.2.3"
+
+
 @patch("builder.image_ops.openstack")
 def test_upload_image(mock_openstack, tmp_path):
     """
