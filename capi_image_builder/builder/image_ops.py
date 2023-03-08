@@ -74,7 +74,7 @@ def get_existing_image_names(
     Checks if an image with the given name exists in Openstack
     """
     conn = openstack.connect(clouds_account)
-    return list(conn.image.images(name=image_details.get_image_name()))
+    return list(filter(lambda x: x.name.startswith("capi"), conn.image.images()))
 
 
 def archive_images(old_images: List[Image], clouds_account: str) -> None:

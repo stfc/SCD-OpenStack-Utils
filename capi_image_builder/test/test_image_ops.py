@@ -129,24 +129,39 @@ def test_get_image_details():
     )
 
 
+def _image_generator():
+    """
+    Helper function to generate a list of images
+    """
+    names = [
+        "capi-ubuntu-2004-kube-v1.2.3",
+        "capi-ubuntu-2004-kube-v1.2.4",
+        "ubuntu-bionic",
+    ]
+    image_mocks = [NonCallableMock() for _ in names]
+    for image, name in zip(image_mocks, names):
+        image.name = name
+        yield image
+
+
 def test_get_existing_image_names():
     """
     Test that the check_existing_image function returns
     if an image exists with the target name
     """
-    expected_return = [NonCallableMock(), NonCallableMock()]
     image_details = Mock()
     expected_cloud_account = "test_cloud_account"
     with patch("builder.image_ops.openstack") as mock_openstack:
         images_api = mock_openstack.connect.return_value.image.images
-        images_api.return_value = expected_return
+        images_api.side_effect = _image_generator
         returned = get_existing_image_names(
             image_details, clouds_account=expected_cloud_account
         )
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
-    images_api.assert_called_once_with(name=image_details.get_image_name())
-    assert returned == expected_return
+    assert len(returned) == 2
+    assert "capi-ubuntu-2004-kube-v1.2.3" in returned[0].name
+    assert "capi-ubuntu-2004-kube-v1.2.4" in returned[1].name
 
 
 def test_archive_images_single_image():
