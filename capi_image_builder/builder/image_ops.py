@@ -67,9 +67,7 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
     )
 
 
-def get_existing_image_names(
-    image_details: ImageDetails, clouds_account: str
-) -> List[Image]:
+def get_existing_image_names(clouds_account: str) -> List[Image]:
     """
     Checks if an image with the given name exists in Openstack
     """

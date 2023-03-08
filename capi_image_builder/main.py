@@ -59,11 +59,11 @@ def rotate_openstack_images(args: Args, image_path: Path) -> Image:
     Rotates the OpenStack images, removing the oldest one
     and making the newest one public.
     """
-    image_details = get_image_details(image_path, args)
-
     # Need to rotate images before we're allowed to upload another
-    existing_images = get_existing_image_names(image_details, args.openstack_cloud)
+    existing_images = get_existing_image_names(args.openstack_cloud)
     archive_images(existing_images, args.openstack_cloud)
+
+    image_details = get_image_details(image_path, args)
     return upload_output_image(image_details, args.openstack_cloud)
 
 

@@ -40,9 +40,7 @@ def test_rotate_openstack_images(
     get_image_details.assert_called_once_with(tmp_path, args)
     image_details = get_image_details.return_value
 
-    get_existing_image_names.assert_called_once_with(
-        image_details, args.openstack_cloud
-    )
+    get_existing_image_names.assert_called_once_with(args.openstack_cloud)
     upload_output_image.assert_called_once_with(image_details, args.openstack_cloud)
     archive_images.assert_called_once_with(
         get_existing_image_names.return_value, args.openstack_cloud
