@@ -92,7 +92,7 @@ def test_upload_image(mock_openstack, tmp_path):
             image_path=tmp_path / "example_image",
             is_public=visibility,
         )
-        expected = "public" if visibility else "private"
+        expected = "public" if visibility else "shared"
 
         mock_openstack.reset_mock()
         mock_cloud = NonCallableMock()

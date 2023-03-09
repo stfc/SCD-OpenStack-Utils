@@ -53,7 +53,7 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
     Uploads a given image to Openstack and returns the resulting image object
     provided by the Openstack SDK
     """
-    visibility = "public" if image_details.is_public else "private"
+    visibility = "public" if image_details.is_public else "shared"
     print(f"Uploading image {image_details.image_path} to Openstack")
     print(f"Image visibility: {visibility}")
 
