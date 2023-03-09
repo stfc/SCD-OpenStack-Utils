@@ -1,11 +1,18 @@
 # TODO Push to GitHub with new tag
 # TODO cleanup the temporary directory
 import argparse
+from pathlib import Path
 
 from args import Args
 from builder.git_steps import prepare_image_repo
-from builder.image_ops import push_new_image
+from builder.image_ops import (
+    get_image_details,
+    get_existing_image_names,
+    upload_output_image,
+    archive_images,
+)
 from builder.packer import build_image
+from openstack.image.v2.image import Image
 
 
 def _parse_args() -> Args:
@@ -47,6 +54,19 @@ def _parse_args() -> Args:
     return Args(**vars(args))
 
 
+def rotate_openstack_images(args: Args, image_path: Path) -> Image:
+    """
+    Rotates the OpenStack images, removing the oldest one
+    and making the newest one public.
+    """
+    # Need to rotate images before we're allowed to upload another
+    existing_images = get_existing_image_names(args.openstack_cloud)
+    archive_images(existing_images, args.openstack_cloud)
+
+    image_details = get_image_details(image_path, args)
+    return upload_output_image(image_details, args.openstack_cloud)
+
+
 def main(args: Args):
     """
     The main entry point for the program.
@@ -56,7 +76,7 @@ def main(args: Args):
     prepare_image_repo(args)
     # Hardcode the Ubuntu version for now
     image_path = build_image(args)
-    openstack_image = push_new_image(image_path, args)
+    openstack_image = rotate_openstack_images(args, image_path)
     print(openstack_image)
 
 
