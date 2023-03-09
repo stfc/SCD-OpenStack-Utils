@@ -1,6 +1,13 @@
 from pathlib import Path
 
-from main import generate_hosts, generate_ips, format_output, read_from_template, substitute_template, write_to_file
+from main import (
+    generate_hosts,
+    generate_ips,
+    format_output,
+    read_from_template,
+    substitute_template,
+    write_to_file,
+)
 
 
 def test_generate_100():
@@ -24,10 +31,11 @@ def test_format_ips():
     assert isinstance(result, str)
 
 
-def test_read_from_file():
-    file_name = Path("../template.txt")
-    result = read_from_template(file_name)
-    assert "    - localhost:9090" in result
+def test_read_from_file(tmp_path):
+    with open(tmp_path / "test.txt", "w") as f:
+        f.write("TEMPLATE")
+    result = read_from_template(tmp_path / "test.txt")
+    assert "TEMPLATE" in result
 
 
 def test_substitute_template():
