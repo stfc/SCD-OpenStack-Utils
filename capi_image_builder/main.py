@@ -74,7 +74,7 @@ def rotate_openstack_images(args: Args, image_path: Path) -> Image:
     archive_images(existing_images, args.openstack_cloud)
 
     image_details = get_image_details(image_path, args)
-    return upload_output_image(image_details, args.openstack_cloud)
+    return upload_output_image(image_details, args)
 
 
 def main(args: Args):

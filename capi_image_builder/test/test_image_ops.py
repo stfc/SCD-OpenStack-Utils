@@ -1,3 +1,4 @@
+from unittest import mock
 from unittest.mock import patch, NonCallableMock, call
 
 import pytest
@@ -95,10 +96,11 @@ def test_upload_image(mock_openstack, tmp_path):
         expected = "public" if visibility else "private"
 
         mock_openstack.reset_mock()
-        mock_cloud = NonCallableMock()
-        upload_output_image(details, mock_cloud)
+        mock_args = NonCallableMock()
+        mock_args.image_name = None
+        upload_output_image(details, mock_args)
 
-        mock_openstack.connect.assert_called_once_with(mock_cloud)
+        mock_openstack.connect.assert_called_once_with(mock_args.openstack_cloud)
         conn = mock_openstack.connect.return_value
         conn.image.create_image.assert_called_once_with(
             name="capi-ubuntu-2004-kube-v1.2.3",
@@ -107,6 +109,26 @@ def test_upload_image(mock_openstack, tmp_path):
             container_format="bare",
             visibility=expected,
         )
+
+
+@patch("builder.image_ops.openstack")
+def test_upload_image_custom_name(mock_openstack, tmp_path):
+    """
+    Test that the upload_image function triggers
+    Openstack with a custom name
+    """
+    mock_args = NonCallableMock()
+    upload_output_image(NonCallableMock(), mock_args)
+
+    conn = mock_openstack.connect.return_value
+    conn.image.create_image.assert_called_once_with(
+        name=mock_args.image_name,
+        # These are tested elsewhere
+        filename=mock.ANY,
+        disk_format=mock.ANY,
+        container_format=mock.ANY,
+        visibility=mock.ANY,
+    )
 
 
 def test_get_image_details():

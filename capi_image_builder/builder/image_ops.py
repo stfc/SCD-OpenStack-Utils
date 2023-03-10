@@ -48,7 +48,7 @@ class ImageDetails:
         return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}"
 
 
-def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Image:
+def upload_output_image(image_details: ImageDetails, args: Args) -> Image:
     """
     Uploads a given image to Openstack and returns the resulting image object
     provided by the Openstack SDK
@@ -57,9 +57,12 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
     print(f"Uploading image {image_details.image_path} to Openstack")
     print(f"Image visibility: {visibility}")
 
-    conn = openstack.connect(clouds_account)
+    image_name = args.image_name if args.image_name else image_details.get_image_name()
+    print(f"Final image name: {image_name}")
+
+    conn = openstack.connect(args.openstack_cloud)
     return conn.image.create_image(
-        name=image_details.get_image_name(),
+        name=image_name,
         filename=image_details.image_path.as_posix(),
         disk_format="qcow2",
         container_format="bare",
