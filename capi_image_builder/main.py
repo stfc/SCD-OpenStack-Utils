@@ -71,7 +71,8 @@ def rotate_openstack_images(args: Args, image_path: Path) -> Image:
     """
     # Need to rotate images before we're allowed to upload another
     existing_images = get_existing_image_names(args.openstack_cloud)
-    archive_images(existing_images, args.openstack_cloud)
+    if not args.image_name:
+        archive_images(existing_images, args.openstack_cloud)
 
     image_details = get_image_details(image_path, args)
     return upload_output_image(image_details, args)
