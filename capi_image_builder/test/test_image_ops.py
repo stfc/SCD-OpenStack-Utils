@@ -112,7 +112,7 @@ def test_upload_image(mock_openstack, tmp_path):
 
 
 @patch("builder.image_ops.openstack")
-def test_upload_image_custom_name(mock_openstack, tmp_path):
+def test_upload_image_custom_name(mock_openstack):
     """
     Test that the upload_image function triggers
     Openstack with a custom name
