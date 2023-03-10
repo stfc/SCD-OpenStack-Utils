@@ -45,9 +45,19 @@ def _parse_args() -> Args:
         " Default: openstack",
     )
     parser.add_argument(
-        "--os_version",
+        "--os-version",
         default="2004",
         help="The Ubuntu version to build. Default: 2004",
+    )
+    parser.add_argument(
+        "--git-branch",
+        default="master",
+        help="The branch to build from. Default: master",
+    )
+    parser.add_argument(
+        "--image-name",
+        default=None,
+        help="Overrides name of the image to build. Default: <Based on upstream K8s version>",
     )
 
     args = parser.parse_args()

@@ -10,7 +10,9 @@ from builder.git_steps import (
     update_repo,
     UPSTREAM_URL,
     prepare_image_repo,
+    checkout_branch,
 )
+from git import Repo
 
 
 def test_new_temp_directory_generated():
@@ -72,6 +74,17 @@ def test_clone_repo(path_mock, git_ops):
     )
 
 
+def test_checkout_branch():
+    """
+    Test that the branch is checked out.
+    """
+    branch = "test"
+    ops = create_autospec(GitOps)
+    ops.repo = create_autospec(Repo)
+    checkout_branch(ops, branch)
+    ops.repo.git.checkout.assert_called_once_with(branch)
+
+
 def test_update_repo():
     """
     Test that the repo is updated with the upstream fork.
@@ -87,16 +100,18 @@ def test_update_repo():
     ops.set_git_email.assert_not_called()
 
 
-def test_prepare_image_repo():
+@patch("builder.git_steps.clone_repo")
+@patch("builder.git_steps.checkout_branch")
+@patch("builder.git_steps.update_repo")
+def test_prepare_image_repo(update_mock, checkout_mock, clone_mock):
     """
     Test that the repo is cloned and merged as expected
     """
     arg_mock = NonCallableMock()
-    with patch("builder.git_steps.clone_repo") as clone_mock:
-        with patch("builder.git_steps.update_repo") as update_mock:
-            prepare_image_repo(arg_mock)
+    prepare_image_repo(arg_mock)
 
     clone_mock.assert_called_once_with(arg_mock)
+    checkout_mock.assert_called_once_with(clone_mock.return_value, arg_mock.git_branch)
     update_mock.assert_called_once_with(
         clone_mock.return_value, arg_mock.push_to_github
     )

@@ -35,6 +35,14 @@ def clone_repo(args: Args) -> GitOps:
     return ops
 
 
+def checkout_branch(ops: GitOps, branch: str):
+    """
+    Checks out the branch to build the image from.
+    """
+    print(f"Checking out branch {branch}")
+    ops.repo.git.checkout(branch)
+
+
 def update_repo(ops: GitOps, push: bool):
     """
     Clones and merges the repo to sync upstream updates.
@@ -52,4 +60,5 @@ def prepare_image_repo(args: Args):
     merging it to sync with upstream changes.
     """
     ops = clone_repo(args)
+    checkout_branch(ops, args.git_branch)
     update_repo(ops, args.push_to_github)
