@@ -191,25 +191,13 @@ def test_archive_images_single_image():
     images = [NonCallableMock()]
     expected_cloud_account = "test_cloud_account"
 
-    with patch("builder.image_ops.openstack") as mock_openstack, patch(
-        "builder.image_ops.datetime"
-    ) as mock_datetime:
+    with patch("builder.image_ops.openstack") as mock_openstack:
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
 
-    # Check YYYY-MM-DD format was used
-    mock_datetime.utcnow.assert_called_once()
-    mock_datetime.utcnow.return_value.strftime.assert_called_once_with("%Y-%m-%d")
-    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
-
     deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
     deactivate_api.assert_called_once_with(images[0])
-
-    update_api = mock_openstack.connect.return_value.image.update_image
-    update_api.assert_called_once_with(
-        images[0], name=f"warehoused-{images[0].name}-{expected_date}"
-    )
 
 
 def test_archive_images_multiple_images():
@@ -220,21 +208,9 @@ def test_archive_images_multiple_images():
     images = [NonCallableMock(), NonCallableMock()]
     expected_cloud_account = "test_cloud_account"
 
-    with patch("builder.image_ops.openstack") as mock_openstack, patch(
-        "builder.image_ops.datetime"
-    ) as mock_datetime:
+    with patch("builder.image_ops.openstack") as mock_openstack:
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
     deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
     deactivate_api.assert_has_calls([call(image) for image in images], any_order=True)
-
-    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
-    update_api = mock_openstack.connect.return_value.image.update_image
-    update_api.assert_has_calls(
-        [
-            call(image, name=f"warehoused-{image.name}-{expected_date}-{i}")
-            for i, image in enumerate(images)
-        ],
-        any_order=True,
-    )

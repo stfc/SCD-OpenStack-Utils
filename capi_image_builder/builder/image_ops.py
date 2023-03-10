@@ -84,17 +84,9 @@ def archive_images(old_images: List[Image], clouds_account: str) -> None:
     """
     conn = openstack.connect(clouds_account)
 
-    date_format = "%Y-%m-%d"
-    suffix_required = len(old_images) > 1
-
-    for i, image in enumerate(old_images):
-        new_name = f"warehoused-{image.name}-{datetime.utcnow().strftime(date_format)}"
-        if suffix_required:
-            new_name = f"{new_name}-{i}"
-
-        print(f"Archiving image {image.name} to {new_name}")
+    for image in old_images:
+        print(f"Archiving image {image.name}")
         conn.image.deactivate_image(image)
-        conn.image.update_image(image, name=new_name)
 
 
 def get_image_details(image_path: Path, args: Args) -> ImageDetails:
