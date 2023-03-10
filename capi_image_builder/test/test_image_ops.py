@@ -1,5 +1,5 @@
 from unittest import mock
-from unittest.mock import patch, NonCallableMock, call
+from unittest.mock import patch, NonCallableMock, call, Mock
 
 import pytest
 import semver
@@ -78,7 +78,10 @@ def test_get_image_name():
         image_path=NonCallableMock(),
         is_public=True,
     )
-    assert details.get_image_name() == "capi-ubuntu-2004-kube-v1.2.3"
+
+    with patch("builder.image_ops.datetime") as mock_datetime:
+        mock_datetime.now.return_value.strftime.return_value = "2021-01-01"
+        assert details.get_image_name() == "capi-ubuntu-2004-kube-v1.2.3-2021-01-01"
 
 
 @patch("builder.image_ops.openstack")
@@ -98,12 +101,14 @@ def test_upload_image(mock_openstack, tmp_path):
         mock_openstack.reset_mock()
         mock_args = NonCallableMock()
         mock_args.image_name = None
+        details.get_image_name = Mock()
+
         upload_output_image(details, mock_args)
 
         mock_openstack.connect.assert_called_once_with(mock_args.openstack_cloud)
         conn = mock_openstack.connect.return_value
         conn.image.create_image.assert_called_once_with(
-            name="capi-ubuntu-2004-kube-v1.2.3",
+            name=details.get_image_name.return_value,
             filename=details.image_path.as_posix(),
             disk_format="qcow2",
             container_format="bare",

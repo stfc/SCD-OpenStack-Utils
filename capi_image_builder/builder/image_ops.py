@@ -45,7 +45,8 @@ class ImageDetails:
         """
         Returns the name of the image based on the image details
         """
-        return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}"
+        date_suffix = datetime.now().strftime("%YYYY-%mM-%dD")
+        return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}-{date_suffix}"
 
 
 def upload_output_image(image_details: ImageDetails, args: Args) -> Image:
