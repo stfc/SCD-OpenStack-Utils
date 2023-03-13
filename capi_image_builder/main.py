@@ -45,9 +45,19 @@ def _parse_args() -> Args:
         " Default: openstack",
     )
     parser.add_argument(
-        "--os_version",
+        "--os-version",
         default="2004",
         help="The Ubuntu version to build. Default: 2004",
+    )
+    parser.add_argument(
+        "--git-branch",
+        default="master",
+        help="The branch to build from. Default: master",
+    )
+    parser.add_argument(
+        "--image-name",
+        default=None,
+        help="Overrides name of the image to build. Default: <Based on upstream K8s version>",
     )
 
     args = parser.parse_args()
@@ -61,10 +71,11 @@ def rotate_openstack_images(args: Args, image_path: Path) -> Image:
     """
     # Need to rotate images before we're allowed to upload another
     existing_images = get_existing_image_names(args.openstack_cloud)
-    archive_images(existing_images, args.openstack_cloud)
+    if not args.image_name:
+        archive_images(existing_images, args.openstack_cloud)
 
     image_details = get_image_details(image_path, args)
-    return upload_output_image(image_details, args.openstack_cloud)
+    return upload_output_image(image_details, args)
 
 
 def main(args: Args):

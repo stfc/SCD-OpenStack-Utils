@@ -1,4 +1,5 @@
-from unittest.mock import patch, NonCallableMock, call
+from unittest import mock
+from unittest.mock import patch, NonCallableMock, call, Mock
 
 import pytest
 import semver
@@ -77,7 +78,10 @@ def test_get_image_name():
         image_path=NonCallableMock(),
         is_public=True,
     )
-    assert details.get_image_name() == "capi-ubuntu-2004-kube-v1.2.3"
+
+    with patch("builder.image_ops.datetime") as mock_datetime:
+        mock_datetime.now.return_value.strftime.return_value = "2021-01-01"
+        assert details.get_image_name() == "capi-ubuntu-2004-kube-v1.2.3-2021-01-01"
 
 
 @patch("builder.image_ops.openstack")
@@ -95,18 +99,41 @@ def test_upload_image(mock_openstack, tmp_path):
         expected = "public" if visibility else "shared"
 
         mock_openstack.reset_mock()
-        mock_cloud = NonCallableMock()
-        upload_output_image(details, mock_cloud)
+        mock_args = NonCallableMock()
+        mock_args.image_name = None
+        details.get_image_name = Mock()
 
-        mock_openstack.connect.assert_called_once_with(mock_cloud)
+        upload_output_image(details, mock_args)
+
+        mock_openstack.connect.assert_called_once_with(mock_args.openstack_cloud)
         conn = mock_openstack.connect.return_value
         conn.image.create_image.assert_called_once_with(
-            name="capi-ubuntu-2004-kube-v1.2.3",
+            name=details.get_image_name.return_value,
             filename=details.image_path.as_posix(),
             disk_format="qcow2",
             container_format="bare",
             visibility=expected,
         )
+
+
+@patch("builder.image_ops.openstack")
+def test_upload_image_custom_name(mock_openstack):
+    """
+    Test that the upload_image function triggers
+    Openstack with a custom name
+    """
+    mock_args = NonCallableMock()
+    upload_output_image(NonCallableMock(), mock_args)
+
+    conn = mock_openstack.connect.return_value
+    conn.image.create_image.assert_called_once_with(
+        name=mock_args.image_name,
+        # These are tested elsewhere
+        filename=mock.ANY,
+        disk_format=mock.ANY,
+        container_format=mock.ANY,
+        visibility=mock.ANY,
+    )
 
 
 def test_get_image_details():
@@ -169,25 +196,13 @@ def test_archive_images_single_image():
     images = [NonCallableMock()]
     expected_cloud_account = "test_cloud_account"
 
-    with patch("builder.image_ops.openstack") as mock_openstack, patch(
-        "builder.image_ops.datetime"
-    ) as mock_datetime:
+    with patch("builder.image_ops.openstack") as mock_openstack:
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
 
-    # Check YYYY-MM-DD format was used
-    mock_datetime.utcnow.assert_called_once()
-    mock_datetime.utcnow.return_value.strftime.assert_called_once_with("%Y-%m-%d")
-    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
-
     deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
     deactivate_api.assert_called_once_with(images[0])
-
-    update_api = mock_openstack.connect.return_value.image.update_image
-    update_api.assert_called_once_with(
-        images[0], name=f"warehoused-{images[0].name}-{expected_date}"
-    )
 
 
 def test_archive_images_multiple_images():
@@ -198,21 +213,9 @@ def test_archive_images_multiple_images():
     images = [NonCallableMock(), NonCallableMock()]
     expected_cloud_account = "test_cloud_account"
 
-    with patch("builder.image_ops.openstack") as mock_openstack, patch(
-        "builder.image_ops.datetime"
-    ) as mock_datetime:
+    with patch("builder.image_ops.openstack") as mock_openstack:
         archive_images(images, clouds_account=expected_cloud_account)
 
     mock_openstack.connect.assert_called_once_with(expected_cloud_account)
     deactivate_api = mock_openstack.connect.return_value.image.deactivate_image
     deactivate_api.assert_has_calls([call(image) for image in images], any_order=True)
-
-    expected_date = mock_datetime.utcnow.return_value.strftime.return_value
-    update_api = mock_openstack.connect.return_value.image.update_image
-    update_api.assert_has_calls(
-        [
-            call(image, name=f"warehoused-{image.name}-{expected_date}-{i}")
-            for i, image in enumerate(images)
-        ],
-        any_order=True,
-    )

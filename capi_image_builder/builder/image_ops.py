@@ -45,10 +45,11 @@ class ImageDetails:
         """
         Returns the name of the image based on the image details
         """
-        return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}"
+        date_suffix = datetime.now().strftime("%YYYY-%mM-%dD")
+        return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}-{date_suffix}"
 
 
-def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Image:
+def upload_output_image(image_details: ImageDetails, args: Args) -> Image:
     """
     Uploads a given image to Openstack and returns the resulting image object
     provided by the Openstack SDK
@@ -57,9 +58,12 @@ def upload_output_image(image_details: ImageDetails, clouds_account: str) -> Ima
     print(f"Uploading image {image_details.image_path} to Openstack")
     print(f"Image visibility: {visibility}")
 
-    conn = openstack.connect(clouds_account)
+    image_name = args.image_name if args.image_name else image_details.get_image_name()
+    print(f"Final image name: {image_name}")
+
+    conn = openstack.connect(args.openstack_cloud)
     return conn.image.create_image(
-        name=image_details.get_image_name(),
+        name=image_name,
         filename=image_details.image_path.as_posix(),
         disk_format="qcow2",
         container_format="bare",
@@ -81,17 +85,9 @@ def archive_images(old_images: List[Image], clouds_account: str) -> None:
     """
     conn = openstack.connect(clouds_account)
 
-    date_format = "%Y-%m-%d"
-    suffix_required = len(old_images) > 1
-
-    for i, image in enumerate(old_images):
-        new_name = f"warehoused-{image.name}-{datetime.utcnow().strftime(date_format)}"
-        if suffix_required:
-            new_name = f"{new_name}-{i}"
-
-        print(f"Archiving image {image.name} to {new_name}")
+    for image in old_images:
+        print(f"Archiving image {image.name}")
         conn.image.deactivate_image(image)
-        conn.image.update_image(image, name=new_name)
 
 
 def get_image_details(image_path: Path, args: Args) -> ImageDetails:
