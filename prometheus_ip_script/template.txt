@@ -1,0 +1,31 @@
+---
+global:
+  evaluation_interval: 60s
+  scrape_interval: 360s
+  scrape_timeout: 300s
+scrape_configs:
+- job_name: prometheus
+  openstack_sd_configs:
+  - domain_name: default
+    identity_endpoint: https://openstack.stfc.ac.uk:5000/v3
+    password: PROMETHEUS_PASSWORD
+    port: 9100
+    project_name: admin
+    region: RegionOne
+    role: hypervisor
+    username: prometheus
+  static_configs:
+  - targets:
+    - localhost:9090
+TEMPLATE
+    - 172.16.100.241:9180
+- job_name: libvirt
+  openstack_sd_configs:
+  - domain_name: default
+    identity_endpoint: https://openstack.stfc.ac.uk:5000/v3
+    password: PROMETHEUS_PASSWORD
+    port: 9177
+    project_name: admin
+    region: RegionOne
+    role: hypervisor
+    username: prometheus
