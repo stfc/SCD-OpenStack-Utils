@@ -45,7 +45,7 @@ class ImageDetails:
         """
         Returns the name of the image based on the image details
         """
-        date_suffix = datetime.now().strftime("%YYYY-%mM-%dD")
+        date_suffix = datetime.now().strftime("%Y-%m-%d")
         return f"capi-ubuntu-{self.os_version}-kube-v{self.kube_version}-{date_suffix}"
 
 
