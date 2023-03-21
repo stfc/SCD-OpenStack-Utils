@@ -105,8 +105,8 @@ jobs:
           cache-to: type=gha,mode=max
           push: true
           context: "{{defaultContext}}:OpenStack-Rabbit-Consumer"
-          tags: "harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:${{ steps.release_tag.outputs.version }}"
+          tags: "harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:v${{ steps.release_tag.outputs.version }}"
 
       - name: Inform of tagged name
         if: steps.release_updated.outputs.version == 'true'
-        run: echo "Image published to harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:${{ steps.release_tag.outputs.version }}"
+        run: echo "Image published to harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:v${{ steps.release_tag.outputs.version }}"
