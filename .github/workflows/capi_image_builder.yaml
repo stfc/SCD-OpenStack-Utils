@@ -1,6 +1,13 @@
 name: K8s Cluster API PR
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - ".github/workflows/capi_image_build.yaml"
+      - "capi_image_builder/**"
 
 jobs:
   test_and_lint:
