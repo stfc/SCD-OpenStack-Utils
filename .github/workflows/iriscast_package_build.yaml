@@ -1,6 +1,13 @@
 name: Cloud Energy Collection Tests
 
-on: [push, pull_request]
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "cloud-energy-collection/**"
+      - ".github/workflows/iriscast_package_build.yaml"
 
 jobs:
   test_and_lint:
