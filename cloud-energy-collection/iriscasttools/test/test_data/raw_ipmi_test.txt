@@ -1,0 +1,7 @@
+Current Power                        : 100 Watts
+Minimum Power over sampling duration : 20 watts
+Maximum Power over sampling duration : 400 watts
+Average Power over sampling duration : 150 watts
+Time Stamp                           : 11/22/2022 - 00:00:00
+Statistics reporting time period     : 1000 milliseconds
+Power Measurement                    : Active

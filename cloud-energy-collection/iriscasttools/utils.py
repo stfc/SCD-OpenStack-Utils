@@ -4,17 +4,22 @@ Provides utility functions to collect energy usage information
 import subprocess
 import time
 import os
+from pathlib import Path
 import re
 from typing import Dict
 
 
 def retry(
-    fn, retry_on: (Exception,), retries: int = 3, delay: int = 3, backoff: int = 2
+    function_to_retry,
+    retry_on: (Exception,),
+    retries: int = 3,
+    delay: int = 3,
+    backoff: int = 2,
 ):
     """A retry function"""
     for i in range(retries + 1):
         try:
-            res = fn()
+            res = function_to_retry()
             break
         except retry_on:
             if i == retries:
@@ -38,7 +43,7 @@ def run_cmd(cmd_args: str):
 def check_ipmi_conn():
     """Check if IPMItool exists and can be connected to"""
     return any(
-        os.path.exists(f) for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"]
+        Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"]
     )
 
 
@@ -84,10 +89,22 @@ def get_ipmi_power_stats(*args):
         for line in res.splitlines():
             line_str = line.split(":")
             stat = line_str[0].strip().lower().replace(" ", "_")
+            raw_val = ":".join(line_str[1:]).strip()
 
             if stat in power_stats.keys():
-                stat_val = re.search("[0-9]+", stat).group(0)
+                if stat == "time_stamp":
+                    stat_val = re.search(
+                        r"\d{2}/\d{2}/\d{4}\s-\s\d{2}:\d{2}:\d{2}", raw_val
+                    ).group(0)
+
+                elif stat == "power_measurement":
+                    stat_val = raw_val
+
+                else:
+                    stat_val = re.search("[0-9]+", raw_val).group(0)
+
                 power_stats[stat] = stat_val
+
     return power_stats
 
 
