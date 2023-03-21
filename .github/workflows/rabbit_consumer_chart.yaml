@@ -18,7 +18,7 @@ jobs:
       - name: Lint Helm Chart
         # Note --strict=true != --strict with the former being stricter
         run: |
-          helm lint OpenStack-Rabbit-Consumer-Chart --values OpenStack-Rabbit-Consumer-Chart/values.yaml --values OpenStack-Rabbit-Consumer-Chart/dev-values.yaml --strict=true
+          helm lint charts/rabbit-consumer --values charts/rabbit-consumer/values.yaml --values charts/rabbit-consumer/dev-values.yaml --strict=true
 
   publish:
     runs-on: ubuntu-latest
@@ -42,7 +42,5 @@ jobs:
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.5.0
-        with:
-          charts_dir: OpenStack-Rabbit-Consumer-Chart
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
