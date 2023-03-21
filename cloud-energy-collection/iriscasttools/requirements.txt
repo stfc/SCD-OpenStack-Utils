@@ -1,2 +1,4 @@
 pytest
 psutil
+pylint
+pre-commit
