@@ -314,10 +314,10 @@ def on_message(message):
     decoded = json.loads(body["oslo.message"])
 
     if not is_aq_message(decoded):
-        logging.debug("Ignoring message: %s", decoded)
+        logger.debug("Ignoring message: %s", decoded)
         return
 
-    logging.debug("Got message: %s", raw_body)
+    logger.debug("Got message: %s", raw_body)
     consume(decoded)
     message.ack()
 
