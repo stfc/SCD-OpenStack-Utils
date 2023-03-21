@@ -22,8 +22,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    # DO NOT MERGE
-    # if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     needs:
       - helm-lint
     steps:
