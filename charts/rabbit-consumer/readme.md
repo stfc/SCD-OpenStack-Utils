@@ -56,8 +56,8 @@ First Deployment
 The correct template needs to be selected from above, where `<template.yaml>` is the placeholder:
 
 ```
-cd rabbit-consumer-chart && \
-helm install rabbit-consumers . -f values.yaml -f <template.yaml>
+helm repo add scd-utils https://stfc.github.io/SCD-OpenStack-Utils
+helm upgrade --install rabbit-consumer scd-utils/rabbit-consumer-chart -f values.yaml -f <template.yaml>
 ```
 
 Upgrades
@@ -65,8 +65,12 @@ Upgrades
 
 Upgrades are similarly handled:
 ```
-cd rabbit-consumer-chart && \
-helm upgrade rabbit-consumers . -f values.yaml -f <template.yaml>
+helm upgrade rabbit-consumer scd-utils/rabbit-consumer-chart  -f values.yaml -f <template.yaml>
+```
+
+If required a version can be specified:
+```
+helm upgrade rabbit-consumer scd-utils/rabbit-consumer-chart  -f values.yaml -f <template.yaml> --version <version>
 ```
 
 Startup
@@ -79,19 +83,15 @@ The logs can be found by doing
 
 Where `<container>` is either `kerberos` or `consumer` for the sidecar / main consumers respectively. 
 
-Updating Prod
-=============
+Updating This Chart
+=========================
+If you have made changes to the Openstack-Rabbit-Consumer directory, you will need to update the version of the docker image used in this chart.
+If you have updated the chart itself, you will need to update the version of the chart. But you can skip updating the image if appropriate.
 
-Currently the CI only builds images targeting dev. This is because we should tag our prod images with semver (e.g. v1.0.0).
+(Sister dir)
+- Open a PR to bump the version of the docker image in the Openstack-Rabbit-Consumer directory.
+- Once merged, the new image will be pushed to the repository.
 
-As we are currently using a mixed repository we can't rely on release tags in Github. For simplicity it's the developers responsibility to:
-
-- Appropriately update the semver in `Charts.yaml`
-- Build, tag and upload to Harbor, where tag is the semver:
-
-```
-docker build . -t harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:<tag>
-docker push harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer:<tag>
-```
-- Pull to the new chart version for prod
-- Monitor (and potentially rollback) the new version using Helm
+(This dir)
+- Once a new image is available, the version in the helm chart needs to be updated. This is done by editing the `Chart.yaml` file and updating the `appVersion` field.
+- Update the chart version to reflect the changes. Minor changes (such as the image version) should increment the patch version. Changes to this chart should increment the major/minor/patch according to SemVer guidance.
