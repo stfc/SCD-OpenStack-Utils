@@ -1,9 +1,9 @@
 #!/bin/bash
 
-GIT_SHA=7253289f01d4eb4daadc709267121486d9bdfb1c
-
 set -e
 
+# https://github.com/stfc-sciml/sciml-bench
+GIT_SHA=7253289f01d4eb4daadc709267121486d9bdfb1c
 NUM_GPU=1
 
 print_usage() {

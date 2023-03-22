@@ -1,5 +1,12 @@
 name: GPU Benchmark PR
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - ".github/workflows/gpu_benchmark.yml"
+      - "gpu_benchmark/**"
 
 jobs:
   shellcheck:
