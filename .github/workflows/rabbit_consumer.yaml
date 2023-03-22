@@ -1,6 +1,13 @@
 name: Rabbit Consumer
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - ".github/workflows/rabbit_consumer.yaml"
+      - "OpenStack-Rabbit-Consumer/**"
 
 jobs:
   test_and_lint:
