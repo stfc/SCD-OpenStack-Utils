@@ -15,13 +15,19 @@ Requirements
 ------------
 
 - Rocky Linux 8.x Machine
-- GPU with CUDA support  (Note: We have selected PyTorch for the ability to run OpenCL in the future)
+- GPU with CUDA support  (Note: We have selected Phoronix Test Suite as we can switch to OpenCL in the future)
 - Internet access
-- 64GB+ of RAM. (Where the RAM Disk takes 40GB).
+
+Scripts
+-------
+
+- gpu_benchmark.sh - Script to run the benchmark. This benchmarks card #0 by default using the Phoronix Test Suite and will output a file gpu-benchmark.txt in the current directory.
+- power_perf.sh - Script to capture power data from IPMI whilst running hashcat on preset known easy passwords. It requires a physical host for ipmitool to work. It will output a file power.log in the current directory every minute.
 
 Usage
 -----
-sudo ./gpu_benchmark.sh [-n <number of GPUs>]
+sudo ./gpu_benchmark.sh [-n <number of test iterations>]
+sudo ./power_perf.sh
 
-Results will be stored in ~/results as *.txt files, where the number corresponds to the number of GPUs used.
-Log files from the training runs are stored in ~/results/*.logs files.
+cat gpu-benchmark.txt
+cat power.log

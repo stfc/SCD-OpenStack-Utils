@@ -2,85 +2,125 @@
 
 set -e
 
-# https://github.com/stfc-sciml/sciml-bench
-GIT_SHA=7253289f01d4eb4daadc709267121486d9bdfb1c
-NUM_GPU=1
-
-print_usage() {
-  printf "Usage: [-n]"
-  printf "  -n  Number of GPUs to use (default: 1)\n"
+NUM_ITERATIONS=5
+print_help(){
+  echo "Usage: $0 -n <number of test iterations>"
+  echo "Example: $0 -n 5"
+  echo "Default number of iterations is 5"
 }
 
-while getopts 'n:v' flag; do
-  case "${flag}" in
-    n) NUM_GPU="${OPTARG}" ;;
-    *) print_usage
-       exit 1 ;;
+while getopts "n:" opt; do
+  case $opt in
+    n) NUM_ITERATIONS=$OPTARG ;;
+    \?) print_help; exit 1 ;;
   esac
 done
 
-# # Nvidia drivers - centos8
-echo 'blacklist nouveau
-options nouveau modeset=0' > /usr/lib/modprobe.d/blacklist-nouveau.conf
-sudo dracut --force
-(lsmod | grep -wq nouveau && echo "Rebooting to disable nouveau" && sudo reboot) || true
+DIR="$(cd "$(dirname "$0")" && pwd)"
+nvidia-smi || bash "$DIR/gpu_setup.sh"
 
-sudo dnf install tar bzip2 make automake gcc gcc-c++ pciutils elfutils-libelf-devel libglvnd-devel -y
-sudo dnf install -y "kernel-devel-$(uname -r) kernel-headers-$(uname -r)" -y
-wget -nc https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run
-nvidia-smi || sudo sh cuda_12.1.0_530.30.02_linux.run --silent
-nvidia-smi || (echo "Rebooting machine to load Nvidia Driver" && sudo reboot)
 
-# Mamba initial setup if not present
-eval "$(~/mambaforge/bin/conda shell.bash hook)" || true
-mamba --version || (wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh && chmod +x Mambaforge-Linux-x86_64.sh && bash ./Mambaforge-Linux-x86_64.sh -b )
-eval "$(~/mambaforge/bin/conda shell.bash hook)"
-conda init bash
+sudo dnf install phoronix-test-suite xorg-x11-server-Xvfb -y
 
-# # Env validation
+echo '<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Options>
+    <OpenBenchmarking>
+      <AnonymousUsageReporting>FALSE</AnonymousUsageReporting>
+      <IndexCacheTTL>3</IndexCacheTTL>
+      <AlwaysUploadSystemLogs>FALSE</AlwaysUploadSystemLogs>
+      <AllowResultUploadsToOpenBenchmarking>FALSE</AllowResultUploadsToOpenBenchmarking>
+    </OpenBenchmarking>
+    <General>
+      <DefaultBrowser></DefaultBrowser>
+      <UsePhodeviCache>TRUE</UsePhodeviCache>
+      <DefaultDisplayMode>DEFAULT</DefaultDisplayMode>
+      <PhoromaticServers></PhoromaticServers>
+      <ColoredConsole>AUTO</ColoredConsole>
+    </General>
+    <Modules>
+      <AutoLoadModules>toggle_screensaver, update_checker, perf_tips, ob_auto_compare, load_dynamic_result_viewer</AutoLoadModules>
+    </Modules>
+    <Installation>
+      <RemoveDownloadFiles>FALSE</RemoveDownloadFiles>
+      <SearchMediaForCache>TRUE</SearchMediaForCache>
+      <SymLinkFilesFromCache>FALSE</SymLinkFilesFromCache>
+      <PromptForDownloadMirror>FALSE</PromptForDownloadMirror>
+      <EnvironmentDirectory>~/.phoronix-test-suite/installed-tests/</EnvironmentDirectory>
+      <CacheDirectory>~/.phoronix-test-suite/download-cache/</CacheDirectory>
+    </Installation>
+    <Testing>
+      <SaveSystemLogs>TRUE</SaveSystemLogs>
+      <SaveInstallationLogs>TRUE</SaveInstallationLogs>
+      <SaveTestLogs>TRUE</SaveTestLogs>
+      <RemoveTestInstallOnCompletion>FALSE</RemoveTestInstallOnCompletion>
+      <ResultsDirectory>~/.phoronix-test-suite/test-results/</ResultsDirectory>
+      <AlwaysUploadResultsToOpenBenchmarking>FALSE</AlwaysUploadResultsToOpenBenchmarking>
+      <AutoSortRunQueue>TRUE</AutoSortRunQueue>
+      <ShowPostRunStatistics>TRUE</ShowPostRunStatistics>
+    </Testing>
+    <TestResultValidation>
+      <DynamicRunCount>TRUE</DynamicRunCount>
+      <LimitDynamicToTestLength>20</LimitDynamicToTestLength>
+      <StandardDeviationThreshold>2.5</StandardDeviationThreshold>
+      <ExportResultsTo></ExportResultsTo>
+      <MinimalTestTime>2</MinimalTestTime>
+      <DropNoisyResults>FALSE</DropNoisyResults>
+    </TestResultValidation>
+    <ResultViewer>
+      <WebPort>RANDOM</WebPort>
+      <LimitAccessToLocalHost>TRUE</LimitAccessToLocalHost>
+      <AccessKey></AccessKey>
+      <AllowSavingResultChanges>TRUE</AllowSavingResultChanges>
+      <AllowDeletingResults>TRUE</AllowDeletingResults>
+    </ResultViewer>
+    <BatchMode>
+      <SaveResults>TRUE</SaveResults>
+      <OpenBrowser>FALSE</OpenBrowser>
+      <UploadResults>FALSE</UploadResults>
+      <PromptForTestIdentifier>FALSE</PromptForTestIdentifier>
+      <PromptForTestDescription>FALSE</PromptForTestDescription>
+      <PromptSaveName>TRUE</PromptSaveName>
+      <RunAllTestCombinations>TRUE</RunAllTestCombinations>
+      <Configured>TRUE</Configured>
+    </BatchMode>
+    <Networking>
+      <NoInternetCommunication>FALSE</NoInternetCommunication>
+      <NoNetworkCommunication>FALSE</NoNetworkCommunication>
+      <Timeout>20</Timeout>
+      <ProxyAddress></ProxyAddress>
+      <ProxyPort></ProxyPort>
+      <ProxyUser></ProxyUser>
+      <ProxyPassword></ProxyPassword>
+    </Networking>
+    <Server>
+      <RemoteAccessPort>RANDOM</RemoteAccessPort>
+      <Password></Password>
+      <WebSocketPort>RANDOM</WebSocketPort>
+      <AdvertiseServiceZeroConf>TRUE</AdvertiseServiceZeroConf>
+      <AdvertiseServiceOpenBenchmarkRelay>TRUE</AdvertiseServiceOpenBenchmarkRelay>
+      <PhoromaticStorage>~/.phoronix-test-suite/phoromatic/</PhoromaticStorage>
+    </Server>
+  </Options>
+</PhoronixTestSuite>' > /etc/phoronix-test-suite.xml
+phoronix-test-suite enterprise-setup
 
-mamba create --name bench python=3.9 -y
-conda activate bench
-mamba install -c conda-forge cudatoolkit=11.2.2 cudnn=8.1.0 -y
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
-python3 -m pip install tensorflow
-python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+# Phoronix options
+SELECTED_TESTS="fahbench realsr-ncnn octanebench"
+xvfb-run phoronix-test-suite install "$SELECTED_TESTS"
 
-# Install Benchmark suite
-dnf install git -y
-if [ ! -d "sciml-bench" ] ; then
-    git clone https://github.com/stfc-sciml/sciml-bench 
-fi
 
-cd sciml-bench
-git reset --h $GIT_SHA
-pip install pip --upgrade
-pip install . 
-sciml-bench --version
+export FORCE_TIMES_TO_RUN=$NUM_ITERATIONS
+export PTS_SILENT_MODE=TRUE
 
-# Downgrade torch to compatible version
-pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
-pip install pytorch-lightning==1.9.4
-dnf install time -y
+rm -rf /var/lib/phoronix-test-suite/test-results/
 
-# Download data for benchmarks
-sciml-bench download stemdl_ds1
+export "CUDA_VISIBLE_DEVICES=0"
+echo "CUDA_VISIBLE_DEVICES set to $CUDA_VISIBLE_DEVICES"
+TEST_RESULTS_IDENTIFIER="gpu-benchmark" TEST_RESULTS_NAME=gpu-benchmark \
+  xvfb-run phoronix-test-suite batch-benchmark "$SELECTED_TESTS"
 
-echo "Prepping data ramdisk"
-dnf install rsync -y
-RAMFS=/mnt/ramfs
-mkdir -p $RAMFS
-mount -t tmpfs -o size=40G tmpfs $RAMFS
-rsync -a ~/sciml_bench/ $RAMFS
-
-RESULTS_DIR=~/results/
-mkdir -p $RESULTS_DIR
-sciml-bench install stemdl_classification
-
-echo "SYNC: letting any outstanding disk IO settle"
-sync
-
-echo "Benchmarking with $NUM_GPU GPUs..."
-sleep 3  # Give users a chance to check their GPU count
-
-/usr/bin/time -f "%e" -p -o "$RESULTS_DIR/stemdl-$NUM_GPU.txt" sciml-bench run stemdl_classification --dataset_dir "$RAMFS/datasets/stemdl_ds1/" --mode training -b epochs 32 -b batchsize 32 -b nodes 1 -b gpus "$NUM_GPU" 2>&1 | tee "$RESULTS_DIR/stemdl-$NUM_GPU.log"
+nvidia-smi > gpu-benchmark.txt
+phoronix-test-suite result-file-to-text gpu-benchmark >> gpu-benchmark.txt
+echo "Results written to gpu-benchmark.txt"
