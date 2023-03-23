@@ -33,7 +33,7 @@ def test_get_iriscast_stats(
     """
 
     expected_power_stats = {"current_power": ""}
-    expected_os_load_stats = {"os_load5": ""}
+    expected_os_load_stats = {"os_load_5": ""}
     expected_ram_stats = {"ram_usage_percentage": ""}
 
     expected_all = dict(expected_power_stats)
@@ -47,7 +47,7 @@ def test_get_iriscast_stats(
     _ = get_iriscast_stats(test_csv_flag, test_include_header)
 
     mock_get_ipmi_power_stats.assert_called_once_with("current_power")
-    mock_get_os_load.assert_called_once_with("os_load5")
+    mock_get_os_load.assert_called_once_with("os_load_5")
     mock_get_ram_usage.assert_called_once_with("ram_usage_percentage")
 
     if test_csv_flag:

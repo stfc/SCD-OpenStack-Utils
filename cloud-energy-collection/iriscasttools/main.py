@@ -19,7 +19,7 @@ def get_iriscast_stats(csv=False, include_header=False):
     power_stats = utils.get_ipmi_power_stats("current_power")
 
     all_stats.update(power_stats)
-    all_stats.update(utils.get_os_load("os_load5"))
+    all_stats.update(utils.get_os_load("os_load_5"))
     all_stats.update(utils.get_ram_usage("ram_usage_percentage"))
 
     if csv:
