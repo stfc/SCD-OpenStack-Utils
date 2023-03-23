@@ -16,7 +16,15 @@ def retry(
     delay: int = 3,
     backoff: int = 2,
 ):
-    """A retry function"""
+    """A retry function
+
+    Keyword Arguments:
+        function_to_retry: an unreliable function which may fail
+        retry_on: a set of exceptions that when any occur, will trigger a retry
+        retries: number of retries to perform before returning None
+        delay: number of seconds delay before next retry
+        backoff: a factor to increase delay after every fail
+    """
     for i in range(retries + 1):
         try:
             res = function_to_retry()
@@ -30,7 +38,11 @@ def retry(
 
 
 def run_cmd(cmd_args: str):
-    """Run command with given arguments and return output"""
+    """Run a bash command with given arguments and return output
+
+    Keyword Arguments
+        cmd_args: a string representing bash command to run
+    """
     with subprocess.Popen(
         cmd_args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as out:
@@ -41,14 +53,22 @@ def run_cmd(cmd_args: str):
 
 
 def check_ipmi_conn():
-    """Check if IPMItool exists and can be connected to"""
+    """Check if IPMItool exists and can be connected to
+
+    Checks if device exists at any of these locations /dev/ipmi0, /dev/ipmi/0 or /dev/ipmidev/0
+    which imply that ipmi-dcmi can be used to get power info
+    """
     return any(
         Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"]
     )
 
 
 def ipmi_raw_power_query():
-    """Get raw power query from IPMItool"""
+    """
+    Get raw power query from IPMItool
+
+    Calls ipmi-dcmi command to get all power statistics
+    """
     try:
         return retry(
             lambda: run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics"),
@@ -63,7 +83,12 @@ def ipmi_raw_power_query():
 
 
 def to_csv(stats: Dict, include_header: bool = False):
-    """convert output to csv"""
+    """convert dictionary into csv string
+
+    Keyword arguments
+    stats -- dict, key-value pairs to be returned in csv format
+    include_header, bool, flag to set if dictionary keys should be returned as header
+    """
     res = ",".join([str(s) for s in stats.values()])
     if include_header:
         return f"{','.join(stats.keys())}\n{res}"
@@ -72,12 +97,17 @@ def to_csv(stats: Dict, include_header: bool = False):
 
 def get_ipmi_power_stats(*args):
     """Get ipmi power stats as dictionary.
-    Stats passed as argument can be one or more of:
-        "current_power",
-        "minimum_power_over_sampling_duration"
-        "maximum_power_over_sampling_duration",
-        "average_power_over_sampling_duration",
-        "statistics_reporting_time_period"
+
+    Keyword arguments
+    *args -- a set of fields to parse and collect.
+    can be one or more of:
+        "current_power": instantaneous reading in Watts,
+        "minimum_power_over_sampling_duration: minimum Watt reading from last sample till now
+        "maximum_power_over_sampling_duration": maximum Watt reading from last sample till now
+        "average_power_over_sampling_duration": average Watt reading from last sample till now
+        "statistics_reporting_time_period": sample period in milliseconds
+        "time_stamp": current timestamp for reading taken
+        "power_measurement": whether power measurement is active on host
     """
     if not check_ipmi_conn():
         return None
@@ -109,7 +139,16 @@ def get_ipmi_power_stats(*args):
 
 
 def get_os_load(*args):
-    """get os load average from os library"""
+    """
+    get os load average from os library
+
+    Keyword Arguments
+    args -- a set of fields to parse and collect.
+    can be one or more of:
+        "os_load_1": avg os load last 1 minute,
+        "os_load_5": avg os load last 5 minutes,
+        "os_load_15: avg os loat last 15 minutes"
+    """
     res = {x: "" for x in args}
 
     stats = {"os_load_1": "", "os_load_5": "", "os_loads_15": ""}
@@ -124,7 +163,15 @@ def get_os_load(*args):
 
 
 def get_ram_usage(*args):
-    """Get Ram usage: (Used RAM / Total RAM) * 100"""
+    """Get Ram usage stats
+
+    Keyword Arguments
+    args -- a set of fields to parse and collect.
+    can be one or more of:
+        "max_ram_kb",
+        "used_ram_kb",
+        "ram_usage_percentage": (Used RAM / Total RAM) * 100
+    """
     res = {x: "" for x in args}
 
     stats = {"max_ram_kb": "", "used_ram_kb": "", "ram_usage_percentage": ""}
