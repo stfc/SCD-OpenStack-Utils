@@ -3,7 +3,6 @@ consumer:
 
   image:
     repository: harbor.stfc.ac.uk/stfc-cloud-staging/openstack-rabbit-consumer
-    tag: "latest"
     pullPolicy: Always
 
   aquilon:

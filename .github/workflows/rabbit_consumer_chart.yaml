@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/rabbit_consumer_chart.yaml"
-      - "OpenStack-Rabbit-Consumer-Chart/**"
+      - "charts/rabbit-consumer/**"
 
 jobs:
   helm-lint:
