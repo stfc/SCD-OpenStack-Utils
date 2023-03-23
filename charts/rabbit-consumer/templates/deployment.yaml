@@ -22,7 +22,7 @@ spec:
       containers:
         - name: consumer
 
-          image: "{{ .Values.consumer.image.repository }}:{{ .Values.consumer.image.tag }}"
+          image: "{{ .Values.consumer.image.repository }}:{{ default .Chart.AppVersion .Values.consumer.image.tag }}"
           imagePullPolicy: {{ .Values.consumer.image.pullPolicy }}
 
           envFrom:
