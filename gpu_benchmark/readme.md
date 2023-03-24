@@ -2,14 +2,10 @@ GPU Benchmarking Script
 =======================
 
 This script is used to benchmark the GPU performance of a machine. It is
-based on the SciML Benchmarking suite, which can be found here:
-https://github.com/stfc-sciml/sciml-bench . (Our thanks to the SciML team).
+based on the Phoronix Test Suite and will run a number of benchmarks automatically.
 
 The script is designed to be run on a machine with a GPU, and will
 run with the specified number of GPUs (default 1).
-
-THe underlying benchmarking tool is PyTorch. The script will install
-PyTorch and the SciML Benchmarking suite and required drivers automatically.
 
 Requirements
 ------------
@@ -31,3 +27,26 @@ sudo ./power_perf.sh
 
 cat gpu-benchmark.txt
 cat power.log
+
+Benchmark Description
+---------------------
+
+The benchmarks run are:
+
+- fahbench https://openbenchmarking.org/test/pts/fahbench
+
+- realsr-ncnn https://openbenchmarking.org/test/pts/realsr-ncnn
+
+- octanebench https://openbenchmarking.org/test/pts/octanebench
+
+These represent a variety of workloads, with tests that place substantial load on the higher class compute GPUs.
+
+Scoring
+-------
+
+Separately to this tool, we normalise the scores to ensure they use a similar scoring scale to fahbench and octanebench, as follows:
+
+realsr-ncnn (TAA: N): 1000 / seconds
+realsr-ncnn (TAA: Y): 10000 / seconds
+
+These FAH and Octane benchmark scores are then combined to give a final score for each GPU.
