@@ -5,7 +5,23 @@ Tests for main functions for iriscasttools package
 from unittest.mock import patch
 import pytest
 
-from main import get_iriscast_stats
+from main import get_iriscast_stats, parse_args
+
+
+@pytest.mark.parametrize(
+    "test_args, expected_arg_values",
+    [
+        (["--as-csv"], {"as_csv": True, "include_header": False}),
+        (["-c"], {"as_csv": True, "include_header": False}),
+        # include header ignored when csv is False
+        (["--include-header"], {"as_csv": False, "include_header": False}),
+        (["-i"], {"as_csv": False, "include_header": False}),
+        (["--as-csv", "--include-header"], {"as_csv": True, "include_header": True}),
+    ],
+)
+def test_parse_args(test_args, expected_arg_values):
+    res = parse_args(test_args)
+    assert vars(res) == expected_arg_values
 
 
 @pytest.mark.parametrize(
