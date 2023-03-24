@@ -60,7 +60,11 @@ def test_get_iriscast_stats(
     mock_get_os_load.return_value = expected_os_load_stats
     mock_get_ram_usage.return_value = expected_ram_stats
 
-    _ = get_iriscast_stats(test_csv_flag, test_include_header)
+    # mock to_csv to just return dict passed to it
+    # test that output of function matches expected mocked values
+    mock_to_csv.side_effect = lambda stats, _: stats
+
+    res = get_iriscast_stats(test_csv_flag, test_include_header)
 
     mock_get_ipmi_power_stats.assert_called_once_with("current_power")
     mock_get_os_load.assert_called_once_with("os_load_5")
@@ -70,3 +74,5 @@ def test_get_iriscast_stats(
         mock_to_csv.assert_called_once_with(expected_all, test_include_header)
     else:
         assert not mock_to_csv.called
+
+    assert res == expected_all
