@@ -137,6 +137,14 @@ def test_check_ipmi_conn(valid_path):
         assert check_ipmi_conn()
 
 
+def test_check_ipmi_conn_fail():
+    """
+    Test "check_ipmi_conn" function return False when paths don't exist
+    """
+    with patch.object(pathlib.Path, "exists", lambda _: False):
+        assert not check_ipmi_conn()
+
+
 @patch("utils.run_cmd")
 def test_ipmi_raw_power_query(mock_run_cmd):
     """
@@ -198,8 +206,8 @@ def test_get_ipmi_power_stats(mock_check_ipmi_conn, mock_raw_power_query, test_a
     )
 
     result = get_ipmi_power_stats(*test_args)
-    assert mock_check_ipmi_conn.call_count == 1
-    assert mock_raw_power_query.call_count == 1
+    mock_check_ipmi_conn.assert_called_once()
+    mock_raw_power_query.assert_called_once()
     assert result == expected_results
 
 
