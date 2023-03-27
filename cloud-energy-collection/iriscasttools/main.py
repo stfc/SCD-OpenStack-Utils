@@ -4,6 +4,9 @@ Collects energy usage metrics using IPMI, as well as other metrics such as CPU a
 import sys
 import utils
 import argparse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_iriscast_stats(csv=False, include_header=False):
@@ -39,7 +42,7 @@ def parse_args(inp_args):
     args, unknown = parser.parse_known_args(inp_args)
 
     if unknown:
-        unknown_args = ",".join([f"{k}:{v}" for k, v in vars(unknown).items()])
+        logger.warning("Received invalid command-line arguments %s, ignoring", unknown)
 
     # ignore include header if csv arg not set
     if args.include_header and not args.as_csv:

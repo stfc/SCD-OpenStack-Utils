@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import re
 from typing import Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def retry(
@@ -14,6 +17,7 @@ def retry(
     retries: int = 3,
     delay: int = 3,
     backoff: int = 2,
+    retry_logger: logging.Logger = None,
 ):
     """A retry decorator
 
@@ -34,8 +38,18 @@ def retry(
                     break
                 except retry_on:
                     if i == retries:
+                        if retry_logger:
+                            retry_logger.error(
+                                "function failed and max retries %s exceeded", retries
+                            )
                         return None
                 seconds = delay + (backoff * i)
+                if retry_logger:
+                    retry_logger.warning(
+                        "function failed to run. Failed attempts: %s. Retrying after %s delay",
+                        i + 1,
+                        seconds,
+                    )
                 time.sleep(seconds)
             return res
 
@@ -44,12 +58,7 @@ def retry(
     return decorator
 
 
-@retry(
-    retry_on=(AssertionError,),
-    retries=3,
-    delay=3,
-    backoff=2,
-)
+@retry(retry_on=(AssertionError,), retries=3, delay=3, backoff=2, retry_logger=logger)
 def run_cmd(cmd_args: str):
     """Run a bash command with given arguments and return output
 
@@ -71,9 +80,10 @@ def check_ipmi_conn():
     Checks if device exists at any of these locations /dev/ipmi0, /dev/ipmi/0 or /dev/ipmidev/0
     which imply that ipmi-dcmi can be used to get power info
     """
-    return any(
-        Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"]
-    )
+    res = any(Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"])
+    if not res:
+        logger.error("Failed to find ipmi device on host")
+    return res
 
 
 def ipmi_raw_power_query():
@@ -85,6 +95,9 @@ def ipmi_raw_power_query():
     try:
         return run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics")
     except AssertionError:
+        logger.error(
+            "command '/usr/sbin/ipmi-dcmi --get-system-power-statistics failed"
+        )
         return None
 
 
