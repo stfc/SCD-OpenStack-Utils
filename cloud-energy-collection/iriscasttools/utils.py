@@ -128,11 +128,11 @@ def get_ipmi_power_stats(*args):
         "time_stamp": current timestamp for reading taken
         "power_measurement": whether power measurement is active on host
     """
-    if not check_ipmi_conn():
-        return None
-    res = ipmi_raw_power_query()
-
     power_stats = {x: "" for x in args}
+
+    if not check_ipmi_conn():
+        return power_stats
+    res = ipmi_raw_power_query()
 
     if res:
         for line in res.splitlines():
@@ -174,10 +174,10 @@ def get_os_load(*args):
 
     try:
         stats["os_load_1"], stats["os_load_5"], stats["os_load_15"] = os.getloadavg()
+        res.update({k: v for k, v in stats.items() if k in args})
     except OSError:
         pass
 
-    res.update({k: v for k, v in stats.items() if k in args})
     return res
 
 
@@ -208,8 +208,8 @@ def get_ram_usage(*args):
                 (stats["used_ram_kb"] / stats["max_ram_kb"]) * 100, 3
             )
 
+        res.update({k: v for k, v in stats.items() if k in args})
     except (AssertionError, ValueError):
         pass
 
-    res.update({k: v for k, v in stats.items() if k in args})
     return res
