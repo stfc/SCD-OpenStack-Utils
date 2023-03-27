@@ -3,4 +3,3 @@ psutil
 pylint
 pre-commit
 argparse
-logging
