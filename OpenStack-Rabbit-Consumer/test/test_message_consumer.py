@@ -15,49 +15,35 @@ from rabbit_consumer.message_consumer import (
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 
-# pylint: disable=duplicate-code
-def _get_metadata_known_messages() -> List[str]:
-    return [
-        "AQ_DOMAIN",
-        "AQ_SANDBOX",
-        "AQ_OSVERSION",
-        "AQ_PERSONALITY",
-        "AQ_ARCHETYPE",
-        "AQ_OS",
-        "aq_domain",
-        "aq_sandbox",
-        "aq_osversion",
-        "aq_personality",
-        "aq_archetype",
-        "aq_os",
-    ]
+def test_is_aq_message_with_aq_image_name():
+    variations = ["image-name-aq", "rhel-8-aq", "test-aq", "centosaq"]
+
+    for i in variations:
+        message = {"payload": {"image_name": i}}
+        assert is_aq_message(message)
 
 
-@pytest.mark.parametrize("message", _get_metadata_known_messages())
-def test_aq_messages_payload_metadata(message):
-    rabbit_message = Mock()
-    rabbit_message.get.return_value.get.return_value = {message: ""}
-
-    assert is_aq_message(rabbit_message)
+def test_aq_messages_no_payload():
+    message = {"image_name": {}}
+    assert not is_aq_message(message)
 
 
-@pytest.mark.parametrize("message", _get_metadata_known_messages())
-def test_aq_messages_payload_image_metadata(message):
-    rabbit_message = Mock()
-    rabbit_message.get.return_value.get.return_value = {message: ""}
-
-    assert is_aq_message(rabbit_message)
-    rabbit_message.get.assert_called_with("payload")
-    rabbit_message.get.return_value.get.assert_called_with("metadata")
+def test_aq_messages_no_image_name():
+    message = {"payload": {"image_name": {}}}
+    assert not is_aq_message(message)
 
 
-def test_aq_messages_unknown_message():
-    rabbit_message = Mock()
-    rabbit_message.get.return_value.get.return_value = {"unknown": ""}
+def test_aq_messages_no_payload_no_image_name():
+    message = {}
+    assert not is_aq_message(message)
 
-    assert not is_aq_message(rabbit_message)
-    rabbit_message.get.assert_called_with("payload")
-    rabbit_message.get.return_value.get.assert_called_with("image_meta")
+
+def test_aq_messages_other_image_names():
+    variations = ["image-name", "rhel-8", "test", "centos"]
+
+    for i in variations:
+        message = {"payload": {"image_name": i}}
+        assert not is_aq_message(message)
 
 
 @pytest.mark.parametrize("key_name", ["metadata", "image_meta"])

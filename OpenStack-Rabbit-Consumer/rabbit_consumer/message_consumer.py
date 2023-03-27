@@ -12,63 +12,35 @@ from rabbit_consumer.aq_fields import AqFields
 
 logger = logging.getLogger(__name__)
 
+KNOWN_AQ_EVENTS = [
+    "AQ_DOMAIN",
+    "AQ_SANDBOX",
+    "AQ_OSVERSION",
+    "AQ_PERSONALITY",
+    "AQ_ARCHETYPE",
+    "AQ_OS",
+]
+
 
 def is_aq_message(message):
     """
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-    metadata = message.get("payload").get("metadata")
-    if metadata:
-        if set(metadata.keys()).intersection(
-            [
-                "AQ_DOMAIN",
-                "AQ_SANDBOX",
-                "AQ_OSVERSION",
-                "AQ_PERSONALITY",
-                "AQ_ARCHETYPE",
-                "AQ_OS",
-            ]
-        ):
-            return True
-    if metadata:
-        if set(metadata.keys()).intersection(
-            [
-                "aq_domain",
-                "aq_sandbox",
-                "aq_osversion",
-                "aq_personality",
-                "aq_archetype",
-                "aq_os",
-            ]
-        ):
-            return True
-    metadata = message.get("payload").get("image_meta")
+    payload = message.get("payload", None)
+    if not payload:
+        logger.debug("No payload found in message")
+        return False
 
-    if metadata:
-        if set(metadata.keys()).intersection(
-            [
-                "AQ_DOMAIN",
-                "AQ_SANDBOX",
-                "AQ_OSVERSION",
-                "AQ_PERSONALITY",
-                "AQ_ARCHETYPE",
-                "AQ_OS",
-            ]
-        ):
-            return True
-    if metadata:
-        if set(metadata.keys()).intersection(
-            [
-                "aq_domain",
-                "aq_sandbox",
-                "aq_osversion",
-                "aq_personality",
-                "aq_archetype",
-                "aq_os",
-            ]
-        ):
-            return True
+    image_name = payload.get("image_name", None)
+    if not image_name:
+        logger.debug("No image_name found in payload")
+        return False
+
+    assert isinstance(image_name, str)
+    if image_name.casefold().endswith("aq".casefold()):
+        logger.debug("Found AQ image name: %s", image_name)
+        return True
 
     return False
 
