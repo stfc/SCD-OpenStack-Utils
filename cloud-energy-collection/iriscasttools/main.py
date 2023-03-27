@@ -2,9 +2,9 @@
 Collects energy usage metrics using IPMI, as well as other metrics such as CPU and RAM usage.
 """
 import sys
-import utils
 import argparse
 import logging
+import utils
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,16 @@ def get_iriscast_stats(csv=False, include_header=False):
 
 
 def parse_args(inp_args):
+    """
+    Parse commandline args
+
+    Keyword arguments:
+        inp_args -- dict, set of command line arguments
+    """
     parser = argparse.ArgumentParser(
         prog="iriscasttools",
-        description="colelcts current power usage for node using IPMI, as well as OS load and RAM usage",
+        description="collects current power usage for node using IPMI, "
+        "as well as OS load and RAM usage",
     )
     parser.add_argument("-c", "--as-csv", default=False, action="store_true")
     parser.add_argument("-i", "--include-header", default=False, action="store_true")
@@ -52,5 +59,5 @@ def parse_args(inp_args):
 
 
 if __name__ == "__main__":
-    args = parse_args(sys.argv[1:])
-    print(get_iriscast_stats(args.as_csv, args.include_header))
+    cmd_args = parse_args(sys.argv[1:])
+    print(get_iriscast_stats(cmd_args.as_csv, cmd_args.include_header))
