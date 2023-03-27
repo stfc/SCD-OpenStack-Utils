@@ -10,33 +10,46 @@ from typing import Dict
 
 
 def retry(
-    function_to_retry,
-    retry_on: (Exception,),
+    retry_on: (Exception,) = None,
     retries: int = 3,
     delay: int = 3,
     backoff: int = 2,
 ):
-    """A retry function
+    """A retry decorator
 
     Keyword Arguments:
-        function_to_retry: an unreliable function which may fail
         retry_on: a set of exceptions that when any occur, will trigger a retry
         retries: number of retries to perform before returning None
         delay: number of seconds delay before next retry
         backoff: a factor to increase delay after every fail
+        retry_logger: logger to log failed attempts
     """
-    for i in range(retries + 1):
-        try:
-            res = function_to_retry()
-            break
-        except retry_on:
-            if i == retries:
-                return None
-        seconds = delay + (backoff * i)
-        time.sleep(seconds)
-    return res
+
+    def decorator(func):
+        def inner(*args, **kwargs):
+            res = None
+            for i in range(retries + 1):
+                try:
+                    res = func(*args, **kwargs)
+                    break
+                except retry_on:
+                    if i == retries:
+                        return None
+                seconds = delay + (backoff * i)
+                time.sleep(seconds)
+            return res
+
+        return inner
+
+    return decorator
 
 
+@retry(
+    retry_on=(AssertionError,),
+    retries=3,
+    delay=3,
+    backoff=2,
+)
 def run_cmd(cmd_args: str):
     """Run a bash command with given arguments and return output
 
@@ -70,14 +83,7 @@ def ipmi_raw_power_query():
     Calls ipmi-dcmi command to get all power statistics
     """
     try:
-        return retry(
-            lambda: run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics"),
-            AssertionError,
-            retries=3,
-            delay=3,
-            backoff=2,
-        )
-
+        return run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics")
     except AssertionError:
         return None
 
@@ -178,22 +184,10 @@ def get_ram_usage(*args):
 
     try:
         stats["max_ram_kb"] = int(
-            retry(
-                lambda: run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
-                retry_on=AssertionError,
-                retries=3,
-                delay=3,
-                backoff=2,
-            )
+            run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
         )
         stats["used_ram_kb"] = int(
-            retry(
-                lambda: run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
-                retry_on=AssertionError,
-                retries=3,
-                delay=3,
-                backoff=2,
-            )
+            run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
         )
 
         if stats["max_ram_kb"] and stats["used_ram_kb"]:

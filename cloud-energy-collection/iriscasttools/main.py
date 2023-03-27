@@ -38,6 +38,9 @@ def parse_args(inp_args):
     parser.add_argument("-i", "--include-header", default=False, action="store_true")
     args, unknown = parser.parse_known_args(inp_args)
 
+    if unknown:
+        unknown_args = ",".join([f"{k}:{v}" for k, v in vars(unknown).items()])
+
     # ignore include header if csv arg not set
     if args.include_header and not args.as_csv:
         args.include_header = False

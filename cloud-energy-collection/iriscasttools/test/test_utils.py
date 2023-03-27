@@ -4,7 +4,7 @@ Tests for utility functions for iriscasttools package
 import csv
 import os
 import pathlib
-from unittest.mock import NonCallableMock, Mock, patch
+from unittest.mock import NonCallableMock, patch
 import pytest
 from utils import (
     to_csv,
@@ -98,20 +98,23 @@ def test_run_cmd_success(mock_subprocess):
 @pytest.mark.parametrize("num_fail, expected_calls", [(0, 1), (1, 2), (2, 3)])
 def test_retry(num_fail, expected_calls):
     """
-    Test "retry" function
+    Test "retry" decorator
 
     Keyword arguments:
         num_fail -- int: number of times command to retry is mocked to fail
         expected_calls -- int: number of times retry function is expected to call subprocess library
     """
-    mock = Mock()
-    side_effects = [AssertionError for _ in range(num_fail)]
-    side_effects.append("Success")
 
-    mock.side_effect = side_effects
+    @retry(retry_on=(AssertionError,), retries=3, delay=1, backoff=1)
+    def retry_func():
+        retry_func.counter += 1
+        if retry_func.counter > num_fail:
+            return "success"
+        raise AssertionError
 
-    retry(mock, retry_on=AssertionError, retries=3, delay=3, backoff=2)
-    assert mock.call_count == expected_calls
+    retry_func.counter = 0
+    retry_func()
+    assert retry_func.counter == expected_calls
 
 
 @pytest.mark.parametrize(
@@ -244,8 +247,8 @@ def test_get_os_load(mock_os_get_load_avg, test_args):
     "test_args",
     [(["max_ram_kb", "used_ram_kb", "ram_usage_percentage"]), (["some_invalid_arg"])],
 )
-@patch("utils.retry")
-def test_get_ram_usage(mock_retry, test_args):
+@patch("utils.run_cmd")
+def test_get_ram_usage(mock_run_cmd, test_args):
     """
     Test "get_ram_usage" function
 
@@ -263,11 +266,11 @@ def test_get_ram_usage(mock_retry, test_args):
     expected_results.update(
         {k: v for k, v in mock_values.items() if k in expected_results.keys()}
     )
-    mock_retry.side_effect = [
+    mock_run_cmd.side_effect = [
         str(mock_values["max_ram_kb"]),
         str(mock_values["used_ram_kb"]),
     ]
 
     result = get_ram_usage(*test_args)
-    assert mock_retry.call_count == 2
+    assert mock_run_cmd.call_count == 2
     assert result == expected_results
