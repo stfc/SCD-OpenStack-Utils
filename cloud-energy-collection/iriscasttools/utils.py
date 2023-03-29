@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from typing import Dict
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -142,14 +143,22 @@ def get_ipmi_power_stats(*args):
 
             if stat in power_stats.keys():
                 if stat == "time_stamp":
-                    stat_val = re.search(
-                        r"\d{2}/\d{2}/\d{4}\s-\s\d{2}:\d{2}:\d{2}", raw_val
-                    ).group(0)
+                    try:
+                        datetime.datetime.strptime(raw_val, "%m/%d/%Y - %H:%M:%S")
+                        stat_val = raw_val
+                    except ValueError as read_date_err:
+                        logger.error(
+                            "could not read timestamp given by ipmi %s: %s",
+                            raw_val,
+                            repr(read_date_err),
+                        )
+                        stat_val = ""
 
                 elif stat == "power_measurement":
                     stat_val = raw_val
 
                 else:
+                    # get integer part only. Power in Watts seems to always be whole number
                     stat_val = re.search("[0-9]+", raw_val).group(0)
 
                 power_stats[stat] = stat_val
