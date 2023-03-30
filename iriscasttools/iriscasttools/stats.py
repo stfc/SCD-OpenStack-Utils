@@ -51,7 +51,7 @@ def parse_args(inp_args):
         logger.warning("Received invalid command-line arguments %s, ignoring", unknown)
 
     # ignore include header if csv arg not set
-    if args.include_header and not args.as_csv:
+    if not args.as_csv:
         args.include_header = False
 
     return args

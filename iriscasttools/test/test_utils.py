@@ -33,10 +33,11 @@ def read_test_from_file(test_fp, expected_out_fp):
         test_str = txt_file.read()
 
     with open(expected_out_fp, "r", encoding="UTF-8") as csv_file:
-        csv_out = csv.DictReader(csv_file)
-        for row in csv_out:
-            expected_out = row
-            break
+        reader = csv.reader(csv_file)
+        headers = next(reader)
+        row = next(reader)
+
+    expected_out = dict(zip(headers, row))
 
     return test_str, expected_out
 
