@@ -13,7 +13,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    python_requires=">=3",
+    python_requires=">=3.6",
     install_requires=[],
     keywords=["python"],
 )
