@@ -11,18 +11,10 @@ from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.aq_fields import AqFields
 
 logger = logging.getLogger(__name__)
-
-KNOWN_AQ_EVENTS = [
-    "AQ_DOMAIN",
-    "AQ_SANDBOX",
-    "AQ_OSVERSION",
-    "AQ_PERSONALITY",
-    "AQ_ARCHETYPE",
-    "AQ_OS",
-]
+known_image_names = ["sl", "scientific", "centos", "rocky", "aq"]
 
 
-def is_aq_message(message):
+def is_aq_managed_image(message):
     """
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
@@ -38,10 +30,9 @@ def is_aq_message(message):
         return False
 
     assert isinstance(image_name, str)
-    if image_name.casefold().endswith("aq".casefold()):
+    if any(i.casefold() in image_name.casefold() for i in known_image_names):
         logger.debug("Found AQ image name: %s", image_name)
         return True
-
     return False
 
 
@@ -71,7 +62,7 @@ def consume(message):
 
 
 def _handle_machine_delete(message):
-    if is_aq_message(message):
+    if is_aq_managed_image(message):
         logger.debug("Message: %s", message)
         logger.info("=== Received Aquilon VM delete message ===")
 
@@ -116,49 +107,50 @@ def _handle_machine_delete(message):
 
 
 def _handle_create_machine(message):
-    if is_aq_message(message):
-        logger.info("=== Received Aquilon VM create message ===")
+    if not is_aq_managed_image(message):
+        return
+    logger.info("=== Received Aquilon VM create message ===")
 
-        project_name = message.get("_context_project_name")
-        vm_id = message.get("payload").get("instance_id")
-        vm_name = message.get("payload").get("display_name")
-        username = message.get("_context_user_name")
+    project_name = message.get("_context_project_name")
+    vm_id = message.get("payload").get("instance_id")
+    vm_name = message.get("payload").get("display_name")
+    username = message.get("_context_user_name")
 
-        aq_details = AqFields(
-            archetype=get_metadata_value(message, "AQ_ARCHETYPE"),
-            hostnames=convert_hostnames(message),
-            osname=get_metadata_value(message, "AQ_OS"),
-            osversion=get_metadata_value(message, "AQ_OSVERSION"),
-            personality=get_metadata_value(message, "AQ_PERSONALITY"),
-            project_id=message.get("_context_project_id"),
-        )
+    aq_details = AqFields(
+        archetype=get_metadata_value(message, "AQ_ARCHETYPE"),
+        hostnames=convert_hostnames(message),
+        osname=get_metadata_value(message, "AQ_OS"),
+        osversion=get_metadata_value(message, "AQ_OSVERSION"),
+        personality=get_metadata_value(message, "AQ_PERSONALITY"),
+        project_id=message.get("_context_project_id"),
+    )
 
-        if not aq_details.hostnames:
-            logger.info("Skipping novalocal only host: %s", vm_name)
-            return
+    if not aq_details.hostnames:
+        logger.info("Skipping novalocal only host: %s", vm_name)
+        return
 
-        logger.debug("Project Name: %s (%s)", project_name, aq_details.project_id)
-        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.debug("Username: %s", username)
-        logger.debug("Hostnames: %s", aq_details.hostnames)
+    logger.debug("Project Name: %s (%s)", project_name, aq_details.project_id)
+    logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
+    logger.debug("Username: %s", username)
+    logger.debug("Hostnames: %s", aq_details.hostnames)
 
-        _add_hostname_to_metadata(aq_details, vm_id)
-        firstip, machinename = _aq_create_machine(aq_details.hostnames, message)
-        _aq_add_first_nic(machinename, message)
-        _aq_add_optional_nics(aq_details.hostnames, machinename, message)
-        _aq_update_machine_nic(machinename)
-        _aq_create_host(firstip, machinename, vm_id, aq_details)
+    _add_hostname_to_metadata(aq_details, vm_id)
+    firstip, machinename = _aq_create_machine(aq_details.hostnames, message)
+    _aq_add_first_nic(machinename, message)
+    _aq_add_optional_nics(aq_details.hostnames, machinename, message)
+    _aq_update_machine_nic(machinename)
+    _aq_create_host(firstip, machinename, vm_id, aq_details)
 
-        # as the machine may have been assigned more that one ip address,
-        # apply the aquilon configuration to all of them
-        _aq_make_machines(aq_details, vm_id)
+    # as the machine may have been assigned more that one ip address,
+    # apply the aquilon configuration to all of them
+    _aq_make_machines(aq_details, vm_id)
 
-        logger.debug("Successfully applied Aquilon configuration")
-        openstack_api.update_metadata(
-            aq_details.project_id, vm_id, {"AQ_STATUS": "SUCCESS"}
-        )
+    logger.debug("Successfully applied Aquilon configuration")
+    openstack_api.update_metadata(
+        aq_details.project_id, vm_id, {"AQ_STATUS": "SUCCESS"}
+    )
 
-        logger.info("=== Finished Aquilon creation hook for VM %s ===", vm_name)
+    logger.info("=== Finished Aquilon creation hook for VM %s ===", vm_name)
 
 
 def _aq_make_machines(fields: AqFields, vm_id: str):
@@ -285,7 +277,7 @@ def on_message(message):
     body = json.loads(raw_body.decode("utf-8"))
     decoded = json.loads(body["oslo.message"])
 
-    if not is_aq_message(decoded):
+    if not is_aq_managed_image(decoded):
         logger.debug("Ignoring message: %s", decoded)
         return
 

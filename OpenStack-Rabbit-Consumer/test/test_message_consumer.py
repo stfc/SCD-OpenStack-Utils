@@ -5,7 +5,7 @@ import pytest
 
 from rabbit_consumer.aq_fields import AqFields
 from rabbit_consumer.message_consumer import (
-    is_aq_message,
+    is_aq_managed_image,
     get_metadata_value,
     on_message,
     initiate_consumer,
@@ -15,35 +15,54 @@ from rabbit_consumer.message_consumer import (
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 
-def test_is_aq_message_with_aq_image_name():
-    variations = ["image-name-aq", "rhel-8-aq", "test-aq", "centosaq"]
-
-    for i in variations:
-        message = {"payload": {"image_name": i}}
-        assert is_aq_message(message)
+@pytest.mark.parametrize(
+    "image_name",
+    [
+        "rocky-8-aq",
+        "rocky8-raw",
+        "centos-stream-8-nogui",
+        "centos-7-aq",
+        "scientificlinux-7-aq",
+        "scientificlinux-7-nogui" "warehoused-scientificlinux-7-aq-23-01-2023-14-49-18",
+        "warehoused-centos-7-aq-23-01-2023-14-49-18",
+        "warehoused-rocky-8-aq-26-01-2023-09-21-12",
+    ],
+)
+def test_is_aq_message_with_real_aq_image_names(image_name):
+    message = {"payload": {"image_name": image_name}}
+    assert is_aq_managed_image(message)
 
 
 def test_aq_messages_no_payload():
     message = {"image_name": {}}
-    assert not is_aq_message(message)
+    assert not is_aq_managed_image(message)
 
 
 def test_aq_messages_no_image_name():
     message = {"payload": {"image_name": {}}}
-    assert not is_aq_message(message)
+    assert not is_aq_managed_image(message)
 
 
 def test_aq_messages_no_payload_no_image_name():
     message = {}
-    assert not is_aq_message(message)
+    assert not is_aq_managed_image(message)
 
 
-def test_aq_messages_other_image_names():
-    variations = ["image-name", "rhel-8", "test", "centos"]
-
-    for i in variations:
-        message = {"payload": {"image_name": i}}
-        assert not is_aq_message(message)
+@pytest.mark.parametrize(
+    "image_name",
+    [
+        "image-name",
+        "rhel-8",
+        "test",
+        "ubuntu",
+        "capi" "warehoused-ubuntu-focal-20.04-gui-08-03-2022-13-39-19",
+        "Fedora-Atomic-FINAL",
+        "capi-ubuntu-2004-kube-v1.23.15-2023-03-14",
+    ],
+)
+def test_aq_messages_other_image_names(image_name):
+    message = {"payload": {"image_name": image_name}}
+    assert not is_aq_managed_image(message)
 
 
 @pytest.mark.parametrize("key_name", ["metadata", "image_meta"])
