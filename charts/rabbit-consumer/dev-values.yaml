@@ -1,11 +1,13 @@
 consumer:
+  logLevel: DEBUG
   image:
-    repository: harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer
-    tag: "qa"
-    pullPolicy: Always
+    repository: rabbit-consumer
+    tag: local
+    # This allows us to build the image locally and use it in the chart
+    pullPolicy: Never
 
   aquilon:
-    defaultPrefix: vm-openstack-PreProd-
+    defaultPrefix: vm-openstack-Dev-
 
   rabbitmq:
     host: dev-openstack.stfc.ac.uk
