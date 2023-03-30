@@ -1,12 +1,14 @@
 import logging
 import subprocess
+from typing import Optional
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.aq_fields import AqFields
+from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
+from rabbit_consumer.vm_data import VmData
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 MODEL = "vm-openstack"
@@ -47,7 +49,7 @@ def verify_kerberos_ticket():
     return True
 
 
-def setup_requests(url, method, desc):
+def setup_requests(url, method, desc, params: Optional[dict] = None):
     verify_kerberos_ticket()
 
     logger.debug("%s: %s", method, url)
@@ -57,13 +59,13 @@ def setup_requests(url, method, desc):
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":
-        response = session.post(url, auth=HTTPKerberosAuth())
+        response = session.post(url, auth=HTTPKerberosAuth(), params=params)
     elif method == "put":
-        response = session.put(url, auth=HTTPKerberosAuth())
+        response = session.put(url, auth=HTTPKerberosAuth(), params=params)
     elif method == "delete":
-        response = session.delete(url, auth=HTTPKerberosAuth())
+        response = session.delete(url, auth=HTTPKerberosAuth(), params=params)
     else:
-        response = session.get(url, auth=HTTPKerberosAuth())
+        response = session.get(url, auth=HTTPKerberosAuth(), params=params)
 
     if response.status_code == 400:
         # This might be an expected error, so don't log it
@@ -82,31 +84,25 @@ def setup_requests(url, method, desc):
     return response.text
 
 
-def aq_make(hostname: str, aq_fields: AqFields):
+def aq_make(hostname: str, os_data: OsDescription):
     logger.debug("Attempting to make templates for %s", hostname)
 
     params = {
-        "personality": aq_fields.personality,
-        "osversion": aq_fields.osversion,
-        "archetype": aq_fields.archetype,
-        "osname": aq_fields.osname,
+        "personality": os_data.aq_default_personality,
+        "osversion": os_data.aq_os_version,
+        "osname": os_data.aq_os_name,
+        "archetype": "cloud",
     }
-    # Remove empty values or whitespace values
-    params = {k: v for k, v in params.items() if v and str(v).strip()}
-    if not hostname or not str(hostname).strip():
-        raise ValueError("An empty hostname cannot be used.")
 
-    # join remaining parameters to form url string
-    params = [k + "=" + v for k, v in params.items()]
+    assert all(
+        i for i in params.values()
+    ), "Some fields were not set in the OS description"
 
-    url = (
-        ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname) + "?" + "&".join(params)
-    )
-    if url[-1] == "?":
-        # Trim trailing query param where there are no values
-        url = url[:-1]
+    if not hostname or not hostname.strip():
+        raise ValueError("Hostname cannot be empty")
 
-    setup_requests(url, "post", "Make Template: ")
+    url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
+    setup_requests(url, "post", "Make Template: ", params)
 
 
 def aq_manage(hostname, env_type, env_name):
@@ -211,7 +207,7 @@ def update_machine_interface(machinename, interfacename):
     setup_requests(url, "post", "Update Machine Interface")
 
 
-def set_env(aq_details: AqFields, domain: str, hostname: str, sandbox: str = None):
+def set_env(aq_details: VmData, domain: str, hostname: str, sandbox: str = None):
     if domain:
         aq_manage(hostname, "domain", domain)
     else:

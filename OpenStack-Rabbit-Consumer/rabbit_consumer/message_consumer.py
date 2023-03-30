@@ -9,8 +9,8 @@ from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.aq_fields import AqFields
-from rabbit_consumer.os_descriptions import OsDescription
+from rabbit_consumer.vm_data import VmData
+from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
 
 logger = logging.getLogger(__name__)
 
@@ -71,12 +71,8 @@ def _handle_create_machine(message):
     vm_name = message.get("payload").get("display_name")
     username = message.get("_context_user_name")
 
-    aq_details = AqFields(
-        archetype=get_metadata_value(message, "AQ_ARCHETYPE"),
+    aq_details = VmData(
         hostnames=convert_hostnames(message),
-        osname=get_metadata_value(message, "AQ_OS"),
-        osversion=get_metadata_value(message, "AQ_OSVERSION"),
-        personality=get_metadata_value(message, "AQ_PERSONALITY"),
         project_id=message.get("_context_project_id"),
     )
 
@@ -153,7 +149,7 @@ def _handle_machine_delete(message):
         logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
 
 
-def _aq_make_machines(fields: AqFields, vm_id: str):
+def _aq_make_machines(fields: VmData, vm_id: str):
     for host in fields.hostnames:
         try:
             aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
@@ -173,7 +169,7 @@ def _aq_make_machines(fields: AqFields, vm_id: str):
             raise err
 
 
-def _aq_create_host(firstip, machinename, vm_id: str, fields: AqFields):
+def _aq_create_host(firstip, machinename, vm_id: str, fields: VmData):
     aq_api.create_host(
         fields.hostnames[0],
         machinename,
@@ -242,7 +238,7 @@ def _aq_create_machine(hostnames, message):
     return first_ip, machine_name
 
 
-def _add_hostname_to_metadata(fields: AqFields, vm_id):
+def _add_hostname_to_metadata(fields: VmData, vm_id):
     try:
         # add hostname(s) to metadata for use when capturing delete messages
         # as these messages do not contain ip information

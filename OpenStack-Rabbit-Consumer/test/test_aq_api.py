@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from unittest import mock
 from unittest.mock import patch, call, NonCallableMock
 
@@ -18,7 +19,8 @@ from rabbit_consumer.aq_api import (
     set_env,
     AquilonError,
 )
-from rabbit_consumer.aq_fields import AqFields
+from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
+from rabbit_consumer.vm_data import VmData
 
 
 def test_verify_kerberos_ticket_valid():
@@ -91,7 +93,7 @@ def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests)
 @patch("rabbit_consumer.aq_api.HTTPKerberosAuth")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
 def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
-    url, desc = NonCallableMock(), NonCallableMock()
+    url, desc, params = NonCallableMock(), NonCallableMock(), NonCallableMock()
 
     session = requests.Session.return_value
 
@@ -99,95 +101,68 @@ def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
     response = rest_method.return_value
     response.status_code = 200
 
-    assert setup_requests(url, rest_verb, desc) == response.text
-    rest_method.assert_called_once_with(url, auth=kerb_auth.return_value)
+    assert setup_requests(url, rest_verb, desc, params) == response.text
+    rest_method.assert_called_once_with(url, auth=kerb_auth.return_value, params=params)
 
 
-@patch("rabbit_consumer.aq_api.requests")
-@patch("rabbit_consumer.aq_api.HTTPKerberosAuth")
-@patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
-def test_setup_requests_get(_, kerb_auth, requests):
-    url, desc = NonCallableMock(), NonCallableMock()
-    session = requests.Session.return_value
-    response = session.get.return_value
-    response.status_code = 200
+@dataclass
+class MockOs(OsDescription):
+    """
+    Represents a mock OS description for testing purposes
+    """
 
-    assert setup_requests(url, "get", desc) == response.text
-
-    session.get.assert_called_once_with(url, auth=kerb_auth.return_value)
+    aq_os_name = NonCallableMock()
+    aq_os_version = NonCallableMock()
+    aq_default_personality = NonCallableMock()
+    os_identifiers = []
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make(config, setup):
-    hostname = "host"
     domain = "domain"
-
-    fields = AqFields(
-        personality="pers",
-        osversion="osvers",
-        archetype="arch",
-        osname="name",
-        hostnames=[hostname],
-        project_id="project",
-    )
-
     config.return_value.aq_url = domain
 
-    aq_make(hostname, fields)
-    setup.assert_called_once()
-
-    expected_url = f"{domain}/host/{hostname}/command/make?personality={fields.personality}&osversion={fields.osversion}&archetype={fields.archetype}&osname={fields.osname}"
-    assert setup.call_args == call(expected_url, "post", mock.ANY)
-
-
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_whitespace(config, setup):
     hostname = "host"
-    domain = "https://example.com"
-
-    aq_fields = AqFields(
-        personality=" ",
-        osversion="  ",
-        archetype="",
-        osname="name",
-        hostnames=[hostname],
-        project_id="project",
-    )
-
-    config.return_value.aq_url = domain
-
-    aq_make(hostname, aq_fields)
-    setup.assert_called_once()
-
-    expected_url = f"{domain}/host/{hostname}/command/make?osname={aq_fields.osname}"
-    assert setup.call_args == call(expected_url, "post", mock.ANY)
-
-
-@patch("rabbit_consumer.aq_api.setup_requests")
-@patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_none(config, setup):
-    hostname = "my_host_name"
-    domain = "https://example.com"
-
-    aq_fields = AqFields(
-        personality=" ",
-        osversion=None,
-        archetype="",
-        osname=None,
-        hostnames=[hostname],
-        project_id="project",
-    )
-
-    config.return_value.aq_url = domain
-
-    aq_make(hostname, aq_fields)
+    mocked_os_details = MockOs()
+    aq_make(hostname, mocked_os_details)
     setup.assert_called_once()
 
     expected_url = f"{domain}/host/{hostname}/command/make"
-    assert "?" not in expected_url  # Since there's no query params
-    assert setup.call_args == call(expected_url, "post", mock.ANY)
+    expected_params = {
+        "osname": mocked_os_details.aq_os_name,
+        "osversion": mocked_os_details.aq_os_version,
+        "personality": mocked_os_details.aq_default_personality,
+        "archetype": "cloud",
+    }
+    assert setup.call_args == call(expected_url, "post", mock.ANY, expected_params)
+
+
+@pytest.mark.parametrize(
+    "field_to_blank",
+    [
+        "aq_default_personality",
+        "aq_os_name",
+        "aq_os_version",
+    ],
+)
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_aq_make_missing_fields(config, setup, field_to_blank):
+    hostname = "my_host_name"
+    domain = "https://example.com"
+
+    os = MockOs()
+
+    config.return_value.aq_url = domain
+
+    with pytest.raises(AssertionError):
+        setattr(os, field_to_blank, None)
+        aq_make(hostname, os)
+
+    with pytest.raises(AssertionError):
+        setattr(os, field_to_blank, "")
+        aq_make(hostname, os)
 
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])

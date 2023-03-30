@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from rabbit_consumer.os_descriptions.base_os_descriptions import OsDescription
+from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
 
 
 @dataclass

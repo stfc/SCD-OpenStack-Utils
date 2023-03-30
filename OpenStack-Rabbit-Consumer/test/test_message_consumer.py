@@ -3,7 +3,7 @@ from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
-from rabbit_consumer.aq_fields import AqFields
+from rabbit_consumer.vm_data import VmData
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
     is_aq_managed_image,
@@ -19,7 +19,6 @@ from rabbit_consumer.message_consumer import (
     "image_name",
     [
         "rocky-8-aq",
-        "rocky8-raw",
         "centos-7-aq",
         "scientificlinux-7-aq",
         "scientificlinux-7-nogui",
@@ -305,7 +304,7 @@ def test_consume_create_machine_hostnames_good_path(
         ]
     )
 
-    expected_fields = AqFields(
+    expected_fields = VmData(
         archetype=get_metadata.return_value,
         hostnames=expected_hostnames,
         osname=get_metadata.return_value,
