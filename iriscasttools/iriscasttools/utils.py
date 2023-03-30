@@ -6,19 +6,25 @@ import time
 import os
 from pathlib import Path
 import re
-from typing import Dict
+from typing import Dict, Tuple
 import logging
 import datetime
 
 logger = logging.getLogger(__name__)
 
 
+class UnsetException(Exception):
+    """
+    default exception for retry
+    """
+
+
 def retry(
-    retry_on: (Exception,) = None,
+    retry_on: Tuple[Exception] = (UnsetException),
+    retry_logger: logging.Logger = logger,
     retries: int = 3,
     delay: int = 3,
     backoff: int = 2,
-    retry_logger: logging.Logger = None,
 ):
     """A retry decorator
 
@@ -38,19 +44,16 @@ def retry(
                     res = func(*args, **kwargs)
                     break
                 except retry_on:
-                    if i == retries:
-                        if retry_logger:
-                            retry_logger.error(
-                                "function failed and max retries %s exceeded", retries
-                            )
-                        return None
+                    if i + 1 == retries:
+                        raise RuntimeError(
+                            f"function failed and max retries {retries} exceeded"
+                        )
                 seconds = delay + (backoff * i)
-                if retry_logger:
-                    retry_logger.warning(
-                        "function failed to run. Failed attempts: %s. Retrying after %s delay",
-                        i + 1,
-                        seconds,
-                    )
+                retry_logger.warning(
+                    "function failed to run. Failed attempts: %s. Retrying after %s delay",
+                    i + 1,
+                    seconds,
+                )
                 time.sleep(seconds)
             return res
 
@@ -59,7 +62,7 @@ def retry(
     return decorator
 
 
-@retry(retry_on=(AssertionError,), retries=3, delay=3, backoff=2, retry_logger=logger)
+@retry(retry_on=(RuntimeError,))
 def run_cmd(cmd_args: str):
     """Run a bash command with given arguments and return output
 

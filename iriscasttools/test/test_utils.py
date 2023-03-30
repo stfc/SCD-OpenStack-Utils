@@ -95,8 +95,11 @@ def test_run_cmd_success(mock_subprocess):
     assert cmd_stdout == "mock success"
 
 
-@pytest.mark.parametrize("num_fail, expected_calls", [(0, 1), (1, 2), (2, 3)])
-def test_retry(num_fail, expected_calls):
+@pytest.mark.parametrize(
+    "num_fail, expected_calls, expected_fail",
+    [(0, 1, False), (1, 2, False), (2, 3, False), (3, 3, True), (4, 3, True)],
+)
+def test_retry(num_fail, expected_calls, expected_fail):
     """
     Test "retry" decorator
 
@@ -113,7 +116,14 @@ def test_retry(num_fail, expected_calls):
         raise AssertionError
 
     retry_func.counter = 0
-    retry_func()
+    if expected_fail:
+        with pytest.raises(RuntimeError) as runtime_error:
+            retry_func()
+        assert (
+            runtime_error.value.args[0] == "function failed and max retries 3 exceeded"
+        )
+    else:
+        retry_func()
     assert retry_func.counter == expected_calls
 
 
