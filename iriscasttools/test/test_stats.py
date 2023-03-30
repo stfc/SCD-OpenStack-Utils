@@ -5,7 +5,7 @@ Tests for main functions for iriscasttools package
 from unittest.mock import patch
 import pytest
 
-from iriscasttools.main import get_iriscast_stats, parse_args
+from iriscasttools.stats import get_iriscast_stats, parse_args
 
 
 @pytest.mark.parametrize(
