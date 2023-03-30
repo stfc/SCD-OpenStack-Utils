@@ -19,6 +19,20 @@ class UnsetException(Exception):
     """
 
 
+def get_func_str(func, *args, **kwargs):
+    """
+    prints function string for debugging
+    output looks like: my_func(1,2,a="A",b="B")
+
+    Keyword Arguments:
+        func: a function
+        *args, **kwargs: arguments for that function
+    """
+    args_str = ",".join(map(str, args))
+    kwargs_str = ",".join(f"{k}={v}" for k, v in kwargs.items())
+    return f"{func.__name__}({','.join([args_str, kwargs_str])})"
+
+
 def retry(
     retry_on: Tuple[Exception] = (UnsetException),
     retry_logger: logging.Logger = logger,
@@ -41,6 +55,9 @@ def retry(
             res = None
             for i in range(retries + 1):
                 try:
+                    retry_logger.debug(
+                        "running retry on %s", get_func_str(func, args, kwargs)
+                    )
                     res = func(*args, **kwargs)
                     break
                 except retry_on as retry_exc:
