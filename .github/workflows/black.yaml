@@ -25,4 +25,4 @@ jobs:
       - name: IRISCAST Energy Monitoring
         uses: psf/black@stable
         with:
-          src: "cloud-energy-collection/iriscasttools"
+          src: "iriscasttools/iriscasttools"
