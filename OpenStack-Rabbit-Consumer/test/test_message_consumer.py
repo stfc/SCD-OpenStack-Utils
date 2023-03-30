@@ -1,9 +1,10 @@
-from typing import List, Union, Dict
+from typing import Union, Dict
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
 from rabbit_consumer.aq_fields import AqFields
+from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
     is_aq_managed_image,
     get_metadata_value,
@@ -12,7 +13,6 @@ from rabbit_consumer.message_consumer import (
     consume,
     convert_hostnames,
 )
-from rabbit_consumer.consumer_config import ConsumerConfig
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,8 @@ from rabbit_consumer.consumer_config import ConsumerConfig
         "rocky8-raw",
         "centos-7-aq",
         "scientificlinux-7-aq",
-        "scientificlinux-7-nogui" "warehoused-scientificlinux-7-aq-23-01-2023-14-49-18",
+        "scientificlinux-7-nogui",
+        "warehoused-scientificlinux-7-aq-23-01-2023-14-49-18",
         "warehoused-centos-7-aq-23-01-2023-14-49-18",
         "warehoused-rocky-8-aq-26-01-2023-09-21-12",
     ],
@@ -54,7 +55,8 @@ def test_aq_messages_no_payload_no_image_name():
         "rhel-8",
         "test",
         "ubuntu",
-        "capi" "warehoused-ubuntu-focal-20.04-gui-08-03-2022-13-39-19",
+        "capi",
+        "warehoused-ubuntu-focal-20.04-gui-08-03-2022-13-39-19",
         "Fedora-Atomic-FINAL",
         "capi-ubuntu-2004-kube-v1.23.15-2023-03-14",
     ],

@@ -36,8 +36,6 @@ class AquilonError(Exception):
     Base class for Aquilon errors
     """
 
-    pass
-
 
 def verify_kerberos_ticket():
     logger.debug("Checking for valid Kerberos Ticket")
@@ -227,8 +225,8 @@ def check_host_exists(hostname: str) -> bool:
     url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
     try:
         setup_requests(url, "get", "Check Host")
-    except AquilonError as e:
-        if f"Host {hostname} not found." in str(e):
+    except AquilonError as err:
+        if f"Host {hostname} not found." in str(err):
             return False
         raise
     return True
