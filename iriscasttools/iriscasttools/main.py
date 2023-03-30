@@ -1,10 +1,9 @@
 """
 Collects energy usage metrics using IPMI, as well as other metrics such as CPU and RAM usage.
 """
-import sys
 import argparse
 import logging
-import utils
+from iriscasttools import utils
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +55,3 @@ def parse_args(inp_args):
         args.include_header = False
 
     return args
-
-
-if __name__ == "__main__":
-    cmd_args = parse_args(sys.argv[1:])
-    print(get_iriscast_stats(cmd_args.as_csv, cmd_args.include_header))

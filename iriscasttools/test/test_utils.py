@@ -6,7 +6,7 @@ import os
 import pathlib
 from unittest.mock import NonCallableMock, patch
 import pytest
-from utils import (
+from iriscasttools.utils import (
     to_csv,
     run_cmd,
     ipmi_raw_power_query,
@@ -71,7 +71,7 @@ def test_to_csv(mock_input, include_headers, expected_out):
     assert to_csv(mock_input, include_headers) == expected_out
 
 
-@patch("utils.subprocess")
+@patch("iriscasttools.utils.subprocess")
 def test_run_cmd_success(mock_subprocess):
     """
     Test "run_cmd" function
@@ -148,7 +148,7 @@ def test_check_ipmi_conn_fail():
         assert not check_ipmi_conn()
 
 
-@patch("utils.run_cmd")
+@patch("iriscasttools.utils.run_cmd")
 def test_ipmi_raw_power_query(mock_run_cmd):
     """
     Test "ipmi_raw_power_query" function
@@ -180,8 +180,8 @@ def test_ipmi_raw_power_query(mock_run_cmd):
         (["some_invalid_arg"]),
     ],
 )
-@patch("utils.ipmi_raw_power_query")
-@patch("utils.check_ipmi_conn")
+@patch("iriscasttools.utils.ipmi_raw_power_query")
+@patch("iriscasttools.utils.check_ipmi_conn")
 def test_get_ipmi_power_stats(mock_check_ipmi_conn, mock_raw_power_query, test_args):
     """
     Test "ipmi_raw_power_query" function
@@ -218,7 +218,7 @@ def test_get_ipmi_power_stats(mock_check_ipmi_conn, mock_raw_power_query, test_a
     "test_args",
     [(["max_ram_kb", "used_ram_kb", "ram_usage_percentage"]), (["some_invalid_arg"])],
 )
-@patch("utils.os.getloadavg")
+@patch("iriscasttools.utils.os.getloadavg")
 def test_get_os_load(mock_os_get_load_avg, test_args):
     """
     Test "get_os_load" function
@@ -247,7 +247,7 @@ def test_get_os_load(mock_os_get_load_avg, test_args):
     "test_args",
     [(["max_ram_kb", "used_ram_kb", "ram_usage_percentage"]), (["some_invalid_arg"])],
 )
-@patch("utils.run_cmd")
+@patch("iriscasttools.utils.run_cmd")
 def test_get_ram_usage(mock_run_cmd, test_args):
     """
     Test "get_ram_usage" function

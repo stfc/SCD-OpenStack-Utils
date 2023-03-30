@@ -5,7 +5,7 @@ Tests for main functions for iriscasttools package
 from unittest.mock import patch
 import pytest
 
-from main import get_iriscast_stats, parse_args
+from iriscasttools.main import get_iriscast_stats, parse_args
 
 
 @pytest.mark.parametrize(
@@ -28,10 +28,10 @@ def test_parse_args(test_args, expected_arg_values):
     "test_csv_flag, test_include_header",
     [(False, False), (True, True), (True, False)],
 )
-@patch("utils.get_ipmi_power_stats")
-@patch("utils.get_os_load")
-@patch("utils.get_ram_usage")
-@patch("utils.to_csv")
+@patch("iriscasttools.utils.get_ipmi_power_stats")
+@patch("iriscasttools.utils.get_os_load")
+@patch("iriscasttools.utils.get_ram_usage")
+@patch("iriscasttools.utils.to_csv")
 def test_get_iriscast_stats(
     mock_to_csv,
     mock_get_ram_usage,

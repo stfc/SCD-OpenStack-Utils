@@ -26,11 +26,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r cloud-energy-collection/iriscasttools/requirements.txt
+          pip install -r iriscasttools/requirements.txt
 
       - name: Run tests
-        run: cd cloud-energy-collection/iriscasttools/ && python3 -m pytest .
+        run: cd iriscasttools/ && python3 -m pytest .
 
       - name: Analyse with pylint
         run: |
-          cd cloud-energy-collection/iriscasttools && pylint --recursive yes . test
+          cd iriscasttools && pylint --recursive yes test iriscasttools
