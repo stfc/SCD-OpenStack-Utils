@@ -31,6 +31,12 @@ DELETE_MACHINE_SUFFIX = "/machine/{0}"
 logger = logging.getLogger(__name__)
 
 
+class AquilonError(Exception):
+    """
+    Base class for Aquilon errors
+    """
+
+
 def verify_kerberos_ticket():
     logger.debug("Checking for valid Kerberos Ticket")
 
@@ -58,6 +64,12 @@ def setup_requests(url, method, desc):
         response = session.delete(url, auth=HTTPKerberosAuth())
     else:
         response = session.get(url, auth=HTTPKerberosAuth())
+
+    if response.status_code == 400:
+        # This might be an expected error, so don't log it
+        logger.debug("AQ Error Response: %s", response.text)
+        raise AquilonError(response.text)
+
     if response.status_code != 200:
         logger.error("%s: Failed: %s", desc, response.text)
         logger.error(url)
@@ -208,9 +220,13 @@ def set_env(aq_details: AqFields, domain: str, hostname: str, sandbox: str = Non
     aq_make(hostname, aq_details)
 
 
-def check_host_exists(hostname):
-    logger.debug("Attempting to make templates for %s", hostname)
-
+def check_host_exists(hostname: str) -> bool:
+    logger.debug("Checking if hostname exists: %s", hostname)
     url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
-
-    setup_requests(url, "get", "Check Host")
+    try:
+        setup_requests(url, "get", "Check Host")
+    except AquilonError as err:
+        if f"Host {hostname} not found." in str(err):
+            return False
+        raise
+    return True

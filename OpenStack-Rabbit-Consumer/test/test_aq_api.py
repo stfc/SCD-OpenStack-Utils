@@ -16,6 +16,7 @@ from rabbit_consumer.aq_api import (
     update_machine_interface,
     check_host_exists,
     set_env,
+    AquilonError,
 )
 from rabbit_consumer.aq_fields import AqFields
 
@@ -334,10 +335,20 @@ def test_check_host_exists(config, setup):
     hostname = "host_str"
 
     config.return_value.aq_url = "https://example.com"
-    check_host_exists(hostname)
+    assert check_host_exists(hostname)
 
     expected_url = f"https://example.com/host/{hostname}"
     setup.assert_called_once_with(expected_url, "get", mock.ANY)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_check_host_exists_returns_false(config, setup):
+    hostname = "host_str"
+    config.return_value.aq_url = "https://example.com"
+    setup.side_effect = AquilonError(f"Error:\n Host {hostname} not found.")
+
+    assert not check_host_exists(hostname)
 
 
 @pytest.mark.parametrize("domain", ["set", ""])
