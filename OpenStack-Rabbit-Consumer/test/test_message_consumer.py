@@ -20,7 +20,6 @@ from rabbit_consumer.consumer_config import ConsumerConfig
     [
         "rocky-8-aq",
         "rocky8-raw",
-        "centos-stream-8-nogui",
         "centos-7-aq",
         "scientificlinux-7-aq",
         "scientificlinux-7-nogui" "warehoused-scientificlinux-7-aq-23-01-2023-14-49-18",
@@ -28,7 +27,7 @@ from rabbit_consumer.consumer_config import ConsumerConfig
         "warehoused-rocky-8-aq-26-01-2023-09-21-12",
     ],
 )
-def test_is_aq_message_with_real_aq_image_names(image_name):
+def test_is_aq_managed_image_with_real_aq_image_names(image_name):
     message = {"payload": {"image_name": image_name}}
     assert is_aq_managed_image(message)
 
@@ -79,7 +78,7 @@ def test_get_metadata_value(key_name):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_parses_json(json, aq_message, _):
     message = MagicMock()
@@ -104,7 +103,7 @@ def test_on_message_parses_json(json, aq_message, _):
 
 
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_forwards_json_to_consumer(json, aq_message_mock, consume_mock):
     message = Mock()
@@ -117,7 +116,7 @@ def test_on_message_forwards_json_to_consumer(json, aq_message_mock, consume_moc
 
 
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.json")
 def test_on_message_ignores_non_aq(json, aq_message_mock, consume_mock):
     message = Mock()
@@ -226,7 +225,7 @@ def _message_get_create(arg_name: str) -> Union[str, Dict]:
     return arg_name
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.get_metadata_value")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
@@ -318,7 +317,7 @@ def test_consume_create_machine_hostnames_good_path(
     )
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 def test_consume_create_machine_update_metadata_failure(openstack, hostname, _):
@@ -334,7 +333,7 @@ def test_consume_create_machine_update_metadata_failure(openstack, hostname, _):
     assert str(err.value) == "Failed to update metadata"
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -351,7 +350,7 @@ def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __):
     assert str(err.value) == "Failed to create machine"
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -368,7 +367,7 @@ def test_consume_add_machine_interface_failure(aq_api, hostname, _, __):
     assert "Failed to add machine interface" in str(err.value)
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -385,7 +384,7 @@ def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __):
     assert "Failed to add machine interface address" in str(err.value)
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -402,7 +401,7 @@ def test_consume_update_machine_interface_failure(aq_api, hostname, _, __):
     assert "Failed to set default interface" in str(err.value)
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -421,7 +420,7 @@ def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __):
     )
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.aq_api")
@@ -454,7 +453,7 @@ def _message_get_delete(arg_name: str) -> Union[str, Dict]:
     return arg_name
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.aq_api")
 def test_consume_delete_machine_good_path(aq_api, _):
     message = Mock()
@@ -468,7 +467,7 @@ def test_consume_delete_machine_good_path(aq_api, _):
     )
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
 def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __):
@@ -485,7 +484,7 @@ def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __
     )
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_message")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.aq_api")
 def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
     message = Mock()
