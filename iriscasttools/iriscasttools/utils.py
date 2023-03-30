@@ -43,11 +43,11 @@ def retry(
                 try:
                     res = func(*args, **kwargs)
                     break
-                except retry_on:
+                except retry_on as retry_exc:
                     if i + 1 == retries:
                         raise RuntimeError(
                             f"function failed and max retries {retries} exceeded"
-                        )
+                        ) from retry_exc
                 seconds = delay + (backoff * i)
                 retry_logger.warning(
                     "function failed to run. Failed attempts: %s. Retrying after %s delay",
@@ -73,7 +73,11 @@ def run_cmd(cmd_args: str):
         cmd_args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as out:
         # assert we did not find any errors
-        assert not out.stderr.read().decode()
+        err = out.stderr.read().decode()
+        if err:
+            raise RuntimeError(
+                f"Failed running command {cmd_args}, error raised: {err}"
+            )
         res_out = out.stdout.read().decode()
     return res_out
 
@@ -84,10 +88,9 @@ def check_ipmi_conn():
     Checks if device exists at any of these locations /dev/ipmi0, /dev/ipmi/0 or /dev/ipmidev/0
     which imply that ipmi-dcmi can be used to get power info
     """
-    res = any(Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"])
-    if not res:
-        logger.error("Failed to find ipmi device on host")
-    return res
+    return any(
+        Path(f).exists() for f in ["/dev/ipmi0", "/dev/ipmi/0", "/dev/ipmidev/0"]
+    )
 
 
 def ipmi_raw_power_query():
@@ -96,13 +99,7 @@ def ipmi_raw_power_query():
 
     Calls ipmi-dcmi command to get all power statistics
     """
-    try:
-        return run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics")
-    except AssertionError:
-        logger.error(
-            "command '/usr/sbin/ipmi-dcmi --get-system-power-statistics failed"
-        )
-        return None
+    return run_cmd("/usr/sbin/ipmi-dcmi --get-system-power-statistics")
 
 
 def to_csv(stats: Dict, include_header: bool = False):
@@ -135,36 +132,35 @@ def get_ipmi_power_stats(*args):
     power_stats = {x: "" for x in args}
 
     if not check_ipmi_conn():
-        return power_stats
+        raise RuntimeError("Failed to find ipmi device on host")
     res = ipmi_raw_power_query()
 
-    if res:
-        for line in res.splitlines():
-            line_str = line.split(":")
-            stat = line_str[0].strip().lower().replace(" ", "_")
-            raw_val = ":".join(line_str[1:]).strip()
+    for line in res.splitlines():
+        line_str = line.split(":")
+        stat = line_str[0].strip().lower().replace(" ", "_")
+        raw_val = ":".join(line_str[1:]).strip()
 
-            if stat in power_stats.keys():
-                if stat == "time_stamp":
-                    try:
-                        datetime.datetime.strptime(raw_val, "%m/%d/%Y - %H:%M:%S")
-                        stat_val = raw_val
-                    except ValueError as read_date_err:
-                        logger.error(
-                            "could not read timestamp given by ipmi %s: %s",
-                            raw_val,
-                            repr(read_date_err),
-                        )
-                        stat_val = ""
-
-                elif stat == "power_measurement":
+        if stat in power_stats.keys():
+            if stat == "time_stamp":
+                try:
+                    datetime.datetime.strptime(raw_val, "%m/%d/%Y - %H:%M:%S")
                     stat_val = raw_val
+                except ValueError as read_date_err:
+                    logger.error(
+                        "could not read timestamp given by ipmi %s: %s",
+                        raw_val,
+                        repr(read_date_err),
+                    )
+                    stat_val = ""
 
-                else:
-                    # get integer part only. Power in Watts seems to always be whole number
-                    stat_val = re.search("[0-9]+", raw_val).group(0)
+            elif stat == "power_measurement":
+                stat_val = raw_val
 
-                power_stats[stat] = stat_val
+            else:
+                # get integer part only. Power in Watts seems to always be whole number
+                stat_val = re.search("[0-9]+", raw_val).group(0)
+
+            power_stats[stat] = stat_val
 
     return power_stats
 
@@ -184,11 +180,8 @@ def get_os_load(*args):
 
     stats = {"os_load_1": "", "os_load_5": "", "os_loads_15": ""}
 
-    try:
-        stats["os_load_1"], stats["os_load_5"], stats["os_load_15"] = os.getloadavg()
-        res.update({k: v for k, v in stats.items() if k in args})
-    except OSError:
-        pass
+    stats["os_load_1"], stats["os_load_5"], stats["os_load_15"] = os.getloadavg()
+    res.update({k: v for k, v in stats.items() if k in args})
 
     return res
 
@@ -207,21 +200,19 @@ def get_ram_usage(*args):
 
     stats = {"max_ram_kb": "", "used_ram_kb": "", "ram_usage_percentage": ""}
 
-    try:
-        stats["max_ram_kb"] = int(
-            run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
-        )
-        stats["used_ram_kb"] = int(
-            run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
+    stats["max_ram_kb"] = int(
+        run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
+    )
+
+    stats["used_ram_kb"] = int(
+        run_cmd("free -k | sed -n '2p' | awk '{print $2}'"),
+    )
+
+    if stats["max_ram_kb"] and stats["used_ram_kb"]:
+        stats["ram_usage_percentage"] = round(
+            (stats["used_ram_kb"] / stats["max_ram_kb"]) * 100, 3
         )
 
-        if stats["max_ram_kb"] and stats["used_ram_kb"]:
-            stats["ram_usage_percentage"] = round(
-                (stats["used_ram_kb"] / stats["max_ram_kb"]) * 100, 3
-            )
-
-        res.update({k: v for k, v in stats.items() if k in args})
-    except (AssertionError, ValueError):
-        pass
+    res.update({k: v for k, v in stats.items() if k in args})
 
     return res
