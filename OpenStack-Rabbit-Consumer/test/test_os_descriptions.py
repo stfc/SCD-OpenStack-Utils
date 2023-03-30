@@ -1,13 +1,13 @@
 import pytest
 
-from rabbit_consumer.os_descriptions import OsDescription
+from rabbit_consumer.os_descriptions.base_os_descriptions import OsDescription
 
 
 @pytest.mark.parametrize(
     "image_name",
     [
-        "scientificlinux-7",
-        "ScientificLinux-7",
+        "scientificlinux-7-aq",
+        "ScientificLinux-7-aq",
         "scientificlinux-7-nogui",
         "scientificlinux-7-aq",
         "scientificlinux-7-gui",
@@ -24,11 +24,7 @@ def test_sl7(image_name):
 @pytest.mark.parametrize(
     "image_name",
     [
-        "centos-7",
-        "Centos-7",
-        "centos-7-nogui",
         "centos-7-aq",
-        "centos-7-gui",
         "warehoused-centos-7-aq-01-02-2023-17-00-43",
     ],
 )
@@ -42,8 +38,8 @@ def test_centos7(image_name):
 @pytest.mark.parametrize(
     "image_name",
     [
-        "rocky-8",
-        "Rocky-8",
+        "rocky-8-aq",
+        "Rocky-8-aq",
         "rocky-8-nogui",
         "rocky-8-aq",
         "rocky-8-gui",
@@ -73,6 +69,43 @@ def test_rocky9(image_name):
     assert isinstance(os, OsDescription)
     assert os.aq_os_name == "rocky"
     assert os.aq_os_version == "9x-x86_64"
+
+
+@pytest.mark.parametrize(
+    "image_name",
+    [
+        "scientificlinux-7-aq",
+        "centos-7-aq",
+        "rocky-8-aq",
+    ],
+)
+def test_aq_based_images(image_name):
+    """
+    Checks the following images use the nubesvms personality
+    by default
+    """
+    os = OsDescription.from_image_name(image_name)
+    assert os.aq_default_personality == "nubesvms"
+
+
+@pytest.mark.parametrize("image_name", ["scientificlinux-7-nogui", "rocky-8-nogui"])
+def test_nogui_based_images(image_name):
+    """
+    Checks the following images use the nubes-unmanaged-nogui personality
+    by default
+    """
+    os = OsDescription.from_image_name(image_name)
+    assert os.aq_default_personality == "nubes-unmanaged-nogui"
+
+
+@pytest.mark.parametrize("image_name", ["scientificlinux-7-gui", "rocky-8-gui"])
+def test_gui_based_images(image_name):
+    """
+    Checks the following images use the nubes-gui personality
+    by default
+    """
+    os = OsDescription.from_image_name(image_name)
+    assert os.aq_default_personality == "nubes-gui"
 
 
 @pytest.mark.parametrize(
