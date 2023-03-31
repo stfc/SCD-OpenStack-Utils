@@ -6,7 +6,7 @@ on:
       - master
   pull_request:
     paths:
-      - "cloud-energy-collection/**"
+      - "iriscasttools/**"
       - ".github/workflows/iriscast_package_build.yaml"
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ["3.10", "3.6"]
+        python-version: ["3.x", "3.10", "3.6"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
