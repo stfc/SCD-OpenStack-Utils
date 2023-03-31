@@ -1,0 +1,2 @@
+current_power,minimum_power_over_sampling_duration,maximum_power_over_sampling_duration,average_power_over_sampling_duration,time_stamp,statistics_reporting_time_period,power_measurement
+100,20,400,150,11/22/2022 - 00:00:00,1000,Active

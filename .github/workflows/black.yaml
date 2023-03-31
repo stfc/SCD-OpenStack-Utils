@@ -21,3 +21,8 @@ jobs:
         uses: psf/black@stable
         with:
           src: "prometheus_ip_script"
+
+      - name: IRISCAST Energy Monitoring
+        uses: psf/black@stable
+        with:
+          src: "iriscasttools/iriscasttools"
