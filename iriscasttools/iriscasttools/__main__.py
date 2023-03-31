@@ -11,7 +11,11 @@ def _prep_logging():
     logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
-if __name__ == "__main__":
+def main():
     _prep_logging()
     cmd_args = parse_args(sys.argv[1:])
     print(get_iriscast_stats(cmd_args.as_csv, cmd_args.include_header))
+
+
+if __name__ == "__main__":
+    main()
