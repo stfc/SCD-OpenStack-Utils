@@ -34,3 +34,67 @@ jobs:
       - name: Analyse with pylint
         run: |
           cd iriscasttools && pylint --recursive yes test iriscasttools
+
+  build_wheel:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.x"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+
+      - name: Build Wheels
+        run: cd iriscasttools && python setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: iriscasttools
+          path: iriscasttools/dist
+          if-no-files-found: error
+
+  publish:
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs:
+      - test_and_lint
+      - build_wheel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Download Wheels
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: iriscasttools
+          path: iriscasttools/dist
+
+      - name: Get Package Version
+        id: version
+        run: echo "version=$(python iriscasttools/setup.py --version)" >> $GITHUB_ENV
+
+      - name: Make Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: iriscasttools/dist/*
+          tag: ${{ env.version }}
+          name: iriscasttools-${{ env.version }}
+          skipIfReleaseExists: true
+
