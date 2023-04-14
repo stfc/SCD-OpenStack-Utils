@@ -103,6 +103,8 @@ for result in results:
         datastring += ",COST=" + str(float(result["GPU_Num"]) * float(result['VM_Seconds']) * float(result["Per_Unit_Cost"]) / float(3600))
     else:
         datastring += ",COST=" + str(float(result["VCPU"]) * float(result['VM_Seconds']) * float(result["Per_Unit_Cost"]) / float(3600))
+        datastring += ",GPUs=" + str(0)
+        datastring += ",GPU_Seconds=" + str(0)
 
     datastring += " "+str(long(endtimestamp))
     datastring += "\n"
