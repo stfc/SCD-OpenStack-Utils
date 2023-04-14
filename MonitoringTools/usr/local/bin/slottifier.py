@@ -45,8 +45,6 @@ flavorListPre = json.loads(command_line("openstack flavor list --long -f json"))
 flavorDict = {}
 for flavor in flavorListPre:
     flavorDict[flavor["Name"]] = flavor
-#print flavorListPre
-#print flavorDict
 
 novacomputeservices = json.loads(command_line("openstack compute service list -f json"))
 
@@ -55,8 +53,6 @@ hypervisors = json.loads(command_line("openstack hypervisor list --long -f json"
 slotdict = {}
 for flavor in flavorListPre:
     slotdict[flavor["Name"]] = 0
-
-#print slotdict
 
 aggregateGroupsListPre = json.loads(command_line("openstack aggregate list --long -f json"))
 aggregateGroupsList = {}
@@ -67,9 +63,6 @@ for aggregateGroup in aggregateGroupsListPre:
     aggregateGroupsList[aggregateGroup["Name"]] = aggregateGroup
 
     aggregateGroupDetails = json.loads(command_line("openstack aggregate show " + aggregateGroup["Name"] + " -f json"))
- #   print aggregateGroup["Name"]
-#    if "hosttype" in aggregateGroup["Properties"]:
- #       print aggregateGroup["Properties"]["hosttype"]
 
     # calculate vcpu's
     uphosts = []
@@ -78,7 +71,6 @@ for aggregateGroup in aggregateGroupsListPre:
             if novaservice["Status"] == "enabled" and novaservice["Host"] == host:
                 for hv in hypervisors:
                     if hv["Hypervisor Hostname"] == novaservice["Host"]:
-  #                      print hv
                         if hv["vCPUs"] - hv["vCPUs Used"] >= 0:
                             coresAvailable = hv["vCPUs"] - hv["vCPUs Used"]
                         else:
@@ -106,45 +98,37 @@ for aggregateGroup in aggregateGroupsListPre:
                                    else:
                                        slotsAvailable= (memAvailable //flavor["RAM"])
                                if "g-" in flavor["Name"] :
-                                   cpuTest = hv["vCPUs"] // flavor["VCPUs"]
-                                   gpunum = int(aggregateGroup["Properties"]["gpunum"])
-                                   if (gpunum < cpuTest):
-                                       if (gpunum * flavor["VCPUs"]) <= hv["vCPUs"]:
-                                           coresAvailable = (flavor["VCPUs"] * gpunum) - hv["vCPUs Used"]
-                                   if coresAvailable <= 0:
-                                      coresAvailable = 0
-                                   gpuSlotsAvailable = coresAvailable // flavor["VCPUs"]
-                                   if gpuSlotsAvailable > aggregateGroup["Properties"]["gpunum"]:
-                                       slotsAvailable = aggregateGroup["Properties"]["gpunum"]
+                                   slotsByCPU = hv["vCPUs"] // flavor["VCPUs"] # can the hv hold any of this flavor, how many
+                                   hostGPUNum = int(aggregateGroup["Properties"]["gpunum"]) # how many gpus are in an a host in this aggregate
+                                   flavorProperties = flavor["Properties"] # extract the metadata for the flavor
+                                   for flavorProperty in flavorProperties.split(", "):
+                                       if "accounting:gpu_num" in flavorProperty:
+                                           flavorGPUNum = int(flavorProperty.replace("accounting:gpu_num='","").replace("'","")) # break the metadata down to the bit we need
+                                   coresAvailable = hv["vCPUs"] - hv["vCPUs Used"] # how many cpu cores are available on the host
+                                   theoreticalSlots = hostGPUNum // flavorGPUNum # if the hv is empty how many instances of the flavor fit
+                                   gpuSlotsAvailable = coresAvailable // flavor["VCPUs"] # how many of the flavors would fit into the available cpus
+                                   if (gpuSlotsAvailable > theoreticalSlots):
+                                       slotsAvailable = theoreticalSlots
                                    else:
                                        slotsAvailable = gpuSlotsAvailable
+
                                slotdict[flavor["Name"]] += slotsAvailable
 
 
 
-
-print slotdict
+print(slotdict)
 
 reportstring = ""
-#print limits
 for flavor in slotdict:
-    #print project
         print flavor
         datastring = ""
         datastring += "SlotsAvailable"
         datastring += ",instance="+instance
         datastring += ",flavor="+flavor
         datastring += " SlotsAvailable=" + str(slotdict[flavor])
-        #    else:
-         #       if statstring != "":
-          #          statstring += ","
-           #     statstring += stat + "=" + str(servicedetails[host][service][stat]) +"i"
-#        datastring += " " + statstring
-        print datastring
         reportstring += datastring
         reportstring += "\n"
 
-print reportstring
 r = requests.post(url,data=reportstring,auth=(username,password))
-print r.text
-print r
+print(r.text)
+print(r)
