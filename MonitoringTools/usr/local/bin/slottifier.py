@@ -54,6 +54,14 @@ slotdict = {}
 for flavor in flavorListPre:
     slotdict[flavor["Name"]] = 0
 
+totalSlotDict = {}
+for flavor in flavorListPre:
+    totalSlotDict[flavor["Name"]] = 0
+
+slotsUsed = {}
+for flavor in flavorListPre:
+    slotsUsed[flavor["Name"]] = 0
+
 aggregateGroupsListPre = json.loads(command_line("openstack aggregate list --long -f json"))
 aggregateGroupsList = {}
 for aggregateGroup in aggregateGroupsListPre:
@@ -100,6 +108,7 @@ for aggregateGroup in aggregateGroupsListPre:
                                if "g-" in flavor["Name"] :
                                    slotsByCPU = hv["vCPUs"] // flavor["VCPUs"] # can the hv hold any of this flavor, how many
                                    hostGPUNum = int(aggregateGroup["Properties"]["gpunum"]) # how many gpus are in an a host in this aggregate
+                                   totalSlotDict[flavor["Name"]] += hostGPUNum # collect how many slots are available on any hypervisor
                                    flavorProperties = flavor["Properties"] # extract the metadata for the flavor
                                    for flavorProperty in flavorProperties.split(", "):
                                        if "accounting:gpu_num" in flavorProperty:
@@ -107,6 +116,7 @@ for aggregateGroup in aggregateGroupsListPre:
                                    coresAvailable = hv["vCPUs"] - hv["vCPUs Used"] # how many cpu cores are available on the host
                                    theoreticalSlots = hostGPUNum // flavorGPUNum # if the hv is empty how many instances of the flavor fit
                                    gpuSlotsAvailable = coresAvailable // flavor["VCPUs"] # how many of the flavors would fit into the available cpus
+                                   slotsUsed[flavor["Name"]] += hostGPUNum - gpuSlotsAvailable # how many slots are in use across hypervisors
                                    if (gpuSlotsAvailable > theoreticalSlots):
                                        slotsAvailable = theoreticalSlots
                                    else:
@@ -126,6 +136,8 @@ for flavor in slotdict:
         datastring += ",instance="+instance
         datastring += ",flavor="+flavor
         datastring += " SlotsAvailable=" + str(slotdict[flavor])
+        datastring += ",maxSlotsAvailable=" + str(totalSlotDict[flavor])
+        datastring += ",usedSlots=" + str(slotsUsed[flavor])
         reportstring += datastring
         reportstring += "\n"
 
