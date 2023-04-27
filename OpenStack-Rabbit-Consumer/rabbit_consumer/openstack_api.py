@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import openstack
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -46,6 +47,31 @@ def authenticate(project_id):
     logger.debug("Authentication successful")
 
     return str(response.headers["X-Subject-Token"])
+
+
+class OpenstackConnection:
+    def __init__(self, project_name: str):
+        self.project_name = project_name
+        self.conn = None
+
+    def __enter__(self):
+        self.conn = openstack.connect(
+            auth_url=ConsumerConfig().openstack_auth_url,
+            project_name=self.project_name,
+            username=ConsumerConfig().openstack_username,
+            password=ConsumerConfig().openstack_password,
+            user_domain_name=ConsumerConfig().openstack_domain_name,
+            project_domain_name="default",
+        )
+        return self.conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()
+
+
+def check_machine_exists(project_name: str, instance_uuid: str) -> bool:
+    with OpenstackConnection(project_name) as conn:
+        return bool(conn.compute.find_server(instance_uuid))
 
 
 def update_metadata(project_id, instance_id, metadata):

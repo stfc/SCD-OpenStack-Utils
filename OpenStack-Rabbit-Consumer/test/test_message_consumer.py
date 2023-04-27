@@ -12,6 +12,7 @@ from rabbit_consumer.message_consumer import (
     initiate_consumer,
     consume,
     convert_hostnames,
+    add_hostname_to_metadata,
 )
 
 
@@ -224,6 +225,32 @@ def _message_get_create(arg_name: str) -> Union[str, Dict]:
     if arg_name == "payload":
         return _FAKE_PAYLOAD
     return arg_name
+
+
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_add_hostname_to_metadata_machine_exists(openstack_api):
+    fields = VmData(["foo"], project_id=NonCallableMock())
+    vm_id = NonCallableMock()
+
+    openstack_api.check_machine_exists.return_value = True
+    add_hostname_to_metadata(fields, vm_id)
+
+    openstack_api.check_machine_exists.assert_called_once_with(fields.project_id, vm_id)
+    openstack_api.update_metadata.assert_called_with(
+        fields.project_id, vm_id, {"HOSTNAMES": "foo"}
+    )
+
+
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api):
+    fields = VmData(["foo"], project_id=NonCallableMock())
+    vm_id = NonCallableMock()
+
+    openstack_api.check_machine_exists.return_value = False
+    add_hostname_to_metadata(fields, vm_id)
+
+    openstack_api.check_machine_exists.assert_called_once_with(fields.project_id, vm_id)
+    openstack_api.update_metadata.assert_not_called()
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")

@@ -85,7 +85,7 @@ def _handle_create_machine(message):
     logger.debug("Username: %s", username)
     logger.debug("Hostnames: %s", aq_details.hostnames)
 
-    _add_hostname_to_metadata(aq_details, vm_id)
+    add_hostname_to_metadata(aq_details, vm_id)
     firstip, machinename = _aq_create_machine(aq_details.hostnames, message)
     _aq_add_first_nic(machinename, message)
     _aq_add_optional_nics(aq_details.hostnames, machinename, message)
@@ -238,7 +238,12 @@ def _aq_create_machine(hostnames, message):
     return first_ip, machine_name
 
 
-def _add_hostname_to_metadata(fields: VmData, vm_id):
+def add_hostname_to_metadata(fields: VmData, vm_id):
+    if not openstack_api.check_machine_exists(fields.project_id, vm_id):
+        # User has likely deleted the machine since we got here
+        logger.warning("Machine %s does not exist, skipping metadata update", vm_id)
+        return
+
     try:
         # add hostname(s) to metadata for use when capturing delete messages
         # as these messages do not contain ip information

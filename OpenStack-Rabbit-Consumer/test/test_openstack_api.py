@@ -4,7 +4,12 @@ from unittest.mock import NonCallableMock, patch, call
 
 import pytest
 
-from rabbit_consumer.openstack_api import authenticate, update_metadata
+from rabbit_consumer.openstack_api import (
+    authenticate,
+    update_metadata,
+    OpenstackConnection,
+    check_machine_exists,
+)
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 
@@ -26,6 +31,55 @@ def _get_json_auth(rabbit_consumer: ConsumerConfig, project_id) -> Dict:
             "scope": {"project": {"id": project_id}},
         }
     }
+
+
+@patch("rabbit_consumer.openstack_api.ConsumerConfig")
+@patch("rabbit_consumer.openstack_api.openstack.connect")
+def test_openstack_connection(mock_connect, mock_config):
+    mock_project = NonCallableMock()
+    with OpenstackConnection(mock_project) as conn:
+        mock_connect.assert_called_once_with(
+            auth_url=mock_config.return_value.openstack_auth_url,
+            project_name=mock_project,
+            username=mock_config.return_value.openstack_username,
+            password=mock_config.return_value.openstack_password,
+            user_domain_name=mock_config.return_value.openstack_domain_name,
+            project_domain_name="default",
+        )
+
+        assert conn == mock_connect.return_value
+        assert conn.close.call_count == 0
+
+    assert conn.close.call_count == 1
+
+
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+def test_check_machine_exists_existing_machine(conn):
+    mock_project = NonCallableMock()
+    mock_instance = NonCallableMock()
+
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.return_value = NonCallableMock()
+    found = check_machine_exists(mock_project, mock_instance)
+
+    conn.assert_called_once_with(mock_project)
+    context.compute.find_server.assert_called_with(mock_instance)
+    assert isinstance(found, bool) and found
+
+
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+def test_check_machine_exists_deleted_machine(conn):
+    mock_project = NonCallableMock()
+    mock_instance = NonCallableMock()
+
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.return_value = None
+    found = check_machine_exists(mock_project, mock_instance)
+
+    conn.assert_called_once_with(mock_project)
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.assert_called_with(mock_instance)
+    assert isinstance(found, bool) and not found
 
 
 @patch("rabbit_consumer.openstack_api.ConsumerConfig")
