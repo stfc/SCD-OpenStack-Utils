@@ -1,55 +1,22 @@
 import logging
+from typing import List
 
-import requests
 import openstack
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from openstack.compute.v2.server import Server
 
 from rabbit_consumer.consumer_config import ConsumerConfig
+from rabbit_consumer.openstack_address import OpenstackAddress
+from rabbit_consumer.vm_data import VmData
 
 logger = logging.getLogger(__name__)
 
 
-def authenticate(project_id):
-    logger.debug("Attempting to authenticate to Openstack")
-
-    session = requests.Session()
-    retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    session.mount("https://", HTTPAdapter(max_retries=retries))
-
-    config = ConsumerConfig()
-
-    # https://developer.openstack.org/api-ref/identity/v3/#password-authentication-with-scoped-authorization
-    data = {
-        "auth": {
-            "identity": {
-                "methods": ["password"],
-                "password": {
-                    "user": {
-                        "name": config.openstack_username,
-                        "domain": {"name": config.openstack_domain_name},
-                        "password": config.openstack_password,
-                    }
-                },
-            },
-            "scope": {"project": {"id": project_id}},
-        }
-    }
-    response = session.post(
-        f"{config.openstack_auth_url}/auth/tokens",
-        json=data,
-    )
-
-    if response.status_code != 201:
-        logger.error("Authentication failure")
-        raise ConnectionRefusedError(f"{response.status_code}: {response.text}")
-
-    logger.debug("Authentication successful")
-
-    return str(response.headers["X-Subject-Token"])
-
-
 class OpenstackConnection:
+    """
+    Wrapper for Openstack connection, to reduce boilerplate code
+    in subsequent functions.
+    """
+
     def __init__(self, project_name: str):
         self.project_name = project_name
         self.conn = None
@@ -69,34 +36,33 @@ class OpenstackConnection:
         self.conn.close()
 
 
-def check_machine_exists(project_name: str, instance_uuid: str) -> bool:
-    with OpenstackConnection(project_name) as conn:
-        return bool(conn.compute.find_server(instance_uuid))
+def check_machine_exists(vm_data: VmData) -> bool:
+    with OpenstackConnection(vm_data.project_id) as conn:
+        return bool(conn.compute.find_server(vm_data.virtual_machine_id))
 
 
-def update_metadata(project_id, instance_id, metadata):
-    logger.debug(
-        "Attempting to set new metadata for VM: %s - %s", instance_id, str(metadata)
-    )
+def get_server_details(vm_data: VmData) -> Server:
+    with OpenstackConnection(vm_data.project_id) as conn:
+        # Workaround for details missing from find_server
+        # on the current version of openstacksdk
+        return list(conn.compute.servers(id=vm_data.virtual_machine_id, details=True))[
+            0
+        ]
 
-    session = requests.Session()
-    retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
-    session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    token = authenticate(project_id)
+def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
+    server = get_server_details(vm_data)
+    return OpenstackAddress.get_internal_networks(server.addresses)
 
-    headers = {"Content-type": "application/json", "X-Auth-Token": token}
-    url = (
-        f"{ConsumerConfig().openstack_compute_url}"
-        f"/{project_id}/servers/{instance_id}/metadata"
-    )
 
-    logger.debug("POST: %s", url)
-    response = session.post(url, headers=headers, json={"metadata": metadata})
+def get_metadata(vm_data: VmData) -> dict:
+    server = get_server_details(vm_data)
+    return server.metadata
 
-    if response.status_code != 200:
-        logger.error("Setting metadata failed")
-        logger.error("POST URL: %s", url)
-        raise ConnectionAbortedError(f"{response.status_code}: {response.text}")
+
+def update_metadata(vm_data: VmData, metadata):
+    server = get_server_details(vm_data)
+    with OpenstackConnection(vm_data.project_id) as conn:
+        conn.compute.set_server_metadata(server, metadata)
 
     logger.debug("Setting metadata successful")

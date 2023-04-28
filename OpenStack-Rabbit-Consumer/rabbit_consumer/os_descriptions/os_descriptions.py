@@ -19,6 +19,7 @@ class OsDescription(abc.ABC):
         # dynamically when we need them
 
         # noinspection PyUnresolvedReferences
+        # pylint: disable=import-outside-toplevel, unused-import
         from . import centos, scientific_linux, rocky
 
         for subclass in cls.__subclasses__():

@@ -1,31 +1,23 @@
 import logging
 import subprocess
-from typing import Optional
+from typing import Optional, List
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
-from rabbit_consumer.vm_data import VmData
 from rabbit_consumer.consumer_config import ConsumerConfig
+from rabbit_consumer.openstack_address import OpenstackAddress
+from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
+from rabbit_consumer.rabbit_message import RabbitMessage
+from rabbit_consumer.vm_data import VmData
 
-MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
-MANAGE_SUFFIX = "/host/{0}/command/manage?hostname={0}&{1}={2}&force=true"
-HOST_CHECK_SUFFIX = "/host/{0}"
-CREATE_MACHINE_SUFFIX = (
-    "/next_machine/{0}?model={1}&serial={2}&vmhost={3}&cpucount={4}&memory={5}"
-)
 
-ADD_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?mac={2}"
+HOST_CHECK_SUFFIX = "/host/{0}"
 
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
-
-ADD_INTERFACE_ADDRESS_SUFFIX = (
-    "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
-)
 
 DELETE_HOST_SUFFIX = "/host/{0}"
 DELETE_MACHINE_SUFFIX = "/machine/{0}"
@@ -84,9 +76,7 @@ def setup_requests(url, method, desc, params: Optional[dict] = None):
     return response.text
 
 
-def aq_make(hostname: str, os_data: OsDescription):
-    logger.debug("Attempting to make templates for %s", hostname)
-
+def aq_make(addresses: List[OpenstackAddress], os_data: OsDescription):
     params = {
         "personality": os_data.aq_default_personality,
         "osversion": os_data.aq_os_version,
@@ -98,34 +88,45 @@ def aq_make(hostname: str, os_data: OsDescription):
         i for i in params.values()
     ), "Some fields were not set in the OS description"
 
-    if not hostname or not hostname.strip():
-        raise ValueError("Hostname cannot be empty")
+    # Manage and make these back to default domain and personality
+    for i in addresses:
+        hostname = i.hostname
+        logger.debug("Attempting to make templates for %s", hostname)
 
-    url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
-    setup_requests(url, "post", "Make Template: ", params)
+        if not hostname or not hostname.strip():
+            raise ValueError("Hostname cannot be empty")
 
-
-def aq_manage(hostname, env_type, env_name):
-    logger.debug("Attempting to manage %s to %s %s", hostname, env_type, env_name)
-
-    url = ConsumerConfig().aq_url + MANAGE_SUFFIX.format(hostname, env_type, env_name)
-
-    setup_requests(url, "post", "Manage Host")
+        url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
+        setup_requests(url, "post", "Make Template: ", params)
 
 
-def create_machine(message, hostname, prefix):
-    logger.debug("Attempting to create machine for %s ", hostname)
+def aq_manage(addresses: List[OpenstackAddress]):
+    for i in addresses:
+        hostname = i.hostname
+        logger.debug("Attempting to manage %s", hostname)
 
-    vcpus = message.get("payload").get("vcpus")
-    memory_mb = message.get("payload").get("memory_mb")
-    uuid = message.get("payload").get("instance_id")
-    vmhost = message.get("payload").get("host")
+        params = {
+            "hostname": hostname,
+            "domain": ConsumerConfig().aq_domain,
+            "force": True,
+        }
+        url = ConsumerConfig().aq_url + f"/host/{hostname}/command/manage"
+        setup_requests(url, "post", "Manage Host", params=params)
 
-    url = ConsumerConfig().aq_url + CREATE_MACHINE_SUFFIX.format(
-        prefix, MODEL, uuid, vmhost, vcpus, memory_mb
-    )
 
-    response = setup_requests(url, "put", "Create Machine")
+def create_machine(message: RabbitMessage, vm_data: VmData) -> str:
+    logger.debug("Attempting to create machine for %s ", vm_data.virtual_machine_id)
+
+    params = {
+        "model": "vm-openstack",
+        "serial": vm_data.virtual_machine_id,
+        "vmhost": message.payload.vm_host,
+        "cpucount": message.payload.vcpus,
+        "memory": message.payload.memory_mb,
+    }
+
+    url = ConsumerConfig().aq_url + f"/next_machine/{ConsumerConfig().aq_prefix}"
+    response = setup_requests(url, "put", "Create Machine", params=params)
     return response
 
 
@@ -138,66 +139,61 @@ def delete_machine(machinename):
 
 
 def create_host(
-    hostname,
-    machinename,
-    firstip,
-    osname,
-    osversion,
+    os_details: OsDescription, addresses: List[OpenstackAddress], machine_name: str
 ):
-    logger.debug("Attempting to create host for %s ", hostname)
     config = ConsumerConfig()
 
-    default_domain = config.aq_domain
-    default_personality = config.aq_personality
-    default_archetype = config.aq_archetype
+    for address in addresses:
+        params = {
+            "machine": machine_name,
+            "ip": address.addr,
+            "domain": config.aq_domain,
+            "archetype": config.aq_archetype,
+            "personality": config.aq_personality,
+            "osname": os_details.aq_os_name,
+            "osversion": os_details.aq_os_version,
+        }
 
-    url = config.aq_url
-    url += (
-        f"/host/{hostname}?"
-        f"machine={machinename}"
-        f"&ip={firstip}"
-        f"&archetype={default_archetype}"
-        f"&domain={default_domain}"
-        f"&personality={default_personality}"
-        f"&osname={osname}"
-        f"&osversion={osversion}"
-    )
-
-    logger.debug(url)
-
-    # reset personality etc ...
-    setup_requests(url, "put", "Host Create")
+        logger.debug("Attempting to create host for %s ", address.hostname)
+        url = config.aq_url + f"/host/{address.hostname}"
+        setup_requests(url, "put", "Host Create", params=params)
 
 
-def delete_host(hostname):
+def delete_host(hostname: str):
     logger.debug("Attempting to delete host for %s ", hostname)
     url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
     setup_requests(url, "delete", "Host Delete")
 
 
-def add_machine_interface(machinename, macaddr, interfacename):
-    logger.debug(
-        "Attempting to add interface %s to machine %s ", interfacename, machinename
-    )
+def add_machine_nics(machine_name, addresses: List[OpenstackAddress]):
+    for i, address in enumerate(addresses):
+        interface_name = f"eth{i}"
 
-    url = ConsumerConfig().aq_url + ADD_INTERFACE_SUFFIX.format(
-        machinename, interfacename, macaddr
-    )
+        logger.debug(
+            "Attempting to add interface %s to machine %s ",
+            interface_name,
+            machine_name,
+        )
+        url = (
+            ConsumerConfig().aq_url
+            + f"/machine/{machine_name}/interface/{interface_name}"
+        )
+        setup_requests(
+            url, "put", "Add Machine Interface", params={"mac": address.mac_addr}
+        )
 
-    setup_requests(url, "put", "Add Machine Interface")
+        params = {
+            "machine": machine_name,
+            "interface": interface_name,
+            "ip": address.addr,
+            "fqdn": address.hostname,
+        }
+
+        url = ConsumerConfig().aq_url + "/interface_address"
+        setup_requests(url, "put", "Add Machine Interface Address", params=params)
 
 
-def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
-    logger.debug("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
-
-    url = ConsumerConfig().aq_url + ADD_INTERFACE_ADDRESS_SUFFIX.format(
-        machinename, interfacename, ipaddr, hostname
-    )
-
-    setup_requests(url, "put", "Add Machine Interface Address")
-
-
-def update_machine_interface(machinename, interfacename):
+def set_interface_bootable(machinename, interfacename):
     logger.debug("Attempting to bootable %s ", machinename)
 
     url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
@@ -205,15 +201,6 @@ def update_machine_interface(machinename, interfacename):
     )
 
     setup_requests(url, "post", "Update Machine Interface")
-
-
-def set_env(aq_details: VmData, domain: str, hostname: str, sandbox: str = None):
-    if domain:
-        aq_manage(hostname, "domain", domain)
-    else:
-        aq_manage(hostname, "sandbox", sandbox)
-
-    aq_make(hostname, aq_details)
 
 
 def check_host_exists(hostname: str) -> bool:

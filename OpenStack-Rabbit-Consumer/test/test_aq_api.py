@@ -4,6 +4,14 @@ from unittest.mock import patch, call, NonCallableMock
 
 import pytest
 
+# noinspection PyUnresolvedReferences
+# pylint: disable=unused-import
+from fixtures import (
+    fixture_rabbit_message,
+    fixture_vm_data,
+    fixture_openstack_address_list,
+    fixture_openstack_address,
+)
 from rabbit_consumer.aq_api import (
     verify_kerberos_ticket,
     setup_requests,
@@ -13,14 +21,12 @@ from rabbit_consumer.aq_api import (
     delete_machine,
     create_host,
     delete_host,
-    add_machine_interface,
-    update_machine_interface,
+    set_interface_bootable,
     check_host_exists,
-    set_env,
     AquilonError,
+    add_machine_nics,
 )
 from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
-from rabbit_consumer.vm_data import VmData
 
 
 def test_verify_kerberos_ticket_valid():
@@ -119,23 +125,30 @@ class MockOs(OsDescription):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make(config, setup):
+def test_aq_make_calls(config, setup, openstack_address_list):
     domain = "domain"
     config.return_value.aq_url = domain
 
-    hostname = "host"
     mocked_os_details = MockOs()
-    aq_make(hostname, mocked_os_details)
-    setup.assert_called_once()
 
-    expected_url = f"{domain}/host/{hostname}/command/make"
+    aq_make(openstack_address_list, mocked_os_details)
+
     expected_params = {
-        "osname": mocked_os_details.aq_os_name,
-        "osversion": mocked_os_details.aq_os_version,
         "personality": mocked_os_details.aq_default_personality,
+        "osversion": mocked_os_details.aq_os_version,
+        "osname": mocked_os_details.aq_os_name,
         "archetype": "cloud",
     }
-    assert setup.call_args == call(expected_url, "post", mock.ANY, expected_params)
+
+    expected_urls = [
+        f"{domain}/host/{net.hostname}/command/make" for net in openstack_address_list
+    ]
+    setup.assert_has_calls(
+        [
+            call(expected_urls[0], "post", mock.ANY, expected_params),
+            call(expected_urls[1], "post", mock.ANY, expected_params),
+        ]
+    )
 
 
 @pytest.mark.parametrize(
@@ -146,10 +159,8 @@ def test_aq_make(config, setup):
         "aq_os_version",
     ],
 )
-@patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_missing_fields(config, setup, field_to_blank):
-    hostname = "my_host_name"
+def test_aq_make_missing_fields(config, field_to_blank, openstack_address_list):
     domain = "https://example.com"
 
     os = MockOs()
@@ -158,61 +169,76 @@ def test_aq_make_missing_fields(config, setup, field_to_blank):
 
     with pytest.raises(AssertionError):
         setattr(os, field_to_blank, None)
-        aq_make(hostname, os)
+        aq_make(openstack_address_list, os)
 
     with pytest.raises(AssertionError):
         setattr(os, field_to_blank, "")
-        aq_make(hostname, os)
+        aq_make(openstack_address_list, os)
 
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_none_hostname(config, setup, hostname):
+def test_aq_make_none_hostname(config, setup, openstack_address, hostname):
     domain = "https://example.com"
-
     config.return_value.aq_url = domain
 
+    address = openstack_address
+    address.hostname = hostname
+
     with pytest.raises(ValueError):
-        aq_make(hostname, NonCallableMock())
+        aq_make([address], NonCallableMock())
 
     setup.assert_not_called()
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_manage(config, setup):
-    env_type, env_name = "type", "name"
-    host = "mocked_host"
+def test_aq_manage(config, setup, openstack_address_list):
     config.return_value.aq_url = "https://example.com"
 
-    aq_manage(host, env_type, env_name)
+    aq_manage(openstack_address_list)
 
-    setup.assert_called_once()
-    expected_url = "https://example.com/host/mocked_host/command/manage?hostname=mocked_host&type=name&force=true"
-    assert setup.call_args == call(expected_url, "post", mock.ANY)
+    params = [
+        {
+            "hostname": net.hostname,
+            "domain": config.return_value.aq_domain,
+            "force": True,
+        }
+        for net in openstack_address_list
+    ]
+
+    expected_urls = [
+        f"https://example.com/host/{i.hostname}/command/manage"
+        for i in openstack_address_list
+    ]
+    setup.assert_has_calls(
+        [
+            call(expected_urls[0], "post", mock.ANY, params=params[0]),
+            call(expected_urls[1], "post", mock.ANY, params=params[1]),
+        ]
+    )
 
 
-@patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_create_machine(config, setup):
-    message = {"payload": {}}
-    payload_dict = message["payload"]
-
-    payload_dict["instance_id"] = "uuid_mock"
-    payload_dict["vcpus"] = "vcpus_mock"
-    payload_dict["memory_mb"] = "memory_mock"
-    payload_dict["host"] = "vmhost_mock"
-
-    prefix = "prefix_mock"
-    hostname = "hostname_mock"
+@patch("rabbit_consumer.aq_api.setup_requests")
+def test_aq_create_machine(setup, config, rabbit_message, vm_data):
     config.return_value.aq_url = "https://example.com"
-    returned = create_machine(message, hostname, prefix)
+    config.return_value.aq_prefix = "prefix_mock"
 
-    setup.assert_called_once()
+    returned = create_machine(rabbit_message, vm_data)
+
+    expected_args = {
+        "model": "vm-openstack",
+        "serial": vm_data.virtual_machine_id,
+        "vmhost": rabbit_message.payload.vm_host,
+        "cpucount": rabbit_message.payload.vcpus,
+        "memory": rabbit_message.payload.memory_mb,
+    }
+
+    expected_url = "https://example.com/next_machine/prefix_mock"
+    assert setup.call_args == call(expected_url, "put", mock.ANY, params=expected_args)
     assert returned == setup.return_value
-    expected_url = "https://example.com/next_machine/prefix_mock?model=vm-openstack&serial=uuid_mock&vmhost=vmhost_mock&cpucount=vcpus_mock&memory=memory_mock"
-    assert setup.call_args == call(expected_url, "put", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -230,29 +256,37 @@ def test_aq_delete_machine(config, setup):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_create_host(config, setup):
-    host, machine = "host_str", "machine_str"
-    first_ip = "ip_str"
-    os_name, os_version = "name_str", "vers_str"
+def test_aq_create_host(config, setup, openstack_address_list):
+    machine_name = "machine_name_str"
+    os_desc = NonCallableMock()
 
     env_config = config.return_value
-
     env_config.aq_url = "https://example.com"
-    env_config.aq_archetype = "def_arch_str"
-    env_config.aq_domain = "def_domain_str"
-    env_config.aq_personality = "def_pers_str"
 
-    create_host(
-        host,
-        machinename=machine,
-        firstip=first_ip,
-        osname=os_name,
-        osversion=os_version,
+    create_host(os_desc, openstack_address_list, machine_name)
+
+    expected_params = [
+        {
+            "machine": machine_name,
+            "ip": net.addr,
+            "archetype": env_config.aq_archetype,
+            "domain": env_config.aq_domain,
+            "personality": env_config.aq_personality,
+            "osname": os_desc.aq_os_name,
+            "osversion": os_desc.aq_os_version,
+        }
+        for net in openstack_address_list
+    ]
+
+    expected_urls = [
+        f"https://example.com/host/{i.hostname}" for i in openstack_address_list
+    ]
+    setup.assert_has_calls(
+        [
+            call(expected_urls[0], "put", mock.ANY, params=expected_params[0]),
+            call(expected_urls[1], "put", mock.ANY, params=expected_params[1]),
+        ]
     )
-
-    setup.assert_called_once()
-    expected_url = "https://example.com/host/host_str?machine=machine_str&ip=ip_str&archetype=def_arch_str&domain=def_domain_str&personality=def_pers_str&osname=name_str&osversion=vers_str"
-    assert setup.call_args == call(expected_url, "put", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -270,24 +304,55 @@ def test_aq_delete_host(config, setup):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_add_machine_interface(config, setup):
-    # Other attrs are unused
-    machine_name = "name_str"
-    mac_addr = "mac_addr"
-    interface_name = "iface_name"
-
+def test_add_machine_interface(config, setup, openstack_address_list):
     config.return_value.aq_url = "https://example.com"
-    add_machine_interface(
-        machine_name,
-        macaddr=mac_addr,
-        interfacename=interface_name,
-    )
 
-    setup.assert_called_once()
-    expected_url = (
-        "https://example.com/machine/name_str/interface/iface_name?mac=mac_addr"
+    machine_name = "name_str"
+    add_machine_nics(machine_name, openstack_address_list)
+
+    iface_creation_urls = [
+        f"https://example.com/machine/{machine_name}/interface/eth{i}"
+        for i in range(len(openstack_address_list))
+    ]
+
+    update_params = [
+        {
+            "machine": machine_name,
+            "interface": f"eth{i}",
+            "ip": net.addr,
+            "fqdn": net.hostname,
+        }
+        for i, net in enumerate(openstack_address_list)
+    ]
+
+    setup.assert_has_calls(
+        [
+            call(
+                iface_creation_urls[0],
+                "put",
+                mock.ANY,
+                params={"mac": openstack_address_list[0].mac_addr},
+            ),
+            call(
+                "https://example.com/interface_address",
+                "put",
+                mock.ANY,
+                params=update_params[0],
+            ),
+            call(
+                iface_creation_urls[1],
+                "put",
+                mock.ANY,
+                params={"mac": openstack_address_list[1].mac_addr},
+            ),
+            call(
+                "https://example.com/interface_address",
+                "put",
+                mock.ANY,
+                params=update_params[1],
+            ),
+        ]
     )
-    assert setup.call_args == call(expected_url, "put", mock.ANY)
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -297,7 +362,7 @@ def test_update_machine_interface(config, setup):
     interface_name = "iface_name"
 
     config.return_value.aq_url = "https://example.com"
-    update_machine_interface(machinename=machine_name, interfacename=interface_name)
+    set_interface_bootable(machinename=machine_name, interfacename=interface_name)
 
     setup.assert_called_once()
     expected_url = "https://example.com/machine/machine_str/interface/iface_name?boot&default_route"
@@ -324,31 +389,3 @@ def test_check_host_exists_returns_false(config, setup):
     setup.side_effect = AquilonError(f"Error:\n Host {hostname} not found.")
 
     assert not check_host_exists(hostname)
-
-
-@pytest.mark.parametrize("domain", ["set", ""])
-@patch("rabbit_consumer.aq_api.aq_manage")
-@patch("rabbit_consumer.aq_api.aq_make")
-def test_set_env_selects_domain_or_sandbox(_, manage, domain):
-    hostname = NonCallableMock()
-    sandbox = NonCallableMock()
-
-    # TODO we should check if sandbox is actually set
-    set_env(NonCallableMock(), domain=domain, hostname=hostname, sandbox=sandbox)
-
-    selected_method = "domain" if domain else "sandbox"
-    selected_obj = domain if domain else sandbox
-    manage.assert_called_once_with(hostname, selected_method, selected_obj)
-
-
-@patch("rabbit_consumer.aq_api.aq_manage")
-@patch("rabbit_consumer.aq_api.aq_make")
-def test_set_env_calls_make(make, _):
-    aq_details = NonCallableMock()
-    domain = NonCallableMock()
-    hostname = NonCallableMock()
-    sandbox = NonCallableMock()
-
-    set_env(aq_details, domain=domain, hostname=hostname, sandbox=sandbox)
-
-    make.assert_called_once_with(hostname, aq_details)

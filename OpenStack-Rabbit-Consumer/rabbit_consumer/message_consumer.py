@@ -1,7 +1,6 @@
 import json
 import logging
-import socket
-from typing import Optional
+from typing import Optional, List
 
 import rabbitpy
 
@@ -9,28 +8,25 @@ from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.vm_data import VmData
+from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
+from rabbit_consumer.rabbit_message import RabbitMessage
+from rabbit_consumer.vm_data import VmData
 
 logger = logging.getLogger(__name__)
 
 
-def is_aq_managed_image(message) -> Optional[OsDescription]:
+def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[OsDescription]:
     """
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-    payload = message.get("payload", None)
-    if not payload:
-        logger.debug("No payload found in message")
-        return None
 
-    image_name = payload.get("image_name", None)
+    image_name = rabbit_message.payload.image_name
     if not image_name:
         logger.debug("No image_name found in payload")
         return None
 
-    assert isinstance(image_name, str)
     try:
         return OsDescription.from_image_name(image_name)
     except ValueError:
@@ -38,245 +34,100 @@ def is_aq_managed_image(message) -> Optional[OsDescription]:
         return None
 
 
-def get_metadata_value(message, key):
-    """
-    Function which gets the value from the possible for a given metadata key
-    from the possible paths in the image or instance metadata with
-    the key in uppercase or lowercase
-    """
-    returnstring = message.get("payload").get("metadata").get(key)
-    if returnstring is None:
-        returnstring = message.get("payload").get("image_meta").get(key)
-        if returnstring is None:
-            returnstring = message.get("payload").get("metadata").get(key.lower())
-            if returnstring is None:
-                returnstring = message.get("payload").get("image_meta").get(key.lower())
-    return returnstring
+def consume(message: RabbitMessage):
+    if not is_aq_managed_image(message):
+        logger.info("Skipping non Aquilon managed image")
+        return
+
+    if message.event_type == "compute.instance.create.end":
+        handle_create_machine(message)
+
+    if message.event_type == "compute.instance.delete.start":
+        handle_machine_delete(message)
 
 
-def consume(message):
-    event = message.get("event_type")
-    if event == "compute.instance.create.end" and is_aq_managed_image(message):
-        _handle_create_machine(message)
-
-    if event == "compute.instance.delete.start":
-        _handle_machine_delete(message)
-
-
-def _handle_create_machine(message):
+def handle_create_machine(rabbit_message: RabbitMessage):
     logger.info("=== Received Aquilon VM create message ===")
+    _print_debug_logging(rabbit_message)
 
-    project_name = message.get("_context_project_name")
-    vm_id = message.get("payload").get("instance_id")
-    vm_name = message.get("payload").get("display_name")
-    username = message.get("_context_user_name")
+    vm_data = VmData.from_message(rabbit_message)
+    os_details = is_aq_managed_image(rabbit_message)
+    network_details = openstack_api.get_server_networks(vm_data)
 
-    aq_details = VmData(
-        hostnames=convert_hostnames(message),
-        project_id=message.get("_context_project_id"),
-    )
-
-    if not aq_details.hostnames:
+    if not network_details or not network_details[0].hostname:
+        vm_name = rabbit_message.payload.vm_name
         logger.info("Skipping novalocal only host: %s", vm_name)
         return
 
-    logger.debug("Project Name: %s (%s)", project_name, aq_details.project_id)
-    logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
-    logger.debug("Username: %s", username)
-    logger.debug("Hostnames: %s", aq_details.hostnames)
+    # Configure networking
+    machine_name = aq_api.create_machine(rabbit_message, vm_data)
+    aq_api.add_machine_nics(machine_name, network_details)
+    aq_api.set_interface_bootable(machine_name, "eth0")
 
-    add_hostname_to_metadata(aq_details, vm_id)
-    firstip, machinename = _aq_create_machine(aq_details.hostnames, message)
-    _aq_add_first_nic(machinename, message)
-    _aq_add_optional_nics(aq_details.hostnames, machinename, message)
-    _aq_update_machine_nic(machinename)
-    _aq_create_host(firstip, machinename, vm_id, aq_details)
+    # Manage host in Aquilon
+    aq_api.create_host(os_details, network_details, machine_name)
+    aq_api.aq_manage(network_details)
+    aq_api.aq_make(network_details, os_details)
 
-    # as the machine may have been assigned more that one ip address,
-    # apply the aquilon configuration to all of them
-    _aq_make_machines(aq_details, vm_id)
+    add_hostname_to_metadata(vm_data, network_details)
+    openstack_api.update_metadata(vm_data, {"AQ_STATUS": "SUCCESS"})
 
-    logger.debug("Successfully applied Aquilon configuration")
-    openstack_api.update_metadata(
-        aq_details.project_id, vm_id, {"AQ_STATUS": "SUCCESS"}
-    )
-
-    logger.info("=== Finished Aquilon creation hook for VM %s ===", vm_name)
-
-
-def _handle_machine_delete(message):
-    if is_aq_managed_image(message):
-        logger.debug("Message: %s", message)
-        logger.info("=== Received Aquilon VM delete message ===")
-
-        project_name = message.get("_context_project_name")
-        project_id = message.get("_context_project_id")
-        vm_id = message.get("payload").get("instance_id")
-        vm_name = message.get("payload").get("display_name")
-        username = message.get("_context_user_name")
-        metadata = message.get("payload").get("metadata")
-        machinename = message.get("payload").get("metadata").get("AQ_MACHINENAME")
-        hostnames = metadata.get("HOSTNAMES", None)
-
-        if not hostnames:
-            logger.debug("No hostnames found in metadata, skipping delete")
-            return
-
-        hostnames = [
-            i
-            for i in hostnames.split(",")
-            if "novalocal".casefold() not in i.casefold()
-        ]
-        if not hostnames:
-            logger.info("Skipping unregistered host (metadata): %s", metadata)
-            return
-
-        logger.debug("Project Name: %s (%s)", project_name, project_id)
-        logger.debug("VM Name: %s (%s) ", vm_name, vm_id)
-        logger.debug("Username: %s", username)
-        logger.debug("Hostnames: %s", hostnames)
-
-        try:
-            for host in metadata.get("HOSTNAMES").split(","):
-                logger.debug("Host cleanup: %s", host)
-                aq_api.delete_host(host)
-
-            logger.debug("Deleting machine: %s", machinename)
-            aq_api.delete_machine(machinename)
-        except ConnectionError:
-            openstack_api.update_metadata(project_id, vm_id, {"AQ_STATUS": "FAILED"})
-
-        logger.info("=== Finished Aquilon deletion hook for VM %s ===", vm_name)
-
-
-def _aq_make_machines(fields: VmData, vm_id: str):
-    for host in fields.hostnames:
-        try:
-            aq_api.aq_manage(host, "domain", ConsumerConfig().aq_domain)
-        except Exception as err:
-            logger.error("Failed to manage in Aquilon: %s", err)
-            openstack_api.update_metadata(
-                fields.project_id, vm_id, {"AQ_STATUS": "FAILED"}
-            )
-            raise err
-        try:
-            aq_api.aq_make(host, fields)
-        except Exception as err:
-            logger.error("Failed to make in Aquilon: %s", err)
-            openstack_api.update_metadata(
-                fields.project_id, vm_id, {"AQ_STATUS": "FAILED"}
-            )
-            raise err
-
-
-def _aq_create_host(firstip, machinename, vm_id: str, fields: VmData):
-    aq_api.create_host(
-        fields.hostnames[0],
-        machinename,
-        firstip,
-        fields.osname,
-        fields.osversion,
-    )  # osname needs to be valid otherwise it fails - also need to pass in sandbox
-    openstack_api.update_metadata(
-        fields.project_id, vm_id, {"AQ_MACHINENAME": machinename}
+    logger.info(
+        "=== Finished Aquilon creation hook for VM %s ===", vm_data.virtual_machine_id
     )
 
 
-def _aq_update_machine_nic(machinename):
-    logger.debug("Updating Interfaces")
-    try:
-        aq_api.update_machine_interface(machinename, "eth0")
-    except Exception as err:
-        raise RuntimeError("Failed to set default interface") from err
-    logger.debug("Creating Host")
+def _print_debug_logging(rabbit_message: RabbitMessage) -> None:
+    vm_data = VmData.from_message(rabbit_message)
+    logger.debug(
+        "Project Name: %s (%s)", rabbit_message.project_name, vm_data.project_id
+    )
+    logger.debug(
+        "VM Name: %s (%s) ", rabbit_message.payload.vm_name, vm_data.virtual_machine_id
+    )
+    logger.debug("Username: %s", rabbit_message.user_name)
 
 
-def _aq_add_optional_nics(hostnames, machinename, message):
-    logger.debug("Creating Interfaces2")
-    for index, ip_addr in enumerate(message.get("payload").get("fixed_ips")):
-        if index > 0:
-            interfacename = "eth" + str(index)
-            try:
-                aq_api.add_machine_interface_address(
-                    machinename,
-                    ip_addr.get("address"),
-                    interfacename,
-                    # socket.gethostbyaddr(ip.get("address"))[0])
-                    hostnames[0],
-                )
-            except Exception as err:
-                raise RuntimeError("Failed to add machine interface address") from err
+def handle_machine_delete(rabbit_message: RabbitMessage):
+    logger.info("=== Received Aquilon VM delete message ===")
+    _print_debug_logging(rabbit_message)
 
+    vm_data = VmData.from_message(rabbit_message)
+    network_data = openstack_api.get_server_networks(vm_data)
 
-def _aq_add_first_nic(machinename, message):
-    logger.debug("Creating Interfaces")
-    for index, ip_addr in enumerate(message.get("payload").get("fixed_ips")):
-        interfacename = "eth" + str(index)
-        try:
-            aq_api.add_machine_interface(
-                machinename,
-                ip_addr.get("vif_mac"),
-                interfacename,
-                # socket.gethostbyaddr(ip.get("address"))[0])
-            )
-        except Exception as err:
-            raise RuntimeError("Failed to add machine interface") from err
-
-
-def _aq_create_machine(hostnames, message):
-    logger.debug("Creating machine")
-    try:
-        machine_name = aq_api.create_machine(
-            message,
-            hostnames[-1],
-            ConsumerConfig().aq_prefix,
-        )
-    except Exception as err:
-        raise RuntimeError("Failed to create machine") from err
-
-    first_ip = message.get("payload").get("fixed_ips")[0].get("address")
-    return first_ip, machine_name
-
-
-def add_hostname_to_metadata(fields: VmData, vm_id):
-    if not openstack_api.check_machine_exists(fields.project_id, vm_id):
-        # User has likely deleted the machine since we got here
-        logger.warning("Machine %s does not exist, skipping metadata update", vm_id)
+    if not network_data or not network_data[0].hostname:
+        vm_name = rabbit_message.payload.vm_name
+        logger.debug("No hostnames found for %s, skipping delete", vm_name)
         return
 
-    try:
-        # add hostname(s) to metadata for use when capturing delete messages
-        # as these messages do not contain ip information
-        openstack_api.update_metadata(
-            fields.project_id, vm_id, {"HOSTNAMES": ", ".join(fields.hostnames)}
+    for host in network_data:
+        aq_api.delete_host(host.hostname)
+
+    aq_api.delete_machine(rabbit_message.payload.metadata.machine_name)
+
+    logger.info(
+        "=== Finished Aquilon deletion hook for VM %s ===", vm_data.virtual_machine_id
+    )
+
+
+def add_hostname_to_metadata(fields: VmData, network_details: List[OpenstackAddress]):
+    if not openstack_api.check_machine_exists(fields):
+        # User has likely deleted the machine since we got here
+        logger.warning(
+            "Machine %s does not exist, skipping metadata update",
+            fields.virtual_machine_id,
         )
-    except Exception as err:
-        raise RuntimeError("Failed to update metadata") from err
-    logger.debug("Building metadata")
+        return
 
-
-def convert_hostnames(message):
-    # convert VM ip address(es) into hostnames
-    hostnames = []
-    for ip_addr in message.get("payload").get("fixed_ips"):
-        try:
-            hostname = socket.gethostbyaddr(ip_addr.get("address"))[0]
-            hostnames.append(hostname)
-        except socket.herror:
-            logger.info("No hostname found for ip %s", ip_addr.get("address"))
-        except Exception:
-            logger.error("Problem converting ip to hostname")
-            raise
-    if len(hostnames) > 1:
-        logger.warning("There are multiple hostnames assigned to this VM")
-    logger.debug("Hostnames: %s", hostnames)
-    return hostnames
+    hostnames = [i.hostname for i in network_details]
+    metadata = {"HOSTNAMES": ",".join(hostnames)}
+    openstack_api.update_metadata(fields, metadata)
 
 
 def on_message(message):
     raw_body = message.body
     body = json.loads(raw_body.decode("utf-8"))
-    decoded = json.loads(body["oslo.message"])
+    decoded = RabbitMessage.from_json(body["oslo.message"])
 
     if not is_aq_managed_image(decoded):
         logger.debug("Ignoring message: %s", decoded)

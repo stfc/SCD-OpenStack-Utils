@@ -1,18 +1,23 @@
-from typing import Union, Dict
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
-from rabbit_consumer.vm_data import VmData
+# noinspection PyUnresolvedReferences
+# pylint: disable=unused-import
+from fixtures import (
+    fixture_rabbit_message,
+    fixture_vm_data,
+    fixture_openstack_address_list,
+    fixture_openstack_address,
+)
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
     is_aq_managed_image,
-    get_metadata_value,
     on_message,
     initiate_consumer,
-    consume,
-    convert_hostnames,
     add_hostname_to_metadata,
+    handle_create_machine,
+    handle_machine_delete,
 )
 
 
@@ -28,24 +33,14 @@ from rabbit_consumer.message_consumer import (
         "warehoused-rocky-8-aq-26-01-2023-09-21-12",
     ],
 )
-def test_is_aq_managed_image_with_real_aq_image_names(image_name):
-    message = {"payload": {"image_name": image_name}}
-    assert is_aq_managed_image(message)
+def test_is_aq_managed_image_with_real_aq_image_names(image_name, rabbit_message):
+    rabbit_message.payload.image_name = image_name
+    assert is_aq_managed_image(rabbit_message)
 
 
-def test_aq_messages_no_payload():
-    message = {"image_name": {}}
-    assert not is_aq_managed_image(message)
-
-
-def test_aq_messages_no_image_name():
-    message = {"payload": {"image_name": {}}}
-    assert not is_aq_managed_image(message)
-
-
-def test_aq_messages_no_payload_no_image_name():
-    message = {}
-    assert not is_aq_managed_image(message)
+def test_aq_messages_no_image_name(rabbit_message):
+    rabbit_message.payload.image_name = None
+    assert not is_aq_managed_image(rabbit_message)
 
 
 @pytest.mark.parametrize(
@@ -61,72 +56,42 @@ def test_aq_messages_no_payload_no_image_name():
         "capi-ubuntu-2004-kube-v1.23.15-2023-03-14",
     ],
 )
-def test_aq_messages_other_image_names(image_name):
-    message = {"payload": {"image_name": image_name}}
-    assert not is_aq_managed_image(message)
-
-
-@pytest.mark.parametrize("key_name", ["metadata", "image_meta"])
-def test_get_metadata_value(key_name):
-    rabbit_message = Mock()
-    mock_key = NonCallableMock()
-    rabbit_message.get.return_value = {
-        "metadata": {},
-        "image_meta": {},
-        key_name: {mock_key: "value"},
-    }
-
-    assert get_metadata_value(rabbit_message, mock_key) == "value"
+def test_aq_messages_other_image_names(image_name, rabbit_message):
+    rabbit_message.payload.image_name = image_name
+    assert not is_aq_managed_image(rabbit_message)
 
 
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.json")
-def test_on_message_parses_json(json, aq_message, _):
+@patch("rabbit_consumer.message_consumer.RabbitMessage")
+def test_on_message_parses_json(message_parser, json, is_managed, consume):
     message = MagicMock()
     raw_body = message.body
-    aq_message.return_value = True
+    is_managed.return_value = True
 
     on_message(message)
     raw_body.decode.assert_called_once_with("utf-8")
 
     decoded_body = json.loads.return_value
-    json.loads.assert_has_calls(
-        [
-            call(raw_body.decode.return_value),
-            # Due to a bug in mocking the ["access"] triggers
-            # a getitem call on the mock that's difficult to assert
-            # pylint: disable=unnecessary-dunder-call
-            call().__getitem__("oslo.message"),
-            call(decoded_body.__getitem__.return_value),
-        ],
-        any_order=False,
-    )
-
-
-@patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.json")
-def test_on_message_forwards_json_to_consumer(json, aq_message_mock, consume_mock):
-    message = Mock()
-    aq_message_mock.return_value = True
-
-    on_message(message)
-    aq_message_mock.assert_called_once_with(json.loads.return_value)
-    consume_mock.assert_called_once_with(json.loads.return_value)
+    message_parser.from_json.assert_called_once_with(decoded_body["oslo.message"])
+    consume.assert_called_once_with(message_parser.from_json.return_value)
     message.ack.assert_called_once()
 
 
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.json")
-def test_on_message_ignores_non_aq(json, aq_message_mock, consume_mock):
+def test_on_message_ignores_non_aq(aq_message_mock, consume_mock):
     message = Mock()
     aq_message_mock.return_value = False
 
-    on_message(message)
+    with (
+        patch("rabbit_consumer.message_consumer.RabbitMessage"),
+        patch("rabbit_consumer.message_consumer.json"),
+    ):
+        on_message(message)
 
-    aq_message_mock.assert_called_once_with(json.loads.return_value)
+    aq_message_mock.assert_called_once()
     consume_mock.assert_not_called()
     message.ack.assert_not_called()
 
@@ -178,346 +143,88 @@ def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
     message_mock.assert_has_calls([call(message) for message in queue_messages])
 
 
-@patch("rabbit_consumer.message_consumer.socket")
-def test_convert_hostnames_multiple(socket):
-    message = Mock()
-    message.get.return_value = {"fixed_ips": [Mock(), Mock()]}
-    socket.gethostbyaddr.side_effect = [["host1"], ["host2"]]
-
-    hostnames = convert_hostnames(message)
-    assert hostnames == ["host1", "host2"]
-
-
-@patch("rabbit_consumer.message_consumer.socket")
-def test_convert_hostnames_single(socket):
-    message = Mock()
-    message.get.return_value = {"fixed_ips": [Mock()]}
-    socket.gethostbyaddr.side_effect = [["host1"]]
-
-    hostnames = convert_hostnames(message)
-    assert hostnames == ["host1"]
-
-
-@patch("rabbit_consumer.message_consumer.socket")
-def test_convert_hostnames_no_ips(_):
-    message = Mock()
-    message.get.return_value = {"fixed_ips": []}
-
-    hostnames = convert_hostnames(message)
-    assert not hostnames
-
-
-_FAKE_PAYLOAD = {
-    "instance_id": NonCallableMock(),
-    "display_name": "vm_display_name",
-    "fixed_ips": [Mock(), Mock()],
-    "metadata": MagicMock(),
-    "host": NonCallableMock(),
-    "vcpus": NonCallableMock(),
-    "memory_mb": NonCallableMock(),
-    "first_ip": [{"address": NonCallableMock()}],
-}
-
-
-def _message_get_create(arg_name: str) -> Union[str, Dict]:
-    if arg_name == "event_type":
-        return "compute.instance.create.end"
-    if arg_name == "payload":
-        return _FAKE_PAYLOAD
-    return arg_name
-
-
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_add_hostname_to_metadata_machine_exists(openstack_api):
-    fields = VmData(["foo"], project_id=NonCallableMock())
-    vm_id = NonCallableMock()
-
+def test_add_hostname_to_metadata_machine_exists(
+    openstack_api, vm_data, openstack_address_list
+):
     openstack_api.check_machine_exists.return_value = True
-    add_hostname_to_metadata(fields, vm_id)
+    add_hostname_to_metadata(vm_data, openstack_address_list)
 
-    openstack_api.check_machine_exists.assert_called_once_with(fields.project_id, vm_id)
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
+    hostnames = [i.hostname for i in openstack_address_list]
     openstack_api.update_metadata.assert_called_with(
-        fields.project_id, vm_id, {"HOSTNAMES": "foo"}
+        vm_data, {"HOSTNAMES": ",".join(hostnames)}
     )
 
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api):
-    fields = VmData(["foo"], project_id=NonCallableMock())
-    vm_id = NonCallableMock()
-
+def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data):
     openstack_api.check_machine_exists.return_value = False
-    add_hostname_to_metadata(fields, vm_id)
+    add_hostname_to_metadata(vm_data, [])
 
-    openstack_api.check_machine_exists.assert_called_once_with(fields.project_id, vm_id)
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
     openstack_api.update_metadata.assert_not_called()
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.get_metadata_value")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.ConsumerConfig")
+@patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
 def test_consume_create_machine_hostnames_good_path(
-    app_conf, aq_api, openstack, hostname, get_metadata, _
+    metadata, aq_api, openstack, is_managed, rabbit_message
 ):
-    expected_hostnames = ["host1", "host2"]
-    hostname.return_value = expected_hostnames
+    with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
+        handle_create_machine(rabbit_message)
 
-    message = Mock()
-    message.get.side_effect = _message_get_create
+        vm_data = data_patch.from_message.return_value
+        network_details = openstack.get_server_networks.return_value
+        os_details = is_managed.return_value
 
-    consume(message)
-    aq_api.create_machine.assert_called_once_with(
-        message,
-        expected_hostnames[-1],
-        app_conf.return_value.aq_prefix,
-    )
+    data_patch.from_message.assert_called_with(rabbit_message)
+    openstack.get_server_networks.assert_called_with(vm_data)
 
-    aq_api.add_machine_interface.assert_has_calls(
-        [
-            call(
-                aq_api.create_machine.return_value,
-                _FAKE_PAYLOAD["fixed_ips"][0].get.return_value,
-                "eth0",
-            ),
-            call(
-                aq_api.create_machine.return_value,
-                _FAKE_PAYLOAD["fixed_ips"][1].get.return_value,
-                "eth1",
-            ),
-        ]
-    )
+    # Check main Aq Flow
+    aq_api.create_machine.assert_called_once_with(rabbit_message, vm_data)
+    machine_name = aq_api.create_machine.return_value
 
-    aq_api.update_machine_interface.assert_called_once_with(
-        aq_api.create_machine.return_value, "eth0"
-    )
+    # Networking
+    aq_api.add_machine_nics.assert_called_once_with(machine_name, network_details)
+
+    aq_api.set_interface_bootable.assert_called_once_with(machine_name, "eth0")
 
     aq_api.create_host.assert_called_once_with(
-        expected_hostnames[0],
-        aq_api.create_machine.return_value,
-        _FAKE_PAYLOAD["fixed_ips"][0].get.return_value,
-        get_metadata.return_value,
-        get_metadata.return_value,
+        os_details, network_details, machine_name
+    )
+    aq_api.aq_manage.assert_called_once_with(network_details)
+    aq_api.aq_make.assert_called_once_with(network_details, os_details)
+
+    # Metadata
+    metadata.assert_called_once_with(vm_data, network_details)
+    openstack.update_metadata.assert_called_once_with(vm_data, {"AQ_STATUS": "SUCCESS"})
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_consume_delete_machine_good_path(aq_api, rabbit_message):
+    rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
+    mock_network_data = [NonCallableMock(), NonCallableMock()]
+
+    with (
+        patch("rabbit_consumer.message_consumer.VmData") as data_patch,
+        patch("rabbit_consumer.message_consumer.openstack_api") as openstack_patch,
+    ):
+        openstack_patch.get_server_networks.return_value = mock_network_data
+
+        handle_machine_delete(rabbit_message)
+
+        data_patch.from_message.assert_called_with(rabbit_message)
+        openstack_patch.get_server_networks.assert_called_with(
+            data_patch.from_message.return_value
+        )
+
+    aq_api.delete_host.assert_has_calls(
+        [call(i.hostname) for i in mock_network_data], any_order=True
     )
 
-    openstack.update_metadata.assert_has_calls(
-        [
-            # Where _context_project_id is the arg passed to message.get()
-            call(
-                "_context_project_id",
-                _FAKE_PAYLOAD["instance_id"],
-                {"HOSTNAMES": ", ".join(expected_hostnames)},
-            ),
-            call(
-                "_context_project_id",
-                _FAKE_PAYLOAD["instance_id"],
-                {"AQ_MACHINENAME": aq_api.create_machine.return_value},
-            ),
-            call(
-                "_context_project_id",
-                _FAKE_PAYLOAD["instance_id"],
-                {"AQ_STATUS": "SUCCESS"},
-            ),
-        ],
-        any_order=False,
-    )
-
-    aq_api.aq_manage.assert_has_calls(
-        [
-            call(host, "domain", app_conf.return_value.aq_domain)
-            for host in expected_hostnames
-        ]
-    )
-
-    expected_fields = VmData(
-        archetype=get_metadata.return_value,
-        hostnames=expected_hostnames,
-        osname=get_metadata.return_value,
-        osversion=get_metadata.return_value,
-        personality=get_metadata.return_value,
-        project_id="_context_project_id",
-    )
-
-    aq_api.aq_make.assert_has_calls(
-        [call(host, expected_fields) for host in expected_hostnames]
-    )
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-def test_consume_create_machine_update_metadata_failure(openstack, hostname, _):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    openstack.update_metadata.side_effect = Exception("mocked exception")
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert str(err.value) == "Failed to update metadata"
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_create_machine_aq_api_failure(aq_api, hostname, _, __):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    aq_api.create_machine.side_effect = Exception("mocked exception")
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert str(err.value) == "Failed to create machine"
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_add_machine_interface_failure(aq_api, hostname, _, __):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    aq_api.add_machine_interface.side_effect = Exception("mocked exception")
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert "Failed to add machine interface" in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_add_machine_interface_address_failure(aq_api, hostname, _, __):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    aq_api.add_machine_interface_address.side_effect = Exception("mocked exception")
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert "Failed to add machine interface address" in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_update_machine_interface_failure(aq_api, hostname, _, __):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-
-    aq_api.update_machine_interface.side_effect = Exception("mocked exception")
-
-    with pytest.raises(Exception) as err:
-        consume(message)
-    assert "Failed to set default interface" in str(err.value)
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_aq_manage_failure_marks_aq_failed(aq_api, hostname, openstack, __):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-    aq_api.aq_manage.side_effect = Exception("mocked_exception")
-
-    with pytest.raises(Exception):
-        consume(message)
-
-    openstack.update_metadata.assert_called_with(
-        "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
-    )
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.convert_hostnames")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_aq_make_failure_marks_aq_failed(aq_api, hostname, openstack, _):
-    hostname.return_value = ["host1", "host2"]
-
-    message = Mock()
-    message.get.side_effect = _message_get_create
-    aq_api.aq_make.side_effect = Exception("mocked_exception")
-
-    with pytest.raises(Exception):
-        consume(message)
-
-    openstack.update_metadata.assert_called_with(
-        "_context_project_id", _FAKE_PAYLOAD["instance_id"], {"AQ_STATUS": "FAILED"}
-    )
-
-
-_DELETE_FAKE_PAYLOAD = {
-    "instance_id": NonCallableMock(),
-    "metadata": {"AQ_MACHINENAME": "AQ-HOST1", "HOSTNAMES": "host1,host2"},
-}
-
-
-def _message_get_delete(arg_name: str) -> Union[str, Dict]:
-    if arg_name == "event_type":
-        return "compute.instance.delete.start"
-    if arg_name == "payload":
-        return _DELETE_FAKE_PAYLOAD
-    return arg_name
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_good_path(aq_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    consume(message)
-
-    aq_api.delete_host.assert_has_calls([call("host1"), call("host2")], any_order=True)
     aq_api.delete_machine.assert_called_once_with(
-        _DELETE_FAKE_PAYLOAD["metadata"]["AQ_MACHINENAME"]
+        rabbit_message.payload.metadata.machine_name
     )
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.openstack_api")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_host_delete_failure(aq_api, openstack_api, __):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.delete_host.side_effect = ConnectionError("mocked exception")
-    consume(message)
-
-    openstack_api.update_metadata.assert_called_with(
-        "_context_project_id",
-        _DELETE_FAKE_PAYLOAD["instance_id"],
-        {"AQ_STATUS": "FAILED"},
-    )
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_aq_delete_machine_failure(aq_api, _):
-    message = Mock()
-    message.get.side_effect = _message_get_delete
-
-    aq_api.delete_machine.side_effect = Exception("mocked exception")
-    with pytest.raises(Exception):
-        consume(message)
