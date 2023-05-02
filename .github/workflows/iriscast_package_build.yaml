@@ -35,7 +35,7 @@ jobs:
         run: |
           cd iriscasttools && pylint --recursive yes test iriscasttools
 
-  build_wheel:
+  build:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -50,11 +50,12 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update && sudo apt-get install -y rpm
           python -m pip install --upgrade pip
           pip install setuptools wheel
 
-      - name: Build Wheels
-        run: cd iriscasttools && python setup.py bdist_wheel
+      - name: Build RPM and Wheels
+        run: cd iriscasttools && python setup.py bdist_wheel bdist_rpm
 
       - uses: actions/upload-artifact@v3
         with:
@@ -67,7 +68,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     needs:
       - test_and_lint
-      - build_wheel
+      - build
     steps:
       - name: Checkout
         uses: actions/checkout@v3
