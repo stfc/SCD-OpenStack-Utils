@@ -34,11 +34,17 @@ from rabbit_consumer.message_consumer import (
     ],
 )
 def test_is_aq_managed_image_with_real_aq_image_names(image_name, rabbit_message):
+    """
+    Test that the function returns True for AQ managed images based on some example image names
+    """
     rabbit_message.payload.image_name = image_name
     assert is_aq_managed_image(rabbit_message)
 
 
 def test_aq_messages_no_image_name(rabbit_message):
+    """
+    Test that the function returns False for messages without an image name
+    """
     rabbit_message.payload.image_name = None
     assert not is_aq_managed_image(rabbit_message)
 
@@ -57,6 +63,9 @@ def test_aq_messages_no_image_name(rabbit_message):
     ],
 )
 def test_aq_messages_other_image_names(image_name, rabbit_message):
+    """
+    Test that the function returns False for messages with non-AQ image names
+    """
     rabbit_message.payload.image_name = image_name
     assert not is_aq_managed_image(rabbit_message)
 
@@ -66,6 +75,9 @@ def test_aq_messages_other_image_names(image_name, rabbit_message):
 @patch("rabbit_consumer.message_consumer.json")
 @patch("rabbit_consumer.message_consumer.RabbitMessage")
 def test_on_message_parses_json(message_parser, json, is_managed, consume):
+    """
+    Test that the function parses the message body as JSON
+    """
     message = MagicMock()
     raw_body = message.body
     is_managed.return_value = True
@@ -82,6 +94,9 @@ def test_on_message_parses_json(message_parser, json, is_managed, consume):
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 def test_on_message_ignores_non_aq(aq_message_mock, consume_mock):
+    """
+    Test that the function ignores non-AQ messages and acks them
+    """
     message = Mock()
     aq_message_mock.return_value = False
 
@@ -111,6 +126,9 @@ class MockedConfig(ConsumerConfig):
 @patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 def test_initiate_consumer_channel_setup(rabbitpy, _):
+    """
+    Test that the function sets up the channel and queue correctly
+    """
     mocked_config = MockedConfig()
 
     with patch("rabbit_consumer.message_consumer.ConsumerConfig") as config:
@@ -134,6 +152,9 @@ def test_initiate_consumer_channel_setup(rabbitpy, _):
 @patch("rabbit_consumer.message_consumer.on_message")
 @patch("rabbit_consumer.message_consumer.rabbitpy")
 def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
+    """
+    Test that the function actually consumes messages
+    """
     queue_messages = [NonCallableMock(), NonCallableMock()]
     # We need our mocked queue to act like a generator
     rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
@@ -147,6 +168,9 @@ def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
 def test_add_hostname_to_metadata_machine_exists(
     openstack_api, vm_data, openstack_address_list
 ):
+    """
+    Test that the function adds the hostname to the metadata when the machine exists
+    """
     openstack_api.check_machine_exists.return_value = True
     add_hostname_to_metadata(vm_data, openstack_address_list)
 
@@ -159,6 +183,9 @@ def test_add_hostname_to_metadata_machine_exists(
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
 def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data):
+    """
+    Test that the function does not add the hostname to the metadata when the machine does not exist
+    """
     openstack_api.check_machine_exists.return_value = False
     add_hostname_to_metadata(vm_data, [])
 
@@ -173,6 +200,9 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
 def test_consume_create_machine_hostnames_good_path(
     metadata, aq_api, openstack, is_managed, rabbit_message
 ):
+    """
+    Test that the function calls the correct functions in the correct order to register a new machine
+    """
     with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
         handle_create_machine(rabbit_message)
 
@@ -205,6 +235,9 @@ def test_consume_create_machine_hostnames_good_path(
 
 @patch("rabbit_consumer.message_consumer.aq_api")
 def test_consume_delete_machine_good_path(aq_api, rabbit_message):
+    """
+    Test that the function calls the correct functions in the correct order to delete a machine
+    """
     rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
     mock_network_data = [NonCallableMock(), NonCallableMock()]
 

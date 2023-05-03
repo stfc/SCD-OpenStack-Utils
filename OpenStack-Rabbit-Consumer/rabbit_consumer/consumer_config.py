@@ -5,6 +5,11 @@ from functools import partial
 
 @dataclass
 class _AqFields:
+    """
+    Dataclass for all Aquilon config elements. These are pulled from
+    environment variables.
+    """
+
     aq_archetype: str = field(default_factory=partial(os.getenv, "AQ_ARCHETYPE"))
     aq_domain: str = field(default_factory=partial(os.getenv, "AQ_DOMAIN"))
     aq_personality: str = field(default_factory=partial(os.getenv, "AQ_PERSONALITY"))
@@ -14,6 +19,11 @@ class _AqFields:
 
 @dataclass
 class _OpenstackFields:
+    """
+    Dataclass for all Openstack config elements. These are pulled from
+    environment variables.
+    """
+
     openstack_auth_url: str = field(
         default_factory=partial(os.getenv, "OPENSTACK_AUTH_URL")
     )
@@ -36,6 +46,11 @@ class _OpenstackFields:
 
 @dataclass
 class _RabbitFields:
+    """
+    Dataclass for all RabbitMQ config elements. These are pulled from
+    environment variables.
+    """
+
     rabbit_host: str = field(default_factory=partial(os.getenv, "RABBIT_HOST", None))
     rabbit_port: str = field(default_factory=partial(os.getenv, "RABBIT_PORT", None))
     rabbit_username: str = field(

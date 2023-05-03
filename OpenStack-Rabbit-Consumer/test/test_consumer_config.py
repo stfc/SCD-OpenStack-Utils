@@ -31,6 +31,9 @@ RABBIT_FIELDS = [
     "config_name,env_var", AQ_FIELDS + OPENSTACK_FIELDS + RABBIT_FIELDS
 )
 def test_config_gets_os_env_vars(monkeypatch, config_name, env_var):
+    """
+    Test that the config class pulls the correct values from the environment.
+    """
     expected = "MOCK_ENV"
     monkeypatch.setenv(env_var, expected)
     assert getattr(ConsumerConfig(), config_name) == expected

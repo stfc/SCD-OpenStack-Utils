@@ -15,9 +15,12 @@ class OsDescription(abc.ABC):
 
     @classmethod
     def from_image_name(cls, image_name: str) -> "OsDescription":
+        """
+        Factory method to create an OS description based on the image name
+        """
+
         # This breaks the circular import, by loading subclasses
         # dynamically when we need them
-
         # noinspection PyUnresolvedReferences
         # pylint: disable=import-outside-toplevel, unused-import
         from . import centos, scientific_linux, rocky

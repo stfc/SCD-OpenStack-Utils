@@ -37,11 +37,17 @@ class OpenstackConnection:
 
 
 def check_machine_exists(vm_data: VmData) -> bool:
+    """
+    Checks to see if the machine exists in Openstack.
+    """
     with OpenstackConnection(vm_data.project_id) as conn:
         return bool(conn.compute.find_server(vm_data.virtual_machine_id))
 
 
 def get_server_details(vm_data: VmData) -> Server:
+    """
+    Gets the server details from Openstack with details included
+    """
     with OpenstackConnection(vm_data.project_id) as conn:
         # Workaround for details missing from find_server
         # on the current version of openstacksdk
@@ -51,16 +57,26 @@ def get_server_details(vm_data: VmData) -> Server:
 
 
 def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
+    """
+    Gets the networks from Openstack for the virtual machine as a list
+    of deserialized OpenstackAddresses.
+    """
     server = get_server_details(vm_data)
     return OpenstackAddress.get_internal_networks(server.addresses)
 
 
 def get_metadata(vm_data: VmData) -> dict:
+    """
+    Gets the metadata from Openstack for the virtual machine.
+    """
     server = get_server_details(vm_data)
     return server.metadata
 
 
-def update_metadata(vm_data: VmData, metadata):
+def update_metadata(vm_data: VmData, metadata) -> None:
+    """
+    Updates the metadata for the virtual machine.
+    """
     server = get_server_details(vm_data)
     with OpenstackConnection(vm_data.project_id) as conn:
         conn.compute.set_server_metadata(server, metadata)

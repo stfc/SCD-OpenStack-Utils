@@ -9,6 +9,9 @@ from rabbit_consumer.vm_data import VmData
 
 @pytest.fixture(name="rabbit_message")
 def fixture_rabbit_message():
+    """
+    Creates a RabbitMessage object with mock data
+    """
     rabbit_payload = RabbitPayload(
         fixed_ips=["127.0.0.1"],
         image_name="image_name_mock",
@@ -32,6 +35,9 @@ def fixture_rabbit_message():
 
 @pytest.fixture(name="vm_data")
 def fixture_vm_data():
+    """
+    Creates a VmData object with mock data
+    """
     return VmData(
         project_id="project_id_mock", virtual_machine_id="virtual_machine_id_mock"
     )
@@ -39,6 +45,9 @@ def fixture_vm_data():
 
 @pytest.fixture(name="openstack_address")
 def fixture_openstack_address():
+    """
+    Creates an OpenstackAddress object with mock data
+    """
     return OpenstackAddress(
         addr="127.0.0.123",
         mac_addr="00:00:00:00:00:00",
@@ -49,6 +58,9 @@ def fixture_openstack_address():
 
 @pytest.fixture(name="openstack_address_list")
 def fixture_openstack_address_list(openstack_address):
+    """
+    Creates a list of OpenstackAddress objects with mock data
+    """
     addresses = [openstack_address, openstack_address]
     for i in addresses:
         # Set a unique hostname for each address, otherwise the fixture

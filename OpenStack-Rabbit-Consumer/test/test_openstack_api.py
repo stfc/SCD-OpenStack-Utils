@@ -15,6 +15,9 @@ from rabbit_consumer.openstack_api import (
 @patch("rabbit_consumer.openstack_api.ConsumerConfig")
 @patch("rabbit_consumer.openstack_api.openstack.connect")
 def test_openstack_connection(mock_connect, mock_config):
+    """
+    Test that the OpenstackConnection context manager calls the correct functions
+    """
     mock_project = NonCallableMock()
     with OpenstackConnection(mock_project) as conn:
         mock_connect.assert_called_once_with(
@@ -34,6 +37,9 @@ def test_openstack_connection(mock_connect, mock_config):
 
 @patch("rabbit_consumer.openstack_api.OpenstackConnection")
 def test_check_machine_exists_existing_machine(conn, vm_data):
+    """
+    Test that the function returns True when the machine exists
+    """
     context = conn.return_value.__enter__.return_value
     context.compute.find_server.return_value = NonCallableMock()
     found = check_machine_exists(vm_data)
@@ -45,6 +51,9 @@ def test_check_machine_exists_existing_machine(conn, vm_data):
 
 @patch("rabbit_consumer.openstack_api.OpenstackConnection")
 def test_check_machine_exists_deleted_machine(conn, vm_data):
+    """
+    Test that the function returns False when the machine does not exist
+    """
     context = conn.return_value.__enter__.return_value
     context.compute.find_server.return_value = None
     found = check_machine_exists(vm_data)
@@ -58,6 +67,9 @@ def test_check_machine_exists_deleted_machine(conn, vm_data):
 @patch("rabbit_consumer.openstack_api.OpenstackConnection")
 @patch("rabbit_consumer.openstack_api.get_server_details")
 def test_update_metadata(server_details, conn, vm_data):
+    """
+    Test that the function calls the correct functions to update the metadata on a VM
+    """
     server_details.return_value = NonCallableMock()
     update_metadata(vm_data, {"key": "value"})
 
@@ -72,6 +84,9 @@ def test_update_metadata(server_details, conn, vm_data):
 
 @patch("rabbit_consumer.openstack_api.OpenstackConnection")
 def test_get_server_details(conn, vm_data):
+    """
+    Test that the function calls the correct functions to get the details of a VM
+    """
     context = conn.return_value.__enter__.return_value
     context.compute.servers.return_value = [NonCallableMock()]
 
@@ -87,6 +102,9 @@ def test_get_server_details(conn, vm_data):
 @patch("rabbit_consumer.openstack_api.get_server_details")
 @patch("rabbit_consumer.openstack_api.OpenstackAddress")
 def test_get_server_networks(address, server_details, vm_data):
+    """
+    Test that the function calls the correct functions to get the networks of a VM
+    """
     server_details.return_value = NonCallableMock()
 
     get_server_networks(vm_data)

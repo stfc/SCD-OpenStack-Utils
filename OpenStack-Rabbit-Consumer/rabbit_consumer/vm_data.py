@@ -14,6 +14,9 @@ class VmData:
 
     @staticmethod
     def from_message(message: RabbitMessage) -> "VmData":
+        """
+        Creates a VmData object from a RabbitMessage
+        """
         return VmData(
             project_id=message.project_id,
             virtual_machine_id=message.payload.instance_id,

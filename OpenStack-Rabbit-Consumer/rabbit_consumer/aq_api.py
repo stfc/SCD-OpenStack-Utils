@@ -31,7 +31,11 @@ class AquilonError(Exception):
     """
 
 
-def verify_kerberos_ticket():
+def verify_kerberos_ticket() -> bool:
+    """
+    Check for a valid Kerberos ticket from a sidecar, or on the host
+    Raises a RuntimeError if no ticket is found
+    """
     logger.debug("Checking for valid Kerberos Ticket")
 
     if subprocess.call(["klist", "-s"]) == 1:
@@ -41,7 +45,10 @@ def verify_kerberos_ticket():
     return True
 
 
-def setup_requests(url, method, desc, params: Optional[dict] = None):
+def setup_requests(url, method, desc, params: Optional[dict] = None) -> str:
+    """
+    Passes a request to the Aquilon API
+    """
     verify_kerberos_ticket()
 
     logger.debug("%s: %s", method, url)
@@ -76,7 +83,10 @@ def setup_requests(url, method, desc, params: Optional[dict] = None):
     return response.text
 
 
-def aq_make(addresses: List[OpenstackAddress], os_data: OsDescription):
+def aq_make(addresses: List[OpenstackAddress], os_data: OsDescription) -> None:
+    """
+    Runs AQ make against a list of addresses passed to build the default personality
+    """
     params = {
         "personality": os_data.aq_default_personality,
         "osversion": os_data.aq_os_version,
@@ -100,7 +110,10 @@ def aq_make(addresses: List[OpenstackAddress], os_data: OsDescription):
         setup_requests(url, "post", "Make Template: ", params)
 
 
-def aq_manage(addresses: List[OpenstackAddress]):
+def aq_manage(addresses: List[OpenstackAddress]) -> None:
+    """
+    Manages the list of Aquilon addresses passed to it back to the production domain
+    """
     for i in addresses:
         hostname = i.hostname
         logger.debug("Attempting to manage %s", hostname)
@@ -115,6 +128,9 @@ def aq_manage(addresses: List[OpenstackAddress]):
 
 
 def create_machine(message: RabbitMessage, vm_data: VmData) -> str:
+    """
+    Creates a machine in Aquilon. Returns the machine name
+    """
     logger.debug("Attempting to create machine for %s ", vm_data.virtual_machine_id)
 
     params = {
@@ -130,7 +146,10 @@ def create_machine(message: RabbitMessage, vm_data: VmData) -> str:
     return response
 
 
-def delete_machine(machinename):
+def delete_machine(machinename) -> None:
+    """
+    Deletes a machine in Aquilon
+    """
     logger.debug("Attempting to delete machine for %s", machinename)
 
     url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machinename)
@@ -140,7 +159,10 @@ def delete_machine(machinename):
 
 def create_host(
     os_details: OsDescription, addresses: List[OpenstackAddress], machine_name: str
-):
+) -> None:
+    """
+    Creates a host in Aquilon
+    """
     config = ConsumerConfig()
 
     for address in addresses:
@@ -159,13 +181,19 @@ def create_host(
         setup_requests(url, "put", "Host Create", params=params)
 
 
-def delete_host(hostname: str):
+def delete_host(hostname: str) -> None:
+    """
+    Deletes a host in Aquilon
+    """
     logger.debug("Attempting to delete host for %s ", hostname)
     url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
     setup_requests(url, "delete", "Host Delete")
 
 
-def add_machine_nics(machine_name, addresses: List[OpenstackAddress]):
+def add_machine_nics(machine_name, addresses: List[OpenstackAddress]) -> None:
+    """
+    Adds NICs to a given machine in Aquilon based on the VM addresses
+    """
     for i, address in enumerate(addresses):
         interface_name = f"eth{i}"
 
@@ -193,7 +221,10 @@ def add_machine_nics(machine_name, addresses: List[OpenstackAddress]):
         setup_requests(url, "put", "Add Machine Interface Address", params=params)
 
 
-def set_interface_bootable(machinename, interfacename):
+def set_interface_bootable(machinename, interfacename) -> None:
+    """
+    Sets a given interface on a machine to be bootable
+    """
     logger.debug("Attempting to bootable %s ", machinename)
 
     url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
@@ -204,6 +235,9 @@ def set_interface_bootable(machinename, interfacename):
 
 
 def check_host_exists(hostname: str) -> bool:
+    """
+    Checks if a host exists in Aquilon
+    """
     logger.debug("Checking if hostname exists: %s", hostname)
     url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
     try:

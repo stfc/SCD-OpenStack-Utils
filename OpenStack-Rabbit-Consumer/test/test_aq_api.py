@@ -30,6 +30,9 @@ from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
 
 
 def test_verify_kerberos_ticket_valid():
+    """
+    Test that verify_kerberos_ticket returns True when the ticket is valid
+    """
     with patch("rabbit_consumer.aq_api.subprocess.call") as mocked_call:
         # Exit code 0 - i.e. valid ticket
         mocked_call.return_value = 0
@@ -39,6 +42,9 @@ def test_verify_kerberos_ticket_valid():
 
 @patch("rabbit_consumer.aq_api.subprocess.call")
 def test_verify_kerberos_ticket_invalid(subprocess):
+    """
+    Test that verify_kerberos_ticket raises an exception when the ticket is invalid
+    """
     # Exit code 1 - i.e. invalid ticket
     # Then 0 (kinit), 0 (klist -s)
     subprocess.side_effect = [1]
@@ -54,6 +60,10 @@ def test_verify_kerberos_ticket_invalid(subprocess):
 @patch("rabbit_consumer.aq_api.HTTPAdapter")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
 def test_setup_requests(verify_kerb, adapter, retry, requests):
+    """
+    Test that setup_requests sets up the Kerberos ticket and the requests session
+    correctly
+    """
     session = requests.Session.return_value
     response = session.get.return_value
     response.status_code = 200
@@ -75,6 +85,9 @@ def test_setup_requests(verify_kerb, adapter, retry, requests):
 @patch("rabbit_consumer.aq_api.HTTPAdapter")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
 def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests):
+    """
+    Test that setup_requests throws an exception when the connection fails
+    """
     session = requests.Session.return_value
     response = session.get.return_value
     response.status_code = 500
@@ -99,6 +112,9 @@ def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests)
 @patch("rabbit_consumer.aq_api.HTTPKerberosAuth")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
 def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
+    """
+    Test that setup_requests calls the correct REST method
+    """
     url, desc, params = NonCallableMock(), NonCallableMock(), NonCallableMock()
 
     session = requests.Session.return_value
@@ -126,6 +142,9 @@ class MockOs(OsDescription):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make_calls(config, setup, openstack_address_list):
+    """
+    Test that aq_make calls the correct URLs with the correct parameters
+    """
     domain = "domain"
     config.return_value.aq_url = domain
 
@@ -161,6 +180,9 @@ def test_aq_make_calls(config, setup, openstack_address_list):
 )
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make_missing_fields(config, field_to_blank, openstack_address_list):
+    """
+    Test that aq_make throws an exception when a required field is missing
+    """
     domain = "https://example.com"
 
     os = MockOs()
@@ -180,6 +202,9 @@ def test_aq_make_missing_fields(config, field_to_blank, openstack_address_list):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_make_none_hostname(config, setup, openstack_address, hostname):
+    """
+    Test that aq_make throws an exception if the field is missing
+    """
     domain = "https://example.com"
     config.return_value.aq_url = domain
 
@@ -195,6 +220,9 @@ def test_aq_make_none_hostname(config, setup, openstack_address, hostname):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_manage(config, setup, openstack_address_list):
+    """
+    Test that aq_manage calls the correct URLs with the correct parameters
+    """
     config.return_value.aq_url = "https://example.com"
 
     aq_manage(openstack_address_list)
@@ -223,6 +251,9 @@ def test_aq_manage(config, setup, openstack_address_list):
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 @patch("rabbit_consumer.aq_api.setup_requests")
 def test_aq_create_machine(setup, config, rabbit_message, vm_data):
+    """
+    Test that aq_create_machine calls the correct URL with the correct parameters
+    """
     config.return_value.aq_url = "https://example.com"
     config.return_value.aq_prefix = "prefix_mock"
 
@@ -244,6 +275,9 @@ def test_aq_create_machine(setup, config, rabbit_message, vm_data):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_delete_machine(config, setup):
+    """
+    Test that aq_delete_machine calls the correct URL with the correct parameters
+    """
     machine_name = "name_mock"
 
     config.return_value.aq_url = "https://example.com"
@@ -257,6 +291,9 @@ def test_aq_delete_machine(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_create_host(config, setup, openstack_address_list):
+    """
+    Test that aq_create_host calls the correct URL with the correct parameters
+    """
     machine_name = "machine_name_str"
     os_desc = NonCallableMock()
 
@@ -292,6 +329,9 @@ def test_aq_create_host(config, setup, openstack_address_list):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_delete_host(config, setup):
+    """
+    Test that aq_delete_host calls the correct URL with the correct parameters
+    """
     machine_name = "name_mock"
 
     config.return_value.aq_url = "https://example.com"
@@ -305,6 +345,9 @@ def test_aq_delete_host(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_add_machine_interface(config, setup, openstack_address_list):
+    """
+    Test that add_machine_interface calls the correct URL with the correct parameters
+    """
     config.return_value.aq_url = "https://example.com"
 
     machine_name = "name_str"
@@ -358,6 +401,9 @@ def test_add_machine_interface(config, setup, openstack_address_list):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_update_machine_interface(config, setup):
+    """
+    Test that update_machine_interface calls the correct URL with the correct parameters
+    """
     machine_name = "machine_str"
     interface_name = "iface_name"
 
@@ -372,6 +418,10 @@ def test_update_machine_interface(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_check_host_exists(config, setup):
+    """
+    Test that check_host_exists calls the correct URL with the correct parameters
+    and detects the host exists based on the response
+    """
     hostname = "host_str"
 
     config.return_value.aq_url = "https://example.com"
@@ -384,6 +434,10 @@ def test_check_host_exists(config, setup):
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_check_host_exists_returns_false(config, setup):
+    """
+    Test that check_host_exists calls the correct URL with the correct parameters
+    and detects the host does not exist based on the response
+    """
     hostname = "host_str"
     config.return_value.aq_url = "https://example.com"
     setup.side_effect = AquilonError(f"Error:\n Host {hostname} not found.")

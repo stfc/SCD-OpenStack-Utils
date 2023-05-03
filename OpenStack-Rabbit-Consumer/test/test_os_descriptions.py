@@ -15,6 +15,9 @@ from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
     ],
 )
 def test_sl7(image_name):
+    """
+    Test that the function returns the correct OS description for SL7 images
+    """
     os = OsDescription.from_image_name(image_name)
     assert isinstance(os, OsDescription)
     assert os.aq_os_name == "sl"
@@ -29,6 +32,9 @@ def test_sl7(image_name):
     ],
 )
 def test_centos7(image_name):
+    """
+    Test that the function returns the correct OS description for CentOS 7 images
+    """
     os = OsDescription.from_image_name(image_name)
     assert isinstance(os, OsDescription)
     assert os.aq_os_name == "centos"
@@ -47,6 +53,9 @@ def test_centos7(image_name):
     ],
 )
 def test_rocky8(image_name):
+    """
+    Test that the function returns the correct OS description for Rocky 8 images
+    """
     os = OsDescription.from_image_name(image_name)
     assert isinstance(os, OsDescription)
     assert os.aq_os_name == "rocky"
@@ -65,6 +74,9 @@ def test_rocky8(image_name):
     ],
 )
 def test_rocky9(image_name):
+    """
+    Test that the function returns the correct OS description for Rocky 9 images
+    """
     os = OsDescription.from_image_name(image_name)
     assert isinstance(os, OsDescription)
     assert os.aq_os_name == "rocky"
@@ -112,5 +124,8 @@ def test_gui_based_images(image_name):
     "image_name", ["unknown", "ubuntu", "capi", "fedora", "custom_image"]
 )
 def test_unknown(image_name):
+    """
+    Test that the function raises a ValueError when the image name is not recognized
+    """
     with pytest.raises(ValueError):
         OsDescription.from_image_name(image_name)

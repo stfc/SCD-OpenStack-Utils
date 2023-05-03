@@ -8,6 +8,9 @@ from rabbit_consumer.openstack_address import OpenstackAddress
 
 @pytest.fixture(name="example_dict")
 def fixture_example_dict():
+    """
+    Creates a dictionary with mock data representing the network addresses of a VM
+    """
     # Adapted from real response from OpenStack API
     return {
         "Internal": [
@@ -23,6 +26,9 @@ def fixture_example_dict():
 
 @pytest.fixture(name="example_dict_two_entries")
 def fixture_example_dict_two_entries(example_dict):
+    """
+    Creates a dictionary with mock data representing the network addresses of a VM with two entries
+    """
     second = copy.deepcopy(example_dict["Internal"][0])
     second["addr"] = "127.0.0.64"
     example_dict["Internal"].append(second)
@@ -30,6 +36,9 @@ def fixture_example_dict_two_entries(example_dict):
 
 
 def test_openstack_address_single_case(example_dict):
+    """
+    Tests the OpenstackAddress class with a single network address
+    """
     result = OpenstackAddress.get_internal_networks(example_dict)
     assert len(result) == 1
     assert result[0].version == 4
@@ -38,6 +47,9 @@ def test_openstack_address_single_case(example_dict):
 
 
 def test_openstack_address_multiple_networks(example_dict_two_entries):
+    """
+    Tests the OpenstackAddress class with multiple network addresses
+    """
     result = OpenstackAddress.get_internal_networks(example_dict_two_entries)
     assert len(result) == 2
     assert result[0].version == 4
@@ -47,6 +59,9 @@ def test_openstack_address_multiple_networks(example_dict_two_entries):
 
 @patch("rabbit_consumer.openstack_address.socket.gethostbyaddr")
 def test_openstack_address_populate(mock_socket, example_dict_two_entries):
+    """
+    Tests the OpenstackAddress class with multiple network addresses
+    """
     mock_socket.side_effect = [("hostname", None, None), ("hostname2", None, None)]
     result = OpenstackAddress.get_internal_networks(example_dict_two_entries)
 

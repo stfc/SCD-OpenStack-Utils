@@ -7,6 +7,9 @@ from rabbit_consumer.rabbit_message import RabbitMessage
 
 
 def _example_dict(with_metadata: bool) -> Dict:
+    """
+    Returns an example dictionary for testing, based on real data from the RabbitMQ queue
+    """
     example_dict = {
         "event_type": "compute.instance.create.end",
         "_context_project_name": "project_name",
@@ -31,15 +34,24 @@ def _example_dict(with_metadata: bool) -> Dict:
 
 @pytest.fixture(name="example_json")
 def fixture_example_json():
+    """
+    Returns an example JSON string for testing, based on real data from the RabbitMQ queue
+    """
     return json.dumps(_example_dict(with_metadata=False))
 
 
 @pytest.fixture(name="example_json_with_metadata")
 def fixture_example_json_with_metadata():
+    """
+    Returns an example JSON string for testing, with metadata included
+    """
     return json.dumps(_example_dict(with_metadata=True))
 
 
 def test_rabbit_json_load(example_json):
+    """
+    Tests that RabbitMessage.from_json() can load a JSON string and deserialise it into dataclasses
+    """
     deserialized = RabbitMessage.from_json(example_json)
     assert deserialized.event_type == "compute.instance.create.end"
     assert deserialized.project_name == "project_name"
@@ -56,5 +68,8 @@ def test_rabbit_json_load(example_json):
 
 
 def test_with_metadata(example_json_with_metadata):
+    """
+    Tests that RabbitMessage.from_json() can load a JSON string and deserialise it into dataclasses
+    """
     deserialized = RabbitMessage.from_json(example_json_with_metadata)
     assert deserialized.payload.metadata.machine_name == "machine_name"

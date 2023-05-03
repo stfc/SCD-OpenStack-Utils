@@ -34,7 +34,11 @@ def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[OsDescription
         return None
 
 
-def consume(message: RabbitMessage):
+def consume(message: RabbitMessage) -> None:
+    """
+    Consumes a message from the rabbit queue and calls the appropriate
+    handler based on the event type.
+    """
     if not is_aq_managed_image(message):
         logger.info("Skipping non Aquilon managed image")
         return
@@ -46,7 +50,11 @@ def consume(message: RabbitMessage):
         handle_machine_delete(message)
 
 
-def handle_create_machine(rabbit_message: RabbitMessage):
+def handle_create_machine(rabbit_message: RabbitMessage) -> None:
+    """
+    Handles the creation of a machine in Aquilon. This includes
+    creating the machine, adding the nics, and managing the host.
+    """
     logger.info("=== Received Aquilon VM create message ===")
     _print_debug_logging(rabbit_message)
 
@@ -78,6 +86,9 @@ def handle_create_machine(rabbit_message: RabbitMessage):
 
 
 def _print_debug_logging(rabbit_message: RabbitMessage) -> None:
+    """
+    Prints debug logging for the Aquilon message.
+    """
     vm_data = VmData.from_message(rabbit_message)
     logger.debug(
         "Project Name: %s (%s)", rabbit_message.project_name, vm_data.project_id
@@ -88,7 +99,11 @@ def _print_debug_logging(rabbit_message: RabbitMessage) -> None:
     logger.debug("Username: %s", rabbit_message.user_name)
 
 
-def handle_machine_delete(rabbit_message: RabbitMessage):
+def handle_machine_delete(rabbit_message: RabbitMessage) -> None:
+    """
+    Handles the deletion of a machine in Aquilon. This includes
+    deleting the machine and the host.
+    """
     logger.info("=== Received Aquilon VM delete message ===")
     _print_debug_logging(rabbit_message)
 
@@ -110,7 +125,12 @@ def handle_machine_delete(rabbit_message: RabbitMessage):
     )
 
 
-def add_hostname_to_metadata(fields: VmData, network_details: List[OpenstackAddress]):
+def add_hostname_to_metadata(
+    fields: VmData, network_details: List[OpenstackAddress]
+) -> None:
+    """
+    Adds the hostname to the metadata of the VM.
+    """
     if not openstack_api.check_machine_exists(fields):
         # User has likely deleted the machine since we got here
         logger.warning(
@@ -124,7 +144,10 @@ def add_hostname_to_metadata(fields: VmData, network_details: List[OpenstackAddr
     openstack_api.update_metadata(fields, metadata)
 
 
-def on_message(message):
+def on_message(message) -> None:
+    """
+    Deserializes the message and calls the consume function on message.
+    """
     raw_body = message.body
     body = json.loads(raw_body.decode("utf-8"))
     decoded = RabbitMessage.from_json(body["oslo.message"])
@@ -138,7 +161,11 @@ def on_message(message):
     message.ack()
 
 
-def initiate_consumer():
+def initiate_consumer() -> None:
+    """
+    Initiates the message consumer and starts consuming messages in a loop.
+    This includes setting up the rabbit connection and channel.
+    """
     logger.debug("Initiating message consumer")
     # Ensure we have valid creds before trying to contact rabbit
     verify_kerberos_ticket()
