@@ -78,11 +78,15 @@ def test_on_message_parses_json(message_parser, json, is_managed, consume):
     """
     Test that the function parses the message body as JSON
     """
-    message = MagicMock()
-    raw_body = message.body
+    message = Mock()
     is_managed.return_value = True
+    json.loads.return_value = {
+        "oslo.message": {"event_type": "compute.instance.create.end"}
+    }
 
     on_message(message)
+
+    raw_body = message.body
     raw_body.decode.assert_called_once_with("utf-8")
 
     decoded_body = json.loads.return_value
@@ -93,22 +97,62 @@ def test_on_message_parses_json(message_parser, json, is_managed, consume):
 
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-def test_on_message_ignores_non_aq(aq_message_mock, consume_mock):
+@patch("rabbit_consumer.message_consumer.json")
+def test_on_message_ignores_wrong_message_type(json, is_managed, consume):
+    """
+    Test that the function ignores messages with the wrong message type
+    """
+    message = Mock()
+    json.loads.return_value = {"oslo.message": {"event_type": "wrong"}}
+
+    on_message(message)
+
+    is_managed.assert_not_called()
+    consume.assert_not_called()
+    message.ack.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "event_type", ["compute.instance.create.end", "compute.instance.delete.start"]
+)
+@patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.json")
+def test_on_message_accepts_event_types(json, is_managed, consume, event_type):
+    """
+    Test that the function accepts the correct event types
+    """
+    message = Mock()
+    json.loads.return_value = {"oslo.message": {"event_type": event_type}}
+    is_managed.return_value = True
+
+    with patch("rabbit_consumer.message_consumer.RabbitMessage"):
+        on_message(message)
+
+    is_managed.assert_called_once()
+    consume.assert_called_once()
+    message.ack.assert_called_once()
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.consume")
+@patch("rabbit_consumer.message_consumer.json")
+def test_on_message_ignores_non_aq(json, consume_mock, aq_message_mock):
     """
     Test that the function ignores non-AQ messages and acks them
     """
     message = Mock()
     aq_message_mock.return_value = False
+    json.loads.return_value = {
+        "oslo.message": {"event_type": "compute.instance.create.end"}
+    }
 
-    with (
-        patch("rabbit_consumer.message_consumer.RabbitMessage"),
-        patch("rabbit_consumer.message_consumer.json"),
-    ):
+    with patch("rabbit_consumer.message_consumer.RabbitMessage"):
         on_message(message)
 
     aq_message_mock.assert_called_once()
     consume_mock.assert_not_called()
-    message.ack.assert_not_called()
+    message.ack.assert_called_once()
 
 
 # pylint: disable=too-few-public-methods

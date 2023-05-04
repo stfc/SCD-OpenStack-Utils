@@ -10,10 +10,14 @@ from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.os_descriptions.os_descriptions import OsDescription
-from rabbit_consumer.rabbit_message import RabbitMessage
+from rabbit_consumer.rabbit_message import RabbitMessage, MessageEventType
 from rabbit_consumer.vm_data import VmData
 
 logger = logging.getLogger(__name__)
+SUPPORTED_MESSAGE_TYPES = {
+    "create": "compute.instance.create.end",
+    "delete": "compute.instance.delete.start",
+}
 
 
 def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[OsDescription]:
@@ -43,10 +47,10 @@ def consume(message: RabbitMessage) -> None:
         logger.info("Skipping non Aquilon managed image")
         return
 
-    if message.event_type == "compute.instance.create.end":
+    if message.event_type == SUPPORTED_MESSAGE_TYPES["create"]:
         handle_create_machine(message)
 
-    if message.event_type == "compute.instance.delete.start":
+    if message.event_type == SUPPORTED_MESSAGE_TYPES["delete"]:
         handle_machine_delete(message)
 
 
@@ -149,14 +153,23 @@ def on_message(message) -> None:
     Deserializes the message and calls the consume function on message.
     """
     raw_body = message.body
-    body = json.loads(raw_body.decode("utf-8"))
-    decoded = RabbitMessage.from_json(body["oslo.message"])
+    logger.debug("Got message: %s", raw_body)
 
-    if not is_aq_managed_image(decoded):
-        logger.debug("Ignoring message: %s", decoded)
+    body = json.loads(raw_body.decode("utf-8"))["oslo.message"]
+    parsed_event = MessageEventType.from_json(body)
+    if parsed_event.event_type not in SUPPORTED_MESSAGE_TYPES.values():
+        logger.debug("Ignoring event_type: %s", parsed_event.event_type)
+        message.ack()
         return
 
-    logger.debug("Got message: %s", raw_body)
+    decoded = RabbitMessage.from_json(body)
+    logger.debug("Decoded message: %s", decoded)
+
+    if not is_aq_managed_image(decoded):
+        logger.debug("Ignoring non AQ Image: %s", decoded)
+        message.ack()
+        return
+
     consume(decoded)
     message.ack()
 

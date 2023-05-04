@@ -6,6 +6,15 @@ from mashumaro.mixins.json import DataClassJSONMixin
 
 
 @dataclass
+class MessageEventType(DataClassJSONMixin):
+    """
+    Parses a raw message from RabbitMQ to determine the event_type
+    """
+
+    event_type: str
+
+
+@dataclass
 class RabbitMeta(DataClassJSONMixin):
     """
     Deserialised custom VM metadata
