@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ["3.x", "3.10", "3.6.8"]
+        python-version: ["3.x", "3.10", "3.6"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -84,6 +84,8 @@ jobs:
       - name: Build RPM
         run: |
           cd iriscasttools
+          python_version=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo -e "[install]\ninstall-lib=/usr/lib/${python_version}/site-packages" > setup.cfg
           python setup.py bdist_rpm
           cd dist
           mv iriscasttools-${{ env.version }}-1.noarch.rpm iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
@@ -92,7 +94,7 @@ jobs:
           name: iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
           path: iriscasttools/dist/iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
           if-no-files-found: error
-
+  
   publish:
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
