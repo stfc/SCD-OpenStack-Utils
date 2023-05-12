@@ -2,7 +2,7 @@ replicaCount: 1
 namespace: rabbit-consumer
 
 consumer:
-  logLevel: DEBUG
+  logLevel: INFO
 
   image:
     repository: harbor.stfc.ac.uk/stfc-cloud/openstack-rabbit-consumer

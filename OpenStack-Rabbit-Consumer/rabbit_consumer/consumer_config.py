@@ -10,9 +10,6 @@ class _AqFields:
     environment variables.
     """
 
-    aq_archetype: str = field(default_factory=partial(os.getenv, "AQ_ARCHETYPE"))
-    aq_domain: str = field(default_factory=partial(os.getenv, "AQ_DOMAIN"))
-    aq_personality: str = field(default_factory=partial(os.getenv, "AQ_PERSONALITY"))
     aq_prefix: str = field(default_factory=partial(os.getenv, "AQ_PREFIX"))
     aq_url: str = field(default_factory=partial(os.getenv, "AQ_URL"))
 
@@ -29,12 +26,6 @@ class _OpenstackFields:
     )
     openstack_compute_url: str = field(
         default_factory=partial(os.getenv, "OPENSTACK_COMPUTE_URL")
-    )
-    openstack_domain_name: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_DOMAIN_NAME")
-    )
-    openstack_project_id: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_PROJECT_ID")
     )
     openstack_username: str = field(
         default_factory=partial(os.getenv, "OPENSTACK_USERNAME")

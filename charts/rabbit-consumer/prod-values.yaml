@@ -2,12 +2,6 @@ consumer:
   aquilon:
     defaultPrefix: vm-openstack-Prod-
 
-  image:
-    repository: rabbit-consumer
-    tag: local
-    # This allows us to build the image locally and use it in the chart
-    pullPolicy: Never
-
   rabbitmq:
     host: openstack.stfc.ac.uk
 

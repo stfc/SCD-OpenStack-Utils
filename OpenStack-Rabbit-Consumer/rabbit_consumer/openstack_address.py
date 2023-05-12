@@ -37,6 +37,9 @@ class OpenstackAddress(DataClassDictMixin):
 
     @staticmethod
     def convert_hostnames(ip_addr: str) -> str:
+        """
+        Converts an ip address to a hostname using DNS lookup.
+        """
         try:
             return socket.gethostbyaddr(ip_addr)[0]
         except socket.herror:

@@ -26,7 +26,7 @@ Initial setup
 -------------
 
 - Spin up minikube locally
-- Install the secrets, as per the instructions above
+- Install the secrets, as per the instructions in the chart
 - Make docker use the minikube docker daemon in your current shell:
 
 Testing

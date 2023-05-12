@@ -22,10 +22,10 @@ def test_openstack_connection(mock_connect, mock_config):
     with OpenstackConnection(mock_project) as conn:
         mock_connect.assert_called_once_with(
             auth_url=mock_config.return_value.openstack_auth_url,
-            project_name=mock_project,
             username=mock_config.return_value.openstack_username,
             password=mock_config.return_value.openstack_password,
-            user_domain_name=mock_config.return_value.openstack_domain_name,
+            project_name="admin",
+            user_domain_name="Default",
             project_domain_name="default",
         )
 
@@ -78,7 +78,7 @@ def test_update_metadata(server_details, conn, vm_data):
     conn.assert_called_once_with(vm_data.project_id)
     context = conn.return_value.__enter__.return_value
     context.compute.set_server_metadata.assert_called_once_with(
-        server_details.return_value, {"key": "value"}
+        server_details.return_value, **{"key": "value"}
     )
 
 
@@ -92,9 +92,7 @@ def test_get_server_details(conn, vm_data):
 
     result = get_server_details(vm_data)
 
-    context.compute.servers.assert_called_once_with(
-        id=vm_data.virtual_machine_id, details=True
-    )
+    context.compute.servers.assert_called_once_with(vm_data.virtual_machine_id)
 
     assert result == context.compute.servers.return_value[0]
 

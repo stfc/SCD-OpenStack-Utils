@@ -9,85 +9,46 @@ from fixtures import (
     fixture_vm_data,
     fixture_openstack_address_list,
     fixture_openstack_address,
+    fixture_image_metadata,
 )
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
-    is_aq_managed_image,
     on_message,
     initiate_consumer,
     add_hostname_to_metadata,
     handle_create_machine,
     handle_machine_delete,
+    SUPPORTED_MESSAGE_TYPES,
 )
 
 
-@pytest.mark.parametrize(
-    "image_name",
-    [
-        "rocky-8-aq",
-        "centos-7-aq",
-        "scientificlinux-7-aq",
-        "scientificlinux-7-nogui",
-        "warehoused-scientificlinux-7-aq-23-01-2023-14-49-18",
-        "warehoused-centos-7-aq-23-01-2023-14-49-18",
-        "warehoused-rocky-8-aq-26-01-2023-09-21-12",
-    ],
-)
-def test_is_aq_managed_image_with_real_aq_image_names(image_name, rabbit_message):
+@pytest.fixture(name="valid_event_type")
+def fixture_valid_event_type():
     """
-    Test that the function returns True for AQ managed images based on some example image names
+    Fixture for a valid event type
     """
-    rabbit_message.payload.image_name = image_name
-    assert is_aq_managed_image(rabbit_message)
-
-
-def test_aq_messages_no_image_name(rabbit_message):
-    """
-    Test that the function returns False for messages without an image name
-    """
-    rabbit_message.payload.image_name = None
-    assert not is_aq_managed_image(rabbit_message)
-
-
-@pytest.mark.parametrize(
-    "image_name",
-    [
-        "image-name",
-        "rhel-8",
-        "test",
-        "ubuntu",
-        "capi",
-        "warehoused-ubuntu-focal-20.04-gui-08-03-2022-13-39-19",
-        "Fedora-Atomic-FINAL",
-        "capi-ubuntu-2004-kube-v1.23.15-2023-03-14",
-    ],
-)
-def test_aq_messages_other_image_names(image_name, rabbit_message):
-    """
-    Test that the function returns False for messages with non-AQ image names
-    """
-    rabbit_message.payload.image_name = image_name
-    assert not is_aq_managed_image(rabbit_message)
+    mock = NonCallableMock()
+    mock.event_type = SUPPORTED_MESSAGE_TYPES["create"]
+    return mock
 
 
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.json")
+@patch("rabbit_consumer.message_consumer.MessageEventType")
 @patch("rabbit_consumer.message_consumer.RabbitMessage")
-def test_on_message_parses_json(message_parser, json, is_managed, consume):
+def test_on_message_parses_json(
+    message_parser, message_event_type, consume, valid_event_type
+):
     """
     Test that the function parses the message body as JSON
     """
-    message = Mock()
-    is_managed.return_value = True
-    json.loads.return_value = {
-        "oslo.message": {"event_type": "compute.instance.create.end"}
-    }
+    message_event_type.from_json.return_value = valid_event_type
 
-    on_message(message)
-
-    raw_body = message.body
-    raw_body.decode.assert_called_once_with("utf-8")
+    with (
+        patch("rabbit_consumer.message_consumer.json") as json,
+        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
+    ):
+        message = Mock()
+        on_message(message)
 
     decoded_body = json.loads.return_value
     message_parser.from_json.assert_called_once_with(decoded_body["oslo.message"])
@@ -97,36 +58,42 @@ def test_on_message_parses_json(message_parser, json, is_managed, consume):
 
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.json")
-def test_on_message_ignores_wrong_message_type(json, is_managed, consume):
+@patch("rabbit_consumer.message_consumer.MessageEventType")
+def test_on_message_ignores_wrong_message_type(message_event_type, is_managed, consume):
     """
     Test that the function ignores messages with the wrong message type
     """
-    message = Mock()
-    json.loads.return_value = {"oslo.message": {"event_type": "wrong"}}
+    message_event = NonCallableMock()
+    message_event.event_type = "wrong"
+    message_event_type.from_json.return_value = message_event
 
-    on_message(message)
+    with patch("rabbit_consumer.message_consumer.json"):
+        message = Mock()
+        on_message(message)
 
     is_managed.assert_not_called()
     consume.assert_not_called()
     message.ack.assert_called_once()
 
 
-@pytest.mark.parametrize(
-    "event_type", ["compute.instance.create.end", "compute.instance.delete.start"]
-)
+@pytest.mark.parametrize("event_type", SUPPORTED_MESSAGE_TYPES.values())
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.json")
-def test_on_message_accepts_event_types(json, is_managed, consume, event_type):
+@patch("rabbit_consumer.message_consumer.MessageEventType")
+def test_on_message_accepts_event_types(message_event_type, consume, event_type):
     """
     Test that the function accepts the correct event types
     """
-    message = Mock()
-    json.loads.return_value = {"oslo.message": {"event_type": event_type}}
-    is_managed.return_value = True
+    message_event = NonCallableMock()
+    message_event.event_type = event_type
+    message_event_type.from_json.return_value = message_event
 
-    with patch("rabbit_consumer.message_consumer.RabbitMessage"):
+    with (
+        patch("rabbit_consumer.message_consumer.RabbitMessage"),
+        patch("rabbit_consumer.message_consumer.json"),
+        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
+    ):
+        is_managed.return_value = True
+        message = Mock()
         on_message(message)
 
     is_managed.assert_called_once()
@@ -136,18 +103,21 @@ def test_on_message_accepts_event_types(json, is_managed, consume, event_type):
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.consume")
-@patch("rabbit_consumer.message_consumer.json")
-def test_on_message_ignores_non_aq(json, consume_mock, aq_message_mock):
+def test_on_message_ignores_non_aq(consume_mock, aq_message_mock, valid_event_type):
     """
     Test that the function ignores non-AQ messages and acks them
     """
     message = Mock()
     aq_message_mock.return_value = False
-    json.loads.return_value = {
-        "oslo.message": {"event_type": "compute.instance.create.end"}
-    }
 
-    with patch("rabbit_consumer.message_consumer.RabbitMessage"):
+    with (
+        patch("rabbit_consumer.message_consumer.json"),
+        patch("rabbit_consumer.message_consumer.RabbitMessage"),
+        patch(
+            "rabbit_consumer.message_consumer.MessageEventType"
+        ) as message_event_type,
+    ):
+        message_event_type.from_json.return_value = valid_event_type
         on_message(message)
 
     aq_message_mock.assert_called_once()
@@ -221,7 +191,7 @@ def test_add_hostname_to_metadata_machine_exists(
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
     hostnames = [i.hostname for i in openstack_address_list]
     openstack_api.update_metadata.assert_called_with(
-        vm_data, {"HOSTNAMES": ",".join(hostnames)}
+        vm_data, {"HOSTNAMES": ",".join(hostnames), "AQ_STATUS": "SUCCESS"}
     )
 
 
@@ -237,22 +207,27 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
     openstack_api.update_metadata.assert_not_called()
 
 
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
 @patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
 def test_consume_create_machine_hostnames_good_path(
-    metadata, aq_api, openstack, is_managed, rabbit_message
+    metadata, aq_api, openstack, rabbit_message, valid_event_type, image_metadata
 ):
     """
     Test that the function calls the correct functions in the correct order to register a new machine
     """
-    with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
+    with (
+        patch("rabbit_consumer.message_consumer.VmData") as data_patch,
+        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
+        patch("rabbit_consumer.message_consumer.MessageEventType") as message_type,
+    ):
+        is_managed.return_value = image_metadata
+        message_type.from_json.return_value = valid_event_type
+
         handle_create_machine(rabbit_message)
 
         vm_data = data_patch.from_message.return_value
         network_details = openstack.get_server_networks.return_value
-        os_details = is_managed.return_value
 
     data_patch.from_message.assert_called_with(rabbit_message)
     openstack.get_server_networks.assert_called_with(vm_data)
@@ -267,41 +242,35 @@ def test_consume_create_machine_hostnames_good_path(
     aq_api.set_interface_bootable.assert_called_once_with(machine_name, "eth0")
 
     aq_api.create_host.assert_called_once_with(
-        os_details, network_details, machine_name
+        image_metadata, network_details, machine_name
     )
-    aq_api.aq_manage.assert_called_once_with(network_details)
-    aq_api.aq_make.assert_called_once_with(network_details, os_details)
+    aq_api.aq_manage.assert_called_once_with(network_details, image_metadata)
+    aq_api.aq_make.assert_called_once_with(network_details, image_metadata)
 
     # Metadata
     metadata.assert_called_once_with(vm_data, network_details)
-    openstack.update_metadata.assert_called_once_with(vm_data, {"AQ_STATUS": "SUCCESS"})
 
 
-@patch("rabbit_consumer.message_consumer.aq_api")
-def test_consume_delete_machine_good_path(aq_api, rabbit_message):
+@patch("rabbit_consumer.message_consumer.delete_machine")
+def test_consume_delete_machine_good_path(
+    delete_machine, rabbit_message, openstack_address_list
+):
     """
     Test that the function calls the correct functions in the correct order to delete a machine
     """
     rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
-    mock_network_data = [NonCallableMock(), NonCallableMock()]
 
     with (
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
-        patch("rabbit_consumer.message_consumer.openstack_api") as openstack_patch,
+        patch("rabbit_consumer.message_consumer.openstack_api") as openstack,
     ):
-        openstack_patch.get_server_networks.return_value = mock_network_data
+        openstack.get_server_networks.return_value = openstack_address_list
 
         handle_machine_delete(rabbit_message)
 
         data_patch.from_message.assert_called_with(rabbit_message)
-        openstack_patch.get_server_networks.assert_called_with(
+        openstack.get_server_networks.assert_called_with(
             data_patch.from_message.return_value
         )
 
-    aq_api.delete_host.assert_has_calls(
-        [call(i.hostname) for i in mock_network_data], any_order=True
-    )
-
-    aq_api.delete_machine.assert_called_once_with(
-        rabbit_message.payload.metadata.machine_name
-    )
+    delete_machine.assert_called_once_with(addresses=openstack_address_list)

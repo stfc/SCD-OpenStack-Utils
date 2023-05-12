@@ -2,9 +2,25 @@ import uuid
 
 import pytest
 
+from rabbit_consumer.image_metadata import ImageMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, RabbitMeta, RabbitPayload
 from rabbit_consumer.vm_data import VmData
+
+
+@pytest.fixture(name="image_metadata")
+def fixture_image_metadata():
+    """
+    Creates an ImageMetadata object with mock data
+    which represent an example OpenStack image
+    """
+    return ImageMetadata(
+        AQ_ARCHETYPE="archetype_mock",
+        AQ_DOMAIN="domain_mock",
+        AQ_PERSONALITY="personality_mock",
+        AQ_OS="os_mock",
+        AQ_OSVERSION="osversion_mock",
+    )
 
 
 @pytest.fixture(name="rabbit_message")
@@ -13,12 +29,9 @@ def fixture_rabbit_message():
     Creates a RabbitMessage object with mock data
     """
     rabbit_payload = RabbitPayload(
-        fixed_ips=["127.0.0.1"],
-        image_name="image_name_mock",
         instance_id="instance_id_mock",
         memory_mb=1024,
         metadata=RabbitMeta(),
-        user_name="user_name_mock",
         vcpus=2,
         vm_host="vm_host_mock",
         vm_name="vm_name_mock",

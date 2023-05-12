@@ -32,12 +32,8 @@ class RabbitPayload(DataClassJSONMixin):
     Deserialises the payload of a RabbitMQ message
     """
 
-    fixed_ips: list[str]
     instance_id: str
-    user_name: str
-    image_name: str
-    vm_name: str
-
+    vm_name: str = field(metadata=field_options(alias="display_name"))
     vcpus: int
     memory_mb: int
     vm_host: str = field(metadata=field_options(alias="host"))
