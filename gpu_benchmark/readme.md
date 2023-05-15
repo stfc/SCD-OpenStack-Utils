@@ -17,12 +17,12 @@ Requirements
 Scripts
 -------
 
-- gpu_benchmark.sh - Script to run the benchmark. This benchmarks card #0 by default using the Phoronix Test Suite and will output a file gpu-benchmark.txt in the current directory.
+- benchmark.sh - Script to run the benchmark. This benchmarks card #0 by default using the Phoronix Test Suite and will output a file gpu-benchmark.txt in the current directory.
 - power_perf.sh - Script to capture power data from IPMI whilst running hashcat on preset known easy passwords. It requires a physical host for ipmitool to work. It will output a file power.log in the current directory every minute.
 
 Usage
 -----
-sudo ./gpu_benchmark.sh [-n <number of test iterations>]
+sudo ./benchmark.sh [-n <number of test iterations>]
 sudo ./power_perf.sh
 
 cat gpu-benchmark.txt
