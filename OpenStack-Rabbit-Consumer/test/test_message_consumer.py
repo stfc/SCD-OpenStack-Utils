@@ -1,4 +1,4 @@
-from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
+from unittest.mock import Mock, NonCallableMock, patch, call
 
 import pytest
 
@@ -45,7 +45,7 @@ def test_on_message_parses_json(
 
     with (
         patch("rabbit_consumer.message_consumer.json") as json,
-        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
+        patch("rabbit_consumer.message_consumer.is_aq_managed_image"),
     ):
         message = Mock()
         on_message(message)
@@ -210,6 +210,7 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
 @patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
+# pylint: disable=too-many-arguments
 def test_consume_create_machine_hostnames_good_path(
     metadata, aq_api, openstack, rabbit_message, valid_event_type, image_metadata
 ):

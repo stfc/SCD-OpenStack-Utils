@@ -15,11 +15,11 @@ def fixture_image_metadata():
     which represent an example OpenStack image
     """
     return ImageMetadata(
-        AQ_ARCHETYPE="archetype_mock",
-        AQ_DOMAIN="domain_mock",
-        AQ_PERSONALITY="personality_mock",
-        AQ_OS="os_mock",
-        AQ_OSVERSION="osversion_mock",
+        aq_archetype="archetype_mock",
+        aq_domain="domain_mock",
+        aq_personality="personality_mock",
+        aq_os="os_mock",
+        aq_os_version="osversion_mock",
     )
 
 

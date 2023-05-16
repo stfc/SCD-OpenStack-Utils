@@ -87,9 +87,9 @@ def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> Non
     Runs AQ make against a list of addresses passed to build the default personality
     """
     params = {
-        "personality": image_meta.AQ_PERSONALITY,
-        "osversion": image_meta.AQ_OSVERSION,
-        "osname": image_meta.AQ_OS,
+        "personality": image_meta.aq_personality,
+        "osversion": image_meta.aq_os_version,
+        "osname": image_meta.aq_os,
         "archetype": "cloud",
     }
 
@@ -119,7 +119,7 @@ def aq_manage(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> N
 
     params = {
         "hostname": hostname,
-        "domain": image_meta.AQ_DOMAIN,
+        "domain": image_meta.aq_domain,
         "force": True,
     }
     url = ConsumerConfig().aq_url + f"/host/{hostname}/command/manage"
@@ -168,11 +168,11 @@ def create_host(
     params = {
         "machine": machine_name,
         "ip": address.addr,
-        "domain": image_meta.AQ_DOMAIN,
-        "archetype": image_meta.AQ_ARCHETYPE,
-        "personality": image_meta.AQ_PERSONALITY,
-        "osname": image_meta.AQ_OS,
-        "osversion": image_meta.AQ_OSVERSION,
+        "domain": image_meta.aq_domain,
+        "archetype": image_meta.aq_archetype,
+        "personality": image_meta.aq_personality,
+        "osname": image_meta.aq_os,
+        "osversion": image_meta.aq_os_version,
     }
 
     logger.debug("Attempting to create host for %s ", address.hostname)

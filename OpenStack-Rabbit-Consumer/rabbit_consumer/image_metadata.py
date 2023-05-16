@@ -1,11 +1,10 @@
 import dataclasses
 import logging
-from dataclasses import dataclass
-from typing import Optional, Type, Mapping, Any
+from dataclasses import dataclass, field
+from typing import Optional, Type
 
-from mashumaro import DataClassDictMixin
-from mashumaro.mixins.json import DataClassJSONMixin, T
-
+from mashumaro import DataClassDictMixin, field_options
+from mashumaro.mixins.json import T
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +15,14 @@ class ImageMetadata(DataClassDictMixin):
     Deserialised metadata that is set on OpenStack images
     """
 
-    AQ_ARCHETYPE: Optional[str] = None
-    AQ_DOMAIN: Optional[str] = None
+    aq_archetype: Optional[str] = field(metadata=field_options(alias="AQ_ARCHETYPE"))
+    aq_domain: Optional[str] = field(metadata=field_options(alias="AQ_DOMAIN"))
 
-    AQ_PERSONALITY: Optional[str] = None
-    AQ_OSVERSION: Optional[str] = None
-    AQ_OS: Optional[str] = None
+    aq_personality: Optional[str] = field(
+        metadata=field_options(alias="AQ_PERSONALITY")
+    )
+    aq_os_version: Optional[str] = field(metadata=field_options(alias="AQ_OSVERSION"))
+    aq_os: Optional[str] = field(metadata=field_options(alias="AQ_OS"))
 
     @classmethod
     def __post_deserialize__(
@@ -36,7 +37,7 @@ class ImageMetadata(DataClassDictMixin):
             return None
 
         if not all(getattr(obj, f.name) for f in fields):
-            logger.error(f"Missing data for on object {obj}")
+            logger.error("Missing data for on object %s", obj)
             return None
 
         return obj

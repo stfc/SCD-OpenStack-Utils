@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from unittest import mock
 from unittest.mock import patch, call, NonCallableMock
 
@@ -139,9 +138,9 @@ def test_aq_make_calls(config, setup, openstack_address_list, image_metadata):
     aq_make(openstack_address_list, image_metadata)
 
     expected_params = {
-        "personality": image_metadata.AQ_PERSONALITY,
-        "osversion": image_metadata.AQ_OSVERSION,
-        "osname": image_metadata.AQ_OS,
+        "personality": image_metadata.aq_personality,
+        "osversion": image_metadata.aq_os_version,
+        "osname": image_metadata.aq_os,
         "archetype": "cloud",
     }
 
@@ -152,9 +151,9 @@ def test_aq_make_calls(config, setup, openstack_address_list, image_metadata):
 @pytest.mark.parametrize(
     "field_to_blank",
     [
-        "AQ_PERSONALITY",
-        "AQ_OSVERSION",
-        "AQ_OS",
+        "aq_personality",
+        "aq_os_version",
+        "aq_os",
     ],
 )
 def test_aq_make_missing_fields(field_to_blank, openstack_address_list, image_metadata):
@@ -202,7 +201,7 @@ def test_aq_manage(config, setup, openstack_address_list, image_metadata):
 
     expected_param = {
         "hostname": address.hostname,
-        "domain": image_metadata.AQ_DOMAIN,
+        "domain": image_metadata.aq_domain,
         "force": True,
     }
 
@@ -267,11 +266,11 @@ def test_aq_create_host(config, setup, openstack_address_list, image_metadata):
     expected_params = {
         "machine": machine_name,
         "ip": address.addr,
-        "archetype": image_metadata.AQ_ARCHETYPE,
-        "domain": image_metadata.AQ_DOMAIN,
-        "personality": image_metadata.AQ_PERSONALITY,
-        "osname": image_metadata.AQ_OS,
-        "osversion": image_metadata.AQ_OSVERSION,
+        "archetype": image_metadata.aq_archetype,
+        "domain": image_metadata.aq_domain,
+        "personality": image_metadata.aq_personality,
+        "osname": image_metadata.aq_os,
+        "osversion": image_metadata.aq_os_version,
     }
 
     expected_url = f"https://example.com/host/{address.hostname}"
