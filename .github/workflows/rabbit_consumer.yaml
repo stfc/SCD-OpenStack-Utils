@@ -29,12 +29,25 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libkrb5-dev
           pip install -r OpenStack-Rabbit-Consumer/requirements.txt
           pip install -r OpenStack-Rabbit-Consumer/requirements-test.txt
+      
       - name: Run tests
         # Using Python3 to launch the module sets up the Python path for us
-        run: cd OpenStack-Rabbit-Consumer && python3 -m pytest .
+        run: cd OpenStack-Rabbit-Consumer && python3 -m coverage run -m pytest .
+      
       - name: Analyse with pylint
         run: |
           cd OpenStack-Rabbit-Consumer && pylint --recursive yes rabbit_consumer test
+
+      - name: Prepare coverage
+        run: |
+          cd OpenStack-Rabbit-Consumer && python -m coverage xml
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: OpenStack-Rabbit-Consumer/coverage.xml
+          fail_ci_if_error: true
+          flags: rabbit_consumer
 
   push_dev_image_harbor:
     runs-on: ubuntu-latest
