@@ -84,7 +84,8 @@ jobs:
       - name: Build RPM
         run: |
           cd iriscasttools
-          echo -e "[install]\ninstall-lib=/usr/lib/${{ matrix.python-version }}/site-packages" > setup.cfg
+          python_version=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo -e "[install]\ninstall-lib=/usr/lib/python${python-version}/site-packages" > setup.cfg
           python setup.py bdist_rpm
           cd dist
           mv iriscasttools-${{ env.version }}-1.noarch.rpm iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
