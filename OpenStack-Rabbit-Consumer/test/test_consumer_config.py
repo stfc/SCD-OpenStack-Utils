@@ -3,9 +3,6 @@ import pytest
 from rabbit_consumer.consumer_config import ConsumerConfig
 
 AQ_FIELDS = [
-    ("aq_archetype", "AQ_ARCHETYPE"),
-    ("aq_domain", "AQ_DOMAIN"),
-    ("aq_personality", "AQ_PERSONALITY"),
     ("aq_prefix", "AQ_PREFIX"),
     ("aq_url", "AQ_URL"),
 ]
@@ -13,8 +10,6 @@ AQ_FIELDS = [
 OPENSTACK_FIELDS = [
     ("openstack_auth_url", "OPENSTACK_AUTH_URL"),
     ("openstack_compute_url", "OPENSTACK_COMPUTE_URL"),
-    ("openstack_domain_name", "OPENSTACK_DOMAIN_NAME"),
-    ("openstack_project_id", "OPENSTACK_PROJECT_ID"),
     ("openstack_username", "OPENSTACK_USERNAME"),
     ("openstack_password", "OPENSTACK_PASSWORD"),
 ]
@@ -31,6 +26,9 @@ RABBIT_FIELDS = [
     "config_name,env_var", AQ_FIELDS + OPENSTACK_FIELDS + RABBIT_FIELDS
 )
 def test_config_gets_os_env_vars(monkeypatch, config_name, env_var):
+    """
+    Test that the config class pulls the correct values from the environment.
+    """
     expected = "MOCK_ENV"
     monkeypatch.setenv(env_var, expected)
     assert getattr(ConsumerConfig(), config_name) == expected

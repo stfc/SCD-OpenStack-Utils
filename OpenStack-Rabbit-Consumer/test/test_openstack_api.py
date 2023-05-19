@@ -1,90 +1,111 @@
-from typing import Dict
-from unittest import mock
-from unittest.mock import NonCallableMock, patch, call
+from unittest.mock import NonCallableMock, patch
 
-import pytest
-
-from rabbit_consumer.openstack_api import authenticate, update_metadata
-from rabbit_consumer.consumer_config import ConsumerConfig
-
-
-# This is duplicated as it matches a REST API call
-# pylint: disable=duplicate-code
-def _get_json_auth(rabbit_consumer: ConsumerConfig, project_id) -> Dict:
-    return {
-        "auth": {
-            "identity": {
-                "methods": ["password"],
-                "password": {
-                    "user": {
-                        "name": rabbit_consumer.openstack_username,
-                        "domain": {"name": rabbit_consumer.openstack_domain_name},
-                        "password": rabbit_consumer.openstack_password,
-                    }
-                },
-            },
-            "scope": {"project": {"id": project_id}},
-        }
-    }
+# noinspection PyUnresolvedReferences
+# pylint: disable=unused-import
+from fixtures import fixture_vm_data
+from rabbit_consumer.openstack_api import (
+    update_metadata,
+    OpenstackConnection,
+    check_machine_exists,
+    get_server_details,
+    get_server_networks,
+)
 
 
 @patch("rabbit_consumer.openstack_api.ConsumerConfig")
-@patch("rabbit_consumer.openstack_api.requests")
-def test_authenticate(requests, config):
-    project_id = NonCallableMock()
-    session = requests.Session.return_value
-    session.post.return_value.status_code = 201
+@patch("rabbit_consumer.openstack_api.openstack.connect")
+def test_openstack_connection(mock_connect, mock_config):
+    """
+    Test that the OpenstackConnection context manager calls the correct functions
+    """
+    mock_project = NonCallableMock()
+    with OpenstackConnection(mock_project) as conn:
+        mock_connect.assert_called_once_with(
+            auth_url=mock_config.return_value.openstack_auth_url,
+            username=mock_config.return_value.openstack_username,
+            password=mock_config.return_value.openstack_password,
+            project_name="admin",
+            user_domain_name="Default",
+            project_domain_name="default",
+        )
 
-    authenticate(project_id)
+        assert conn == mock_connect.return_value
+        assert conn.close.call_count == 0
 
-    requests.Session.assert_called_once()
-    session.mount.assert_called_once_with("https://", mock.ANY)
-    session.post.assert_called_once()
+    assert conn.close.call_count == 1
 
-    args = session.post.call_args
-    assert args == call(
-        f"{config.return_value.openstack_auth_url}/auth/tokens",
-        json=_get_json_auth(config.return_value, project_id),
+
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+def test_check_machine_exists_existing_machine(conn, vm_data):
+    """
+    Test that the function returns True when the machine exists
+    """
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.return_value = NonCallableMock()
+    found = check_machine_exists(vm_data)
+
+    conn.assert_called_once_with(vm_data.project_id)
+    context.compute.find_server.assert_called_with(vm_data.virtual_machine_id)
+    assert isinstance(found, bool) and found
+
+
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+def test_check_machine_exists_deleted_machine(conn, vm_data):
+    """
+    Test that the function returns False when the machine does not exist
+    """
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.return_value = None
+    found = check_machine_exists(vm_data)
+
+    conn.assert_called_once_with(vm_data.project_id)
+    context = conn.return_value.__enter__.return_value
+    context.compute.find_server.assert_called_with(vm_data.virtual_machine_id)
+    assert isinstance(found, bool) and not found
+
+
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+@patch("rabbit_consumer.openstack_api.get_server_details")
+def test_update_metadata(server_details, conn, vm_data):
+    """
+    Test that the function calls the correct functions to update the metadata on a VM
+    """
+    server_details.return_value = NonCallableMock()
+    update_metadata(vm_data, {"key": "value"})
+
+    server_details.assert_called_once_with(vm_data)
+
+    conn.assert_called_once_with(vm_data.project_id)
+    context = conn.return_value.__enter__.return_value
+    context.compute.set_server_metadata.assert_called_once_with(
+        server_details.return_value, **{"key": "value"}
     )
 
 
-@patch("rabbit_consumer.openstack_api.requests")
-def test_authenticate_throws(requests):
-    session = requests.Session.return_value
-    session.post.return_value.status_code = 500
+@patch("rabbit_consumer.openstack_api.OpenstackConnection")
+def test_get_server_details(conn, vm_data):
+    """
+    Test that the function calls the correct functions to get the details of a VM
+    """
+    context = conn.return_value.__enter__.return_value
+    context.compute.servers.return_value = [NonCallableMock()]
 
-    with pytest.raises(ConnectionRefusedError):
-        authenticate(NonCallableMock())
+    result = get_server_details(vm_data)
+
+    context.compute.servers.assert_called_once_with(vm_data.virtual_machine_id)
+
+    assert result == context.compute.servers.return_value[0]
 
 
-@patch("rabbit_consumer.openstack_api.ConsumerConfig")
-@patch("rabbit_consumer.openstack_api.requests")
-@patch("rabbit_consumer.openstack_api.authenticate")
-def test_update_metadata(auth, requests, config):
-    project_id, instance_id = "mock_project", "mock_instance"
-    metadata = NonCallableMock()
-    session = requests.Session.return_value
-    session.post.return_value.status_code = 200
+@patch("rabbit_consumer.openstack_api.get_server_details")
+@patch("rabbit_consumer.openstack_api.OpenstackAddress")
+def test_get_server_networks(address, server_details, vm_data):
+    """
+    Test that the function calls the correct functions to get the networks of a VM
+    """
+    server_details.return_value = NonCallableMock()
 
-    update_metadata(project_id, instance_id, metadata)
-
-    session.mount.assert_called_once_with("https://", mock.ANY)
-    auth.assert_called_once_with(project_id)
-    session.post.assert_called_once()
-
-    assert session.post.call_args == call(
-        f"{config.return_value.openstack_compute_url}"
-        f"/{project_id}/servers/{instance_id}/metadata",
-        headers={"Content-type": "application/json", "X-Auth-Token": auth.return_value},
-        json={"metadata": metadata},
+    get_server_networks(vm_data)
+    address.get_internal_networks.assert_called_once_with(
+        server_details.return_value.addresses
     )
-
-
-@patch("rabbit_consumer.openstack_api.authenticate")
-@patch("rabbit_consumer.openstack_api.requests")
-def test_update_metadata_throws_exception(_, requests):
-    session = requests.Session.return_value
-    session.post.return_value.status_code = 500
-
-    with pytest.raises(ConnectionAbortedError):
-        update_metadata(NonCallableMock(), NonCallableMock(), NonCallableMock())

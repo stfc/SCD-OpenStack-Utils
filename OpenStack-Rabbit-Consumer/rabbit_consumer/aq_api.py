@@ -1,29 +1,23 @@
 import logging
 import subprocess
+from typing import Optional, List
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
-from rabbit_consumer.aq_fields import AqFields
 from rabbit_consumer.consumer_config import ConsumerConfig
+from rabbit_consumer.image_metadata import ImageMetadata
+from rabbit_consumer.openstack_address import OpenstackAddress
+from rabbit_consumer.rabbit_message import RabbitMessage
+from rabbit_consumer.vm_data import VmData
 
-MODEL = "vm-openstack"
 MAKE_SUFFIX = "/host/{0}/command/make"
-MANAGE_SUFFIX = "/host/{0}/command/manage?hostname={0}&{1}={2}&force=true"
-HOST_CHECK_SUFFIX = "/host/{0}"
-CREATE_MACHINE_SUFFIX = (
-    "/next_machine/{0}?model={1}&serial={2}&vmhost={3}&cpucount={4}&memory={5}"
-)
 
-ADD_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?mac={2}"
+HOST_CHECK_SUFFIX = "/host/{0}"
 
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
-
-ADD_INTERFACE_ADDRESS_SUFFIX = (
-    "/interface_address?machine={0}&interface={1}&ip={2}&fqdn={3}"
-)
 
 DELETE_HOST_SUFFIX = "/host/{0}"
 DELETE_MACHINE_SUFFIX = "/machine/{0}"
@@ -37,7 +31,11 @@ class AquilonError(Exception):
     """
 
 
-def verify_kerberos_ticket():
+def verify_kerberos_ticket() -> bool:
+    """
+    Check for a valid Kerberos ticket from a sidecar, or on the host
+    Raises a RuntimeError if no ticket is found
+    """
     logger.debug("Checking for valid Kerberos Ticket")
 
     if subprocess.call(["klist", "-s"]) == 1:
@@ -47,23 +45,27 @@ def verify_kerberos_ticket():
     return True
 
 
-def setup_requests(url, method, desc):
+def setup_requests(
+    url: str, method: str, desc: str, params: Optional[dict] = None
+) -> str:
+    """
+    Passes a request to the Aquilon API
+    """
     verify_kerberos_ticket()
-
-    logger.debug("%s: %s", method, url)
+    logger.debug("%s: %s - params: %s", method, url, params)
 
     session = requests.Session()
     session.verify = "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     if method == "post":
-        response = session.post(url, auth=HTTPKerberosAuth())
+        response = session.post(url, auth=HTTPKerberosAuth(), params=params)
     elif method == "put":
-        response = session.put(url, auth=HTTPKerberosAuth())
+        response = session.put(url, auth=HTTPKerberosAuth(), params=params)
     elif method == "delete":
-        response = session.delete(url, auth=HTTPKerberosAuth())
+        response = session.delete(url, auth=HTTPKerberosAuth(), params=params)
     else:
-        response = session.get(url, auth=HTTPKerberosAuth())
+        response = session.get(url, auth=HTTPKerberosAuth(), params=params)
 
     if response.status_code == 400:
         # This might be an expected error, so don't log it
@@ -78,149 +80,200 @@ def setup_requests(url, method, desc):
         )
 
     logger.debug("Success: %s ", desc)
-    logger.debug("Response: %s", response.text)
+    logger.debug("AQ Response: %s", response.text)
     return response.text
 
 
-def aq_make(hostname: str, aq_fields: AqFields):
+def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+    """
+    Runs AQ make against a list of addresses passed to build the default personality
+    """
+    params = {
+        "personality": image_meta.aq_personality,
+        "osversion": image_meta.aq_os_version,
+        "osname": image_meta.aq_os,
+        "archetype": "cloud",
+    }
+
+    assert all(
+        i for i in params.values()
+    ), "Some fields were not set in the OS description"
+
+    # Manage and make these back to default domain and personality
+    address = addresses[0]
+    hostname = address.hostname
     logger.debug("Attempting to make templates for %s", hostname)
 
+    if not hostname or not hostname.strip():
+        raise ValueError("Hostname cannot be empty")
+
+    url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
+    setup_requests(url, "post", "Make Template: ", params)
+
+
+def aq_manage(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+    """
+    Manages the list of Aquilon addresses passed to it back to the production domain
+    """
+    address = addresses[0]
+    hostname = address.hostname
+    logger.debug("Attempting to manage %s", hostname)
+
     params = {
-        "personality": aq_fields.personality,
-        "osversion": aq_fields.osversion,
-        "archetype": aq_fields.archetype,
-        "osname": aq_fields.osname,
+        "hostname": hostname,
+        "domain": image_meta.aq_domain,
+        "force": True,
     }
-    # Remove empty values or whitespace values
-    params = {k: v for k, v in params.items() if v and str(v).strip()}
-    if not hostname or not str(hostname).strip():
-        raise ValueError("An empty hostname cannot be used.")
-
-    # join remaining parameters to form url string
-    params = [k + "=" + v for k, v in params.items()]
-
-    url = (
-        ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname) + "?" + "&".join(params)
-    )
-    if url[-1] == "?":
-        # Trim trailing query param where there are no values
-        url = url[:-1]
-
-    setup_requests(url, "post", "Make Template: ")
+    url = ConsumerConfig().aq_url + f"/host/{hostname}/command/manage"
+    setup_requests(url, "post", "Manage Host", params=params)
 
 
-def aq_manage(hostname, env_type, env_name):
-    logger.debug("Attempting to manage %s to %s %s", hostname, env_type, env_name)
+def create_machine(message: RabbitMessage, vm_data: VmData) -> str:
+    """
+    Creates a machine in Aquilon. Returns the machine name
+    """
+    logger.debug("Attempting to create machine for %s ", vm_data.virtual_machine_id)
 
-    url = ConsumerConfig().aq_url + MANAGE_SUFFIX.format(hostname, env_type, env_name)
+    params = {
+        "model": "vm-openstack",
+        "serial": vm_data.virtual_machine_id,
+        "vmhost": message.payload.vm_host,
+        "cpucount": message.payload.vcpus,
+        "memory": message.payload.memory_mb,
+    }
 
-    setup_requests(url, "post", "Manage Host")
-
-
-def create_machine(message, hostname, prefix):
-    logger.debug("Attempting to create machine for %s ", hostname)
-
-    vcpus = message.get("payload").get("vcpus")
-    memory_mb = message.get("payload").get("memory_mb")
-    uuid = message.get("payload").get("instance_id")
-    vmhost = message.get("payload").get("host")
-
-    url = ConsumerConfig().aq_url + CREATE_MACHINE_SUFFIX.format(
-        prefix, MODEL, uuid, vmhost, vcpus, memory_mb
-    )
-
-    response = setup_requests(url, "put", "Create Machine")
+    url = ConsumerConfig().aq_url + f"/next_machine/{ConsumerConfig().aq_prefix}"
+    response = setup_requests(url, "put", "Create Machine", params=params)
     return response
 
 
-def delete_machine(machinename):
-    logger.debug("Attempting to delete machine for %s", machinename)
+def delete_machine(machine_name: str) -> None:
+    """
+    Deletes a machine in Aquilon
+    """
+    logger.debug("Attempting to delete machine for %s", machine_name)
 
-    url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machinename)
+    url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machine_name)
 
     setup_requests(url, "delete", "Delete Machine")
 
 
 def create_host(
-    hostname,
-    machinename,
-    firstip,
-    osname,
-    osversion,
-):
-    logger.debug("Attempting to create host for %s ", hostname)
+    image_meta: ImageMetadata, addresses: List[OpenstackAddress], machine_name: str
+) -> None:
+    """
+    Creates a host in Aquilon
+    """
     config = ConsumerConfig()
 
-    default_domain = config.aq_domain
-    default_personality = config.aq_personality
-    default_archetype = config.aq_archetype
+    address = addresses[0]
+    params = {
+        "machine": machine_name,
+        "ip": address.addr,
+        "domain": image_meta.aq_domain,
+        "archetype": image_meta.aq_archetype,
+        "personality": image_meta.aq_personality,
+        "osname": image_meta.aq_os,
+        "osversion": image_meta.aq_os_version,
+    }
 
-    url = config.aq_url
-    url += (
-        f"/host/{hostname}?"
-        f"machine={machinename}"
-        f"&ip={firstip}"
-        f"&archetype={default_archetype}"
-        f"&domain={default_domain}"
-        f"&personality={default_personality}"
-        f"&osname={osname}"
-        f"&osversion={osversion}"
-    )
-
-    logger.debug(url)
-
-    # reset personality etc ...
-    setup_requests(url, "put", "Host Create")
+    logger.debug("Attempting to create host for %s ", address.hostname)
+    url = config.aq_url + f"/host/{address.hostname}"
+    setup_requests(url, "put", "Host Create", params=params)
 
 
-def delete_host(hostname):
+def delete_host(hostname: str) -> None:
+    """
+    Deletes a host in Aquilon
+    """
     logger.debug("Attempting to delete host for %s ", hostname)
     url = ConsumerConfig().aq_url + DELETE_HOST_SUFFIX.format(hostname)
     setup_requests(url, "delete", "Host Delete")
 
 
-def add_machine_interface(machinename, macaddr, interfacename):
+def delete_address(address: OpenstackAddress, machine_name: str) -> None:
+    """
+    Deletes an address in Aquilon
+    """
+    logger.debug("Attempting to delete address for %s ", address.addr)
+    url = ConsumerConfig().aq_url + "/interface_address"
+    params = {"ip": address.addr, "machine": machine_name, "interface": "eth0"}
+    setup_requests(url, "delete", "Address Delete", params=params)
+
+
+def delete_interface(address: OpenstackAddress) -> None:
+    """
+    Deletes a host interface in Aquilon
+    """
+    logger.debug("Attempting to delete interface for %s ", address.mac_addr)
+    url = ConsumerConfig().aq_url + "/interface/command/del"
+    params = {"mac": address.mac_addr}
+    setup_requests(url, "post", "Interface Delete", params=params)
+
+
+def add_machine_nics(machine_name: str, addresses: List[OpenstackAddress]) -> None:
+    """
+    Adds NICs to a given machine in Aquilon based on the VM addresses
+    """
+    # We only add the first host interface for now
+    # this avoids having to do a lot of work to figure out
+    # which interface names we have to use to clean-up
+    address = addresses[0]
+    interface_name = "eth0"
+
     logger.debug(
-        "Attempting to add interface %s to machine %s ", interfacename, machinename
+        "Attempting to add interface %s to machine %s ",
+        interface_name,
+        machine_name,
+    )
+    url = (
+        ConsumerConfig().aq_url + f"/machine/{machine_name}/interface/{interface_name}"
+    )
+    setup_requests(
+        url, "put", "Add Machine Interface", params={"mac": address.mac_addr}
     )
 
-    url = ConsumerConfig().aq_url + ADD_INTERFACE_SUFFIX.format(
-        machinename, interfacename, macaddr
-    )
 
-    setup_requests(url, "put", "Add Machine Interface")
-
-
-def add_machine_interface_address(machinename, ipaddr, interfacename, hostname):
-    logger.debug("Attempting to add address ip %s to machine %s ", ipaddr, machinename)
-
-    url = ConsumerConfig().aq_url + ADD_INTERFACE_ADDRESS_SUFFIX.format(
-        machinename, interfacename, ipaddr, hostname
-    )
-
-    setup_requests(url, "put", "Add Machine Interface Address")
-
-
-def update_machine_interface(machinename, interfacename):
-    logger.debug("Attempting to bootable %s ", machinename)
+def set_interface_bootable(machine_name: str, interface_name: str) -> None:
+    """
+    Sets a given interface on a machine to be bootable
+    """
+    logger.debug("Attempting to bootable %s ", machine_name)
 
     url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
-        machinename, interfacename
+        machine_name, interface_name
     )
 
     setup_requests(url, "post", "Update Machine Interface")
 
 
-def set_env(aq_details: AqFields, domain: str, hostname: str, sandbox: str = None):
-    if domain:
-        aq_manage(hostname, "domain", domain)
-    else:
-        aq_manage(hostname, "sandbox", sandbox)
+def search_machine(mac_addr: str) -> Optional[str]:
+    """
+    Searches for a machine in Aquilon based on a MAC address
+    """
+    logger.debug("Searching for host with MAC %s", mac_addr)
+    url = ConsumerConfig().aq_url + "/find/machine"
+    params = {"mac": mac_addr}
+    response = setup_requests(url, "get", "Search Host", params=params).strip()
 
-    aq_make(hostname, aq_details)
+    if response:
+        return response
+    return None
+
+
+def get_machine_details(machine_name: str) -> str:
+    """
+    Gets a machine's details as a string
+    """
+    logger.debug("Getting machine details for %s", machine_name)
+    url = ConsumerConfig().aq_url + f"/machine/{machine_name}"
+    return setup_requests(url, "get", "Get machine details").strip()
 
 
 def check_host_exists(hostname: str) -> bool:
+    """
+    Checks if a host exists in Aquilon
+    """
     logger.debug("Checking if hostname exists: %s", hostname)
     url = ConsumerConfig().aq_url + HOST_CHECK_SUFFIX.format(hostname)
     try:
