@@ -12,11 +12,6 @@ jobs:
         with:
           src: "OpenStack-Rabbit-Consumer"
 
-      - name: CAPI Image Builder
-        uses: psf/black@stable
-        with:
-          src: "capi_image_builder"
-
       - name: Prometheus IP Script
         uses: psf/black@stable
         with:
