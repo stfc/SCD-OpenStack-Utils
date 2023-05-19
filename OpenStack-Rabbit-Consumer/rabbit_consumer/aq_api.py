@@ -45,7 +45,9 @@ def verify_kerberos_ticket() -> bool:
     return True
 
 
-def setup_requests(url, method, desc, params: Optional[dict] = None) -> str:
+def setup_requests(
+    url: str, method: str, desc: str, params: Optional[dict] = None
+) -> str:
     """
     Passes a request to the Aquilon API
     """
@@ -145,13 +147,13 @@ def create_machine(message: RabbitMessage, vm_data: VmData) -> str:
     return response
 
 
-def delete_machine(machinename) -> None:
+def delete_machine(machine_name: str) -> None:
     """
     Deletes a machine in Aquilon
     """
-    logger.debug("Attempting to delete machine for %s", machinename)
+    logger.debug("Attempting to delete machine for %s", machine_name)
 
-    url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machinename)
+    url = ConsumerConfig().aq_url + DELETE_MACHINE_SUFFIX.format(machine_name)
 
     setup_requests(url, "delete", "Delete Machine")
 
@@ -209,7 +211,7 @@ def delete_interface(address: OpenstackAddress) -> None:
     setup_requests(url, "post", "Interface Delete", params=params)
 
 
-def add_machine_nics(machine_name, addresses: List[OpenstackAddress]) -> None:
+def add_machine_nics(machine_name: str, addresses: List[OpenstackAddress]) -> None:
     """
     Adds NICs to a given machine in Aquilon based on the VM addresses
     """
@@ -232,14 +234,14 @@ def add_machine_nics(machine_name, addresses: List[OpenstackAddress]) -> None:
     )
 
 
-def set_interface_bootable(machinename, interfacename) -> None:
+def set_interface_bootable(machine_name: str, interface_name: str) -> None:
     """
     Sets a given interface on a machine to be bootable
     """
-    logger.debug("Attempting to bootable %s ", machinename)
+    logger.debug("Attempting to bootable %s ", machine_name)
 
     url = ConsumerConfig().aq_url + UPDATE_INTERFACE_SUFFIX.format(
-        machinename, interfacename
+        machine_name, interface_name
     )
 
     setup_requests(url, "post", "Update Machine Interface")

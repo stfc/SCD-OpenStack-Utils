@@ -176,7 +176,7 @@ def add_hostname_to_metadata(
     openstack_api.update_metadata(vm_data, metadata)
 
 
-def on_message(message) -> None:
+def on_message(message: rabbitpy.Message) -> None:
     """
     Deserializes the message and calls the consume function on message.
     """

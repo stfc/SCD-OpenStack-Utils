@@ -324,7 +324,7 @@ def test_update_machine_interface(config, setup):
     interface_name = "iface_name"
 
     config.return_value.aq_url = "https://example.com"
-    set_interface_bootable(machinename=machine_name, interfacename=interface_name)
+    set_interface_bootable(machine_name=machine_name, interface_name=interface_name)
 
     setup.assert_called_once()
     expected_url = "https://example.com/machine/machine_str/interface/iface_name?boot&default_route"
