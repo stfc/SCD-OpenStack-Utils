@@ -26,12 +26,12 @@ def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[ImageMetadata
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-    image = openstack_api.get_image_name(VmData.from_message(rabbit_message))
-    image_meta = ImageMetadata.from_dict(image.metadata)
-
-    if not image_meta:
+    image = openstack_api.get_image(VmData.from_message(rabbit_message))
+    if "AQ_OS" not in image.metadata:
         logger.debug("Skipping non-Aquilon image: %s", image.name)
         return None
+
+    image_meta = ImageMetadata.from_dict(image.metadata)
     return image_meta
 
 

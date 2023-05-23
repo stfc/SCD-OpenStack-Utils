@@ -76,7 +76,7 @@ def get_metadata(vm_data: VmData) -> dict:
     return server.metadata
 
 
-def get_image_name(vm_data: VmData) -> Image:
+def get_image(vm_data: VmData) -> Image:
     """
     Gets the image name from Openstack for the virtual machine.
     """
