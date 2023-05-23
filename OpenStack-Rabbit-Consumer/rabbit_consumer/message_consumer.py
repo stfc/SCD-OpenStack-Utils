@@ -80,10 +80,6 @@ def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
     """
     Checks to see if the machine is valid for creating in Aquilon.
     """
-    if not is_aq_managed_image(rabbit_message):
-        logger.debug("Ignoring non AQ Image: %s", rabbit_message)
-        return False
-
     vm_data = VmData.from_message(rabbit_message)
     if not openstack_api.check_machine_exists(vm_data):
         # User has likely deleted the machine since we got here
@@ -91,6 +87,11 @@ def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
             "Machine %s does not exist, skipping creation", vm_data.virtual_machine_id
         )
         return False
+
+    if not is_aq_managed_image(rabbit_message):
+        logger.debug("Ignoring non AQ Image: %s", rabbit_message)
+        return False
+
     return True
 
 
