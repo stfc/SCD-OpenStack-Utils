@@ -211,11 +211,10 @@ def test_consume_create_machine_hostnames_good_path(
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
         patch("rabbit_consumer.message_consumer.check_machine_valid") as check_machine,
         patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
-        patch("rabbit_consumer.message_consumer.MessageEventType") as message_type,
+        patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine,
     ):
         check_machine.return_value = True
         is_managed.return_value = image_metadata
-        message_type.from_json.return_value = valid_event_type
 
         handle_create_machine(rabbit_message)
 
@@ -226,6 +225,7 @@ def test_consume_create_machine_hostnames_good_path(
     openstack.get_server_networks.assert_called_with(vm_data)
 
     # Check main Aq Flow
+    delete_machine.assert_called_once_with(vm_data)
     aq_api.create_machine.assert_called_once_with(rabbit_message, vm_data)
     machine_name = aq_api.create_machine.return_value
 
@@ -245,28 +245,16 @@ def test_consume_create_machine_hostnames_good_path(
 
 
 @patch("rabbit_consumer.message_consumer.delete_machine")
-def test_consume_delete_machine_good_path(
-    delete_machine, rabbit_message, openstack_address_list
-):
+def test_consume_delete_machine_good_path(delete_machine, rabbit_message):
     """
     Test that the function calls the correct functions in the correct order to delete a machine
     """
     rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
 
-    with (
-        patch("rabbit_consumer.message_consumer.VmData") as data_patch,
-        patch("rabbit_consumer.message_consumer.openstack_api") as openstack,
-    ):
-        openstack.get_server_networks.return_value = openstack_address_list
-
+    with (patch("rabbit_consumer.message_consumer.VmData") as data_patch,):
         handle_machine_delete(rabbit_message)
 
-        data_patch.from_message.assert_called_with(rabbit_message)
-        openstack.get_server_networks.assert_called_with(
-            data_patch.from_message.return_value
-        )
-
-    delete_machine.assert_called_once_with(addresses=openstack_address_list)
+    delete_machine.assert_called_once_with(vm_data=data_patch.from_message.return_value)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
@@ -298,7 +286,9 @@ def test_check_machine_invalid_image(openstack_api, is_aq_managed_image):
 
     assert not check_machine_valid(mock_message)
 
-    openstack_api.check_machine_exists.assert_called_once_with(VmData.from_message(mock_message))
+    openstack_api.check_machine_exists.assert_called_once_with(
+        VmData.from_message(mock_message)
+    )
     is_aq_managed_image.assert_called_once_with(mock_message)
 
 
