@@ -372,7 +372,7 @@ def test_search_machine_by_serial(config, setup, vm_data):
     config.return_value.aq_url = "https://example.com"
     response = search_machine_by_serial(vm_data)
 
-    expected_url = f"https://example.com/find/machine"
+    expected_url = "https://example.com/find/machine"
     expected_args = {"serial": vm_data.virtual_machine_id}
     setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
     assert response == setup.return_value.strip.return_value
@@ -388,10 +388,10 @@ def test_search_machine_by_serial_not_found(config, setup, vm_data):
     setup.return_value = ""
     response = search_machine_by_serial(vm_data)
 
-    expected_url = f"https://example.com/find/machine"
+    expected_url = "https://example.com/find/machine"
     expected_args = {"serial": vm_data.virtual_machine_id}
     setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
-    assert response == None
+    assert response is None
 
 
 @patch("rabbit_consumer.aq_api.setup_requests")
@@ -404,7 +404,7 @@ def test_search_host_by_machine(config, setup):
     config.return_value.aq_url = "https://example.com"
     response = search_host_by_machine("machine_name")
 
-    expected_url = f"https://example.com/find/host"
+    expected_url = "https://example.com/find/host"
     expected_args = {"machine": "machine_name"}
     setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
     assert response == setup.return_value.strip.return_value
@@ -421,7 +421,7 @@ def test_search_host_by_machine_not_found(config, setup):
     setup.return_value = ""
     response = search_host_by_machine("machine_name")
 
-    expected_url = f"https://example.com/find/host"
+    expected_url = "https://example.com/find/host"
     expected_args = {"machine": "machine_name"}
     setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
-    assert response == None
+    assert response is None

@@ -1,10 +1,7 @@
-import dataclasses
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Type
 
 from mashumaro import DataClassDictMixin, field_options
-from mashumaro.mixins.json import T
 
 logger = logging.getLogger(__name__)
 

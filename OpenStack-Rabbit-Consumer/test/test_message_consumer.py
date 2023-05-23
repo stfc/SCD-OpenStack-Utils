@@ -203,7 +203,7 @@ def test_handle_create_machine_skips_invalid(openstack_api, machine_valid):
 @patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
 # pylint: disable=too-many-arguments
 def test_consume_create_machine_hostnames_good_path(
-    metadata, aq_api, openstack, rabbit_message, valid_event_type, image_metadata
+    metadata, aq_api, openstack, rabbit_message, image_metadata
 ):
     """
     Test that the function calls the correct functions in the correct order to register a new machine
@@ -260,16 +260,16 @@ def test_consume_delete_machine_good_path(delete_machine, rabbit_message):
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_check_machine_valid(openstack_api, is_aq_managed_image):
+def test_check_machine_valid(openstack_api, is_aq_managed):
     """
     Test that the function returns True when the machine is valid
     """
     mock_message = NonCallableMock()
-    is_aq_managed_image.return_value = True
+    is_aq_managed.return_value = True
     openstack_api.check_machine_exists.return_value = True
 
     assert check_machine_valid(mock_message)
-    is_aq_managed_image.assert_called_once_with(mock_message)
+    is_aq_managed.assert_called_once_with(mock_message)
     openstack_api.check_machine_exists.assert_called_once_with(
         VmData.from_message(mock_message)
     )
