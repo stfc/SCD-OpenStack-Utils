@@ -76,6 +76,24 @@ def delete_machine(addresses: List[OpenstackAddress]):
         aq_api.delete_machine(machine_name)
 
 
+def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
+    """
+    Checks to see if the machine is valid for creating in Aquilon.
+    """
+    if not is_aq_managed_image(rabbit_message):
+        logger.debug("Ignoring non AQ Image: %s", rabbit_message)
+        return False
+
+    vm_data = VmData.from_message(rabbit_message)
+    if not openstack_api.check_machine_exists(vm_data):
+        # User has likely deleted the machine since we got here
+        logger.warning(
+            "Machine %s does not exist, skipping creation", vm_data.virtual_machine_id
+        )
+        return False
+    return True
+
+
 def handle_create_machine(rabbit_message: RabbitMessage) -> None:
     """
     Handles the creation of a machine in Aquilon. This includes
@@ -84,13 +102,10 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
     logger.info("=== Received Aquilon VM create message ===")
     _print_debug_logging(rabbit_message)
 
-    vm_data = VmData.from_message(rabbit_message)
-    if not openstack_api.check_machine_exists(vm_data):
-        # User has likely deleted the machine since we got here
-        logger.warning(
-            "Machine %s does not exist, skipping creation", vm_data.virtual_machine_id
-        )
+    if not check_machine_valid(rabbit_message):
         return
+
+    vm_data = VmData.from_message(rabbit_message)
 
     image_meta = is_aq_managed_image(rabbit_message)
     network_details = openstack_api.get_server_networks(vm_data)
@@ -128,7 +143,7 @@ def _print_debug_logging(rabbit_message: RabbitMessage) -> None:
     logger.debug(
         "Project Name: %s (%s)", rabbit_message.project_name, vm_data.project_id
     )
-    logger.debug(
+    logger.info(
         "VM Name: %s (%s) ", rabbit_message.payload.vm_name, vm_data.virtual_machine_id
     )
     logger.debug("Username: %s", rabbit_message.user_name)
@@ -192,11 +207,6 @@ def on_message(message: rabbitpy.Message) -> None:
 
     decoded = RabbitMessage.from_json(body)
     logger.debug("Decoded message: %s", decoded)
-
-    if not is_aq_managed_image(decoded):
-        logger.debug("Ignoring non AQ Image: %s", decoded)
-        message.ack()
-        return
 
     consume(decoded)
     message.ack()

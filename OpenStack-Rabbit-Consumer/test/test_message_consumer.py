@@ -19,7 +19,9 @@ from rabbit_consumer.message_consumer import (
     handle_create_machine,
     handle_machine_delete,
     SUPPORTED_MESSAGE_TYPES,
+    check_machine_valid,
 )
+from rabbit_consumer.vm_data import VmData
 
 
 @pytest.fixture(name="valid_event_type")
@@ -90,38 +92,11 @@ def test_on_message_accepts_event_types(message_event_type, consume, event_type)
     with (
         patch("rabbit_consumer.message_consumer.RabbitMessage"),
         patch("rabbit_consumer.message_consumer.json"),
-        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
     ):
-        is_managed.return_value = True
         message = Mock()
         on_message(message)
 
-    is_managed.assert_called_once()
     consume.assert_called_once()
-    message.ack.assert_called_once()
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.consume")
-def test_on_message_ignores_non_aq(consume_mock, aq_message_mock, valid_event_type):
-    """
-    Test that the function ignores non-AQ messages and acks them
-    """
-    message = Mock()
-    aq_message_mock.return_value = False
-
-    with (
-        patch("rabbit_consumer.message_consumer.json"),
-        patch("rabbit_consumer.message_consumer.RabbitMessage"),
-        patch(
-            "rabbit_consumer.message_consumer.MessageEventType"
-        ) as message_event_type,
-    ):
-        message_event_type.from_json.return_value = valid_event_type
-        on_message(message)
-
-    aq_message_mock.assert_called_once()
-    consume_mock.assert_not_called()
     message.ack.assert_called_once()
 
 
@@ -207,6 +182,21 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
     openstack_api.update_metadata.assert_not_called()
 
 
+@patch("rabbit_consumer.message_consumer.check_machine_valid")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_handle_create_machine_skips_invalid(openstack_api, machine_valid):
+    """
+    Test that the function skips invalid machines
+    """
+    machine_valid.return_value = False
+    vm_data = Mock()
+
+    handle_create_machine(vm_data)
+
+    machine_valid.assert_called_once_with(vm_data)
+    openstack_api.get_server_networks.assert_not_called()
+
+
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
 @patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
@@ -219,9 +209,11 @@ def test_consume_create_machine_hostnames_good_path(
     """
     with (
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
+        patch("rabbit_consumer.message_consumer.check_machine_valid") as check_machine,
         patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
         patch("rabbit_consumer.message_consumer.MessageEventType") as message_type,
     ):
+        check_machine.return_value = True
         is_managed.return_value = image_metadata
         message_type.from_json.return_value = valid_event_type
 
@@ -275,3 +267,54 @@ def test_consume_delete_machine_good_path(
         )
 
     delete_machine.assert_called_once_with(addresses=openstack_address_list)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_valid(openstack_api, is_aq_managed_image):
+    """
+    Test that the function returns True when the machine is valid
+    """
+    mock_message = NonCallableMock()
+    is_aq_managed_image.return_value = True
+    openstack_api.check_machine_exists.return_value = True
+
+    assert check_machine_valid(mock_message)
+    is_aq_managed_image.assert_called_once_with(mock_message)
+    openstack_api.check_machine_exists.assert_called_once_with(
+        VmData.from_message(mock_message)
+    )
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_invalid_image(openstack_api, is_aq_managed_image):
+    """
+    Test that the function returns False when the image is not AQ managed
+    """
+    mock_message = NonCallableMock()
+    is_aq_managed_image.return_value = False
+    openstack_api.check_machine_exists.return_value = True
+
+    assert not check_machine_valid(mock_message)
+
+    is_aq_managed_image.assert_called_once_with(mock_message)
+    openstack_api.check_machine_exists.assert_not_called()
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_invalid_machine(openstack_api, is_aq_managed_image):
+    """
+    Test that the function returns False when the machine does not exist
+    """
+    mock_message = NonCallableMock()
+    is_aq_managed_image.return_value = True
+    openstack_api.check_machine_exists.return_value = False
+
+    assert not check_machine_valid(mock_message)
+
+    is_aq_managed_image.assert_called_once_with(mock_message)
+    openstack_api.check_machine_exists.assert_called_once_with(
+        VmData.from_message(mock_message)
+    )
