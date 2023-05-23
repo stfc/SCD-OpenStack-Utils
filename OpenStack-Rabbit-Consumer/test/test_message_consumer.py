@@ -226,7 +226,7 @@ def test_consume_create_machine_hostnames_good_path(
     openstack.get_server_networks.assert_called_with(vm_data)
 
     # Check main Aq Flow
-    delete_machine.assert_called_once_with(vm_data)
+    delete_machine.assert_called_once_with(vm_data, network_details[0])
     aq_api.create_machine.assert_called_once_with(rabbit_message, vm_data)
     machine_name = aq_api.create_machine.return_value
 

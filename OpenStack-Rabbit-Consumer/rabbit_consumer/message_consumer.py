@@ -50,37 +50,46 @@ def consume(message: RabbitMessage) -> None:
         raise ValueError(f"Unsupported message type: {message.event_type}")
 
 
-def delete_machine(vm_data: VmData):
+def delete_machine(
+    vm_data: VmData, network_details: Optional[OpenstackAddress] = None
+) -> None:
     """
     Deletes a machine in Aquilon and all associated addresses based on
     the serial, MAC and hostname provided. This is the best effort attempt
     to clean-up, since we can have partial or incorrect information.
     """
     # First handle hostnames
+    if network_details and aq_api.check_host_exists(network_details.hostname):
+        logger.info("Deleting host %s", network_details.hostname)
+        aq_api.delete_host(network_details.hostname)
+
     machine_name = aq_api.search_machine_by_serial(vm_data)
     if not machine_name:
-        logger.info("No machine found for %s", vm_data.virtual_machine_id)
+        logger.info("No existing record found for %s", vm_data.virtual_machine_id)
         return
 
-    hostname = aq_api.search_host_by_machine(machine_name)
-    logger.info("Host exists for %s. Deleting old", hostname)
-    aq_api.delete_host(hostname)
-
-    logger.info("Machine exists for %s. Deleting old", vm_data.virtual_machine_id)
-    machine_details = aq_api.get_machine_details(machine_name)
     # We have to do this manually because AQ has neither a:
     # - Just delete the machine please
     # - Delete this if it exists
     # So alas we have to do everything by hand, whilst adhering to random rules
     # of deletion orders which it enforces...
 
-    # First delete the interfaces
-    ipv4_address = socket.gethostbyname(hostname)
-    if ipv4_address in machine_details:
-        aq_api.delete_address(ipv4_address, machine_name)
+    hostname = aq_api.search_host_by_machine(machine_name)
+    machine_details = aq_api.get_machine_details(machine_name)
+    if hostname:
+        # We have to clean-up all the interfaces and addresses first
+        logger.info("Host exists for %s. Deleting old", hostname)
+        aq_api.delete_host(hostname)
 
-    if "eth0" in machine_details:
-        aq_api.delete_interface(machine_name)
+        # First delete the interfaces
+        ipv4_address = socket.gethostbyname(hostname)
+        if ipv4_address in machine_details:
+            aq_api.delete_address(ipv4_address, machine_name)
+
+        if "eth0" in machine_details:
+            aq_api.delete_interface(machine_name)
+
+    logger.info("Machine exists for %s. Deleting old", vm_data.virtual_machine_id)
 
     # Then delete the machine
     aq_api.delete_machine(machine_name)
@@ -126,7 +135,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
         logger.info("Skipping novalocal only host: %s", vm_name)
         return
 
-    delete_machine(vm_data)
+    delete_machine(vm_data, network_details[0])
 
     # Configure networking
     machine_name = aq_api.create_machine(rabbit_message, vm_data)
