@@ -113,8 +113,7 @@ def test_get_server_networks(address, server_details, vm_data):
 
 
 @patch("rabbit_consumer.openstack_api.get_server_details")
-@patch("rabbit_consumer.openstack_api.OpenstackAddress")
-def test_get_server_networks_no_internal(address, server_details, vm_data):
+def test_get_server_networks_no_internal(server_details, vm_data):
     """
     Tests that an empty list is returned when there are no internal networks
     """
@@ -122,4 +121,4 @@ def test_get_server_networks_no_internal(address, server_details, vm_data):
     server_details.return_value.addresses = {"public": []}
 
     result = get_server_networks(vm_data)
-    assert result == []
+    assert not result

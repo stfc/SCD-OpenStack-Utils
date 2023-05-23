@@ -277,12 +277,12 @@ def test_check_machine_valid(openstack_api, is_aq_managed):
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_check_machine_invalid_image(openstack_api, is_aq_managed_image):
+def test_check_machine_invalid_image(openstack_api, is_aq_managed):
     """
     Test that the function returns False when the image is not AQ managed
     """
     mock_message = NonCallableMock()
-    is_aq_managed_image.return_value = False
+    is_aq_managed.return_value = False
     openstack_api.check_machine_exists.return_value = True
 
     assert not check_machine_valid(mock_message)
@@ -290,12 +290,12 @@ def test_check_machine_invalid_image(openstack_api, is_aq_managed_image):
     openstack_api.check_machine_exists.assert_called_once_with(
         VmData.from_message(mock_message)
     )
-    is_aq_managed_image.assert_called_once_with(mock_message)
+    is_aq_managed.assert_called_once_with(mock_message)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_check_machine_invalid_machine(openstack_api, is_aq_managed_image):
+def test_check_machine_invalid_machine(openstack_api, is_aq_managed):
     """
     Test that the function returns False when the machine does not exist
     """
@@ -304,7 +304,7 @@ def test_check_machine_invalid_machine(openstack_api, is_aq_managed_image):
 
     assert not check_machine_valid(mock_message)
 
-    is_aq_managed_image.assert_not_called()
+    is_aq_managed.assert_not_called()
     openstack_api.check_machine_exists.assert_called_once_with(
         VmData.from_message(mock_message)
     )
