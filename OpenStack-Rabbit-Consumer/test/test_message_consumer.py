@@ -15,7 +15,7 @@ from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
     on_message,
     initiate_consumer,
-    add_hostname_to_metadata,
+    add_aq_details_to_metadata,
     handle_create_machine,
     handle_machine_delete,
     SUPPORTED_MESSAGE_TYPES,
@@ -155,20 +155,26 @@ def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
 
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_add_hostname_to_metadata_machine_exists(
-    openstack_api, vm_data, openstack_address_list
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_add_aq_details_to_metadata(
+    aq_api, openstack_api, vm_data, openstack_address_list
 ):
     """
     Test that the function adds the hostname to the metadata when the machine exists
     """
     openstack_api.check_machine_exists.return_value = True
-    add_hostname_to_metadata(vm_data, openstack_address_list)
+    add_aq_details_to_metadata(vm_data, openstack_address_list)
+
+    hostnames = [i.hostname for i in openstack_address_list]
+    expected = {
+        "HOSTNAMES": ",".join(hostnames),
+        "AQ_STATUS": "SUCCESS",
+        "AQ_MACHINE": aq_api.search_machine_by_serial.return_value,
+    }
 
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
-    hostnames = [i.hostname for i in openstack_address_list]
-    openstack_api.update_metadata.assert_called_with(
-        vm_data, {"HOSTNAMES": ",".join(hostnames), "AQ_STATUS": "SUCCESS"}
-    )
+    aq_api.search_machine_by_serial.assert_called_once_with(vm_data)
+    openstack_api.update_metadata.assert_called_with(vm_data, expected)
 
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
@@ -177,7 +183,7 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
     Test that the function does not add the hostname to the metadata when the machine does not exist
     """
     openstack_api.check_machine_exists.return_value = False
-    add_hostname_to_metadata(vm_data, [])
+    add_aq_details_to_metadata(vm_data, [])
 
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
     openstack_api.update_metadata.assert_not_called()
@@ -200,7 +206,7 @@ def test_handle_create_machine_skips_invalid(openstack_api, machine_valid):
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
+@patch("rabbit_consumer.message_consumer.add_aq_details_to_metadata")
 # pylint: disable=too-many-arguments
 def test_consume_create_machine_hostnames_good_path(
     metadata, aq_api, openstack, rabbit_message, image_metadata
