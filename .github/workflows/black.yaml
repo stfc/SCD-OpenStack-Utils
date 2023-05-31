@@ -7,6 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: motd updater
+        uses: psf/black@stable
+        with:
+          src: "motd_updater"
+
       - name: Rabbit Consumer
         uses: psf/black@stable
         with:
@@ -21,3 +26,5 @@ jobs:
         uses: psf/black@stable
         with:
           src: "iriscasttools/iriscasttools"
+
+

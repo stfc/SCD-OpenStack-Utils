@@ -1,0 +1,28 @@
+name: Motd Updater
+
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "motd_updater/**"
+      - ".github/workflows/motd_updater.yaml"
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.x"]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Run unit tests
+        run: cd "motd_updater" && python3 -m pytest .
