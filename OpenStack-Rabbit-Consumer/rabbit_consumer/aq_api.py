@@ -191,23 +191,23 @@ def delete_host(hostname: str) -> None:
     setup_requests(url, "delete", "Host Delete")
 
 
-def delete_address(address: OpenstackAddress, machine_name: str) -> None:
+def delete_address(address: str, machine_name: str) -> None:
     """
     Deletes an address in Aquilon
     """
-    logger.debug("Attempting to delete address for %s ", address.addr)
+    logger.debug("Attempting to delete address for %s ", address)
     url = ConsumerConfig().aq_url + "/interface_address"
-    params = {"ip": address.addr, "machine": machine_name, "interface": "eth0"}
+    params = {"ip": address, "machine": machine_name, "interface": "eth0"}
     setup_requests(url, "delete", "Address Delete", params=params)
 
 
-def delete_interface(address: OpenstackAddress) -> None:
+def delete_interface(machine_name: str) -> None:
     """
     Deletes a host interface in Aquilon
     """
-    logger.debug("Attempting to delete interface for %s ", address.mac_addr)
+    logger.debug("Attempting to delete interface for %s ", machine_name)
     url = ConsumerConfig().aq_url + "/interface/command/del"
-    params = {"mac": address.mac_addr}
+    params = {"interface": "eth0", "machine": machine_name}
     setup_requests(url, "post", "Interface Delete", params=params)
 
 
@@ -247,13 +247,27 @@ def set_interface_bootable(machine_name: str, interface_name: str) -> None:
     setup_requests(url, "post", "Update Machine Interface")
 
 
-def search_machine(mac_addr: str) -> Optional[str]:
+def search_machine_by_serial(vm_data: VmData) -> Optional[str]:
     """
-    Searches for a machine in Aquilon based on a MAC address
+    Searches for a machine in Aquilon based on a serial number
     """
-    logger.debug("Searching for host with MAC %s", mac_addr)
+    logger.debug("Searching for host with serial %s", vm_data.virtual_machine_id)
     url = ConsumerConfig().aq_url + "/find/machine"
-    params = {"mac": mac_addr}
+    params = {"serial": vm_data.virtual_machine_id}
+    response = setup_requests(url, "get", "Search Host", params=params).strip()
+
+    if response:
+        return response
+    return None
+
+
+def search_host_by_machine(machine_name: str) -> Optional[str]:
+    """
+    Searches for a host in Aquilon based on a machine name
+    """
+    logger.debug("Searching for host with machine name %s", machine_name)
+    url = ConsumerConfig().aq_url + "/find/host"
+    params = {"machine": machine_name}
     response = setup_requests(url, "get", "Search Host", params=params).strip()
 
     if response:

@@ -1,5 +1,6 @@
 import json
 import logging
+import socket
 from typing import Optional, List
 
 import rabbitpy
@@ -25,12 +26,12 @@ def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[ImageMetadata
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-    image = openstack_api.get_image_name(VmData.from_message(rabbit_message))
-    image_meta = ImageMetadata.from_dict(image.metadata)
-
-    if not image_meta:
+    image = openstack_api.get_image(VmData.from_message(rabbit_message))
+    if "AQ_OS" not in image.metadata:
         logger.debug("Skipping non-Aquilon image: %s", image.name)
         return None
+
+    image_meta = ImageMetadata.from_dict(image.metadata)
     return image_meta
 
 
@@ -49,31 +50,71 @@ def consume(message: RabbitMessage) -> None:
         raise ValueError(f"Unsupported message type: {message.event_type}")
 
 
-def delete_machine(addresses: List[OpenstackAddress]):
-    for address in addresses:
-        if aq_api.check_host_exists(address.hostname):
-            logger.info("Host exists for %s. Deleting old", address.hostname)
-            aq_api.delete_host(address.hostname)
+def delete_machine(
+    vm_data: VmData, network_details: Optional[OpenstackAddress] = None
+) -> None:
+    """
+    Deletes a machine in Aquilon and all associated addresses based on
+    the serial, MAC and hostname provided. This is the best effort attempt
+    to clean-up, since we can have partial or incorrect information.
+    """
+    # First handle hostnames
+    if network_details and aq_api.check_host_exists(network_details.hostname):
+        logger.info("Deleting host %s", network_details.hostname)
+        aq_api.delete_host(network_details.hostname)
 
-        machine_name = aq_api.search_machine(address.mac_addr)
-        if not machine_name:
-            # Nothing else to do at this point
-            return
+    machine_name = aq_api.search_machine_by_serial(vm_data)
+    if not machine_name:
+        logger.info("No existing record found for %s", vm_data.virtual_machine_id)
+        return
 
-        logger.info("Machine exists for MAC: %s. Deleting old", address.mac_addr)
-        machine_details = aq_api.get_machine_details(machine_name)
+    # We have to do this manually because AQ has neither a:
+    # - Just delete the machine please
+    # - Delete this if it exists
+    # So alas we have to do everything by hand, whilst adhering to random rules
+    # of deletion orders which it enforces...
 
-        # We have to do this manually because AQ has neither a:
-        # - Just delete the machine please
-        # - Delete this if it exists
-        # So alas we have to do everything by hand, whilst adhering to random rules
-        # of deletion orders which it enforces...
+    hostname = aq_api.search_host_by_machine(machine_name)
+    machine_details = aq_api.get_machine_details(machine_name)
+    # We have to clean-up all the interfaces and addresses first
+    if hostname:
+        if aq_api.check_host_exists(hostname):
+            # This is a different hostname to the one we have in the message
+            # so, we need to delete it
+            logger.info("Host exists for %s. Deleting old", hostname)
+            aq_api.delete_host(hostname)
 
-        if address.addr in machine_details:
-            aq_api.delete_address(address, machine_name)
-        if address.mac_addr in machine_details:
-            aq_api.delete_interface(address)
-        aq_api.delete_machine(machine_name)
+        # First delete the interfaces
+        ipv4_address = socket.gethostbyname(hostname)
+        if ipv4_address in machine_details:
+            aq_api.delete_address(ipv4_address, machine_name)
+
+        if "eth0" in machine_details:
+            aq_api.delete_interface(machine_name)
+
+    logger.info("Machine exists for %s. Deleting old", vm_data.virtual_machine_id)
+
+    # Then delete the machine
+    aq_api.delete_machine(machine_name)
+
+
+def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
+    """
+    Checks to see if the machine is valid for creating in Aquilon.
+    """
+    vm_data = VmData.from_message(rabbit_message)
+    if not openstack_api.check_machine_exists(vm_data):
+        # User has likely deleted the machine since we got here
+        logger.warning(
+            "Machine %s does not exist, skipping creation", vm_data.virtual_machine_id
+        )
+        return False
+
+    if not is_aq_managed_image(rabbit_message):
+        logger.debug("Ignoring non AQ Image: %s", rabbit_message)
+        return False
+
+    return True
 
 
 def handle_create_machine(rabbit_message: RabbitMessage) -> None:
@@ -84,13 +125,10 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
     logger.info("=== Received Aquilon VM create message ===")
     _print_debug_logging(rabbit_message)
 
-    vm_data = VmData.from_message(rabbit_message)
-    if not openstack_api.check_machine_exists(vm_data):
-        # User has likely deleted the machine since we got here
-        logger.warning(
-            "Machine %s does not exist, skipping creation", vm_data.virtual_machine_id
-        )
+    if not check_machine_valid(rabbit_message):
         return
+
+    vm_data = VmData.from_message(rabbit_message)
 
     image_meta = is_aq_managed_image(rabbit_message)
     network_details = openstack_api.get_server_networks(vm_data)
@@ -100,7 +138,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
         logger.info("Skipping novalocal only host: %s", vm_name)
         return
 
-    delete_machine(network_details)
+    delete_machine(vm_data, network_details[0])
 
     # Configure networking
     machine_name = aq_api.create_machine(rabbit_message, vm_data)
@@ -128,7 +166,7 @@ def _print_debug_logging(rabbit_message: RabbitMessage) -> None:
     logger.debug(
         "Project Name: %s (%s)", rabbit_message.project_name, vm_data.project_id
     )
-    logger.debug(
+    logger.info(
         "VM Name: %s (%s) ", rabbit_message.payload.vm_name, vm_data.virtual_machine_id
     )
     logger.debug("Username: %s", rabbit_message.user_name)
@@ -143,14 +181,7 @@ def handle_machine_delete(rabbit_message: RabbitMessage) -> None:
     _print_debug_logging(rabbit_message)
 
     vm_data = VmData.from_message(rabbit_message)
-    network_data = openstack_api.get_server_networks(vm_data)
-
-    if not network_data or not network_data[0].hostname:
-        vm_name = rabbit_message.payload.vm_name
-        logger.debug("No hostnames found for %s, skipping delete", vm_name)
-        return
-
-    delete_machine(addresses=network_data)
+    delete_machine(vm_data=vm_data)
 
     logger.info(
         "=== Finished Aquilon deletion hook for VM %s ===", vm_data.virtual_machine_id
@@ -192,11 +223,6 @@ def on_message(message: rabbitpy.Message) -> None:
 
     decoded = RabbitMessage.from_json(body)
     logger.debug("Decoded message: %s", decoded)
-
-    if not is_aq_managed_image(decoded):
-        logger.debug("Ignoring non AQ Image: %s", decoded)
-        message.ack()
-        return
 
     consume(decoded)
     message.ack()

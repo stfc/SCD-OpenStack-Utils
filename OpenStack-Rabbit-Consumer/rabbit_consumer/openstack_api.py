@@ -18,8 +18,7 @@ class OpenstackConnection:
     in subsequent functions.
     """
 
-    def __init__(self, project_name: str):
-        self.project_name = project_name
+    def __init__(self):
         self.conn = None
 
     def __enter__(self):
@@ -41,7 +40,7 @@ def check_machine_exists(vm_data: VmData) -> bool:
     """
     Checks to see if the machine exists in Openstack.
     """
-    with OpenstackConnection(vm_data.project_id) as conn:
+    with OpenstackConnection() as conn:
         return bool(conn.compute.find_server(vm_data.virtual_machine_id))
 
 
@@ -49,10 +48,12 @@ def get_server_details(vm_data: VmData) -> Server:
     """
     Gets the server details from Openstack with details included
     """
-    with OpenstackConnection(vm_data.project_id) as conn:
+    with OpenstackConnection() as conn:
         # Workaround for details missing from find_server
         # on the current version of openstacksdk
-        found = list(conn.compute.servers(vm_data.virtual_machine_id))
+        found = list(
+            conn.compute.servers(uuid=vm_data.virtual_machine_id, all_projects=True)
+        )
         if not found:
             raise ValueError(f"Server not found for id: {vm_data.virtual_machine_id}")
         return found[0]
@@ -64,6 +65,9 @@ def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
     of deserialized OpenstackAddresses.
     """
     server = get_server_details(vm_data)
+    if "Internal" not in server.addresses:
+        logger.warning("No internal network found for server %s", server.name)
+        return []
     return OpenstackAddress.get_internal_networks(server.addresses)
 
 
@@ -75,13 +79,13 @@ def get_metadata(vm_data: VmData) -> dict:
     return server.metadata
 
 
-def get_image_name(vm_data: VmData) -> Image:
+def get_image(vm_data: VmData) -> Image:
     """
     Gets the image name from Openstack for the virtual machine.
     """
     server = get_server_details(vm_data)
     uuid = server.image.id
-    with OpenstackConnection(vm_data.project_id) as conn:
+    with OpenstackConnection() as conn:
         image = conn.compute.find_image(uuid)
         return image
 
@@ -91,7 +95,7 @@ def update_metadata(vm_data: VmData, metadata) -> None:
     Updates the metadata for the virtual machine.
     """
     server = get_server_details(vm_data)
-    with OpenstackConnection(vm_data.project_id) as conn:
+    with OpenstackConnection() as conn:
         conn.compute.set_server_metadata(server, **metadata)
 
     logger.debug("Setting metadata successful")
