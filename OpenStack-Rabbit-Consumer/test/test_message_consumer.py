@@ -252,7 +252,7 @@ def test_consume_delete_machine_good_path(delete_machine, rabbit_message):
     """
     rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
 
-    with (patch("rabbit_consumer.message_consumer.VmData") as data_patch,):
+    with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
         handle_machine_delete(rabbit_message)
 
     delete_machine.assert_called_once_with(vm_data=data_patch.from_message.return_value)
