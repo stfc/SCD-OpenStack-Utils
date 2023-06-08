@@ -9,7 +9,7 @@ from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.build_metadata import AqMetadata
+from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, MessageEventType
 from rabbit_consumer.vm_data import VmData

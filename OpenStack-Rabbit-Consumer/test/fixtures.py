@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from rabbit_consumer.build_metadata import AqMetadata
+from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, RabbitMeta, RabbitPayload
 from rabbit_consumer.vm_data import VmData

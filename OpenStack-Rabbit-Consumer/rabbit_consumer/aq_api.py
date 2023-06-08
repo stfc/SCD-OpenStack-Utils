@@ -8,7 +8,7 @@ from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.build_metadata import AqMetadata
+from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage
 from rabbit_consumer.vm_data import VmData
