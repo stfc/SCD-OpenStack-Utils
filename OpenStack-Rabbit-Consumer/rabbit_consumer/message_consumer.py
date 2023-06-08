@@ -9,7 +9,7 @@ from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.image_metadata import ImageMetadata
+from rabbit_consumer.build_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, MessageEventType
 from rabbit_consumer.vm_data import VmData
@@ -33,9 +33,13 @@ def is_aq_managed_image(vm_data: VmData) -> bool:
     return True
 
 
-def get_image_metadata(vm_data: VmData) -> ImageMetadata:
+def get_aq_build_metadata(vm_data: VmData) -> AqMetadata:
+    """
+    Gets the Aq Metadata from either the image or VM (where
+    VM metadata takes precedence) to determine the AQ params
+    """
     image = openstack_api.get_image(vm_data)
-    image_meta = ImageMetadata.from_dict(image.metadata)
+    image_meta = AqMetadata.from_dict(image.metadata)
     return image_meta
 
 
@@ -135,7 +139,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
 
     vm_data = VmData.from_message(rabbit_message)
 
-    image_meta = get_image_metadata(vm_data)
+    image_meta = get_aq_build_metadata(vm_data)
     network_details = openstack_api.get_server_networks(vm_data)
 
     if not network_details or not network_details[0].hostname:

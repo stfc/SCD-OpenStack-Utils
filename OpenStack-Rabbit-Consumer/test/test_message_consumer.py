@@ -21,7 +21,7 @@ from rabbit_consumer.message_consumer import (
     SUPPORTED_MESSAGE_TYPES,
     check_machine_valid,
     is_aq_managed_image,
-    get_image_metadata,
+    get_aq_build_metadata,
 )
 from rabbit_consumer.vm_data import VmData
 
@@ -218,7 +218,9 @@ def test_consume_create_machine_hostnames_good_path(
     with (
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
         patch("rabbit_consumer.message_consumer.check_machine_valid") as check_machine,
-        patch("rabbit_consumer.message_consumer.get_image_metadata") as get_image_meta,
+        patch(
+            "rabbit_consumer.message_consumer.get_aq_build_metadata"
+        ) as get_image_meta,
         patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine,
     ):
         check_machine.return_value = True
@@ -340,13 +342,13 @@ def test_is_aq_managed_image_missing_key(openstack_api, vm_data):
     openstack_api.get_image.assert_called_once_with(vm_data)
 
 
-@patch("rabbit_consumer.message_consumer.ImageMetadata")
+@patch("rabbit_consumer.message_consumer.AqMetadata")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_get_image_metadata(openstack_api, image_metadata, vm_data):
+def test_get_aq_build_metadata(openstack_api, image_metadata, vm_data):
     """
     Test that the function returns the correct metadata
     """
-    image_meta = get_image_metadata(vm_data)
+    image_meta = get_aq_build_metadata(vm_data)
 
     assert image_meta == image_metadata.from_dict.return_value
     image_metadata.from_dict.assert_called_once_with(

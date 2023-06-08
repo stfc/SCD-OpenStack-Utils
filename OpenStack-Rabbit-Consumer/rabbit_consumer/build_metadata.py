@@ -7,9 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ImageMetadata(DataClassDictMixin):
+class AqMetadata(DataClassDictMixin):
     """
-    Deserialised metadata that is set on OpenStack images
+    Deserialised metadata that is set either on an Openstack image
+    or a VM's metadata
     """
 
     aq_archetype: str = field(metadata=field_options(alias="AQ_ARCHETYPE"))

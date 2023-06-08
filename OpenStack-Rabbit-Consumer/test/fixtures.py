@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from rabbit_consumer.image_metadata import ImageMetadata
+from rabbit_consumer.build_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, RabbitMeta, RabbitPayload
 from rabbit_consumer.vm_data import VmData
@@ -14,7 +14,7 @@ def fixture_image_metadata():
     Creates an ImageMetadata object with mock data
     which represent an example OpenStack image
     """
-    return ImageMetadata(
+    return AqMetadata(
         aq_archetype="archetype_mock",
         aq_domain="domain_mock",
         aq_personality="personality_mock",
