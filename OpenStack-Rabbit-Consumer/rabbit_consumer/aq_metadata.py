@@ -23,7 +23,12 @@ class AqMetadata(DataClassDictMixin):
     aq_os_version: str
     aq_os: str
 
+    # pylint: disable=too-few-public-methods
     class Config(BaseConfig):
+        """
+        Sets the aliases for the metadata keys
+        """
+
         aliases = {
             "aq_archetype": "AQ_ARCHETYPE",
             "aq_domain": "AQ_DOMAIN",
