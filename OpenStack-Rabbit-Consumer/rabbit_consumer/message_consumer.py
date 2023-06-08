@@ -21,16 +21,20 @@ SUPPORTED_MESSAGE_TYPES = {
 }
 
 
-def is_aq_managed_image(rabbit_message: RabbitMessage) -> Optional[ImageMetadata]:
+def is_aq_managed_image(vm_data: VmData) -> bool:
     """
     Check to see if the metadata in the message contains entries that suggest it
     is for an Aquilon VM.
     """
-    image = openstack_api.get_image(VmData.from_message(rabbit_message))
+    image = openstack_api.get_image(vm_data)
     if "AQ_OS" not in image.metadata:
         logger.debug("Skipping non-Aquilon image: %s", image.name)
-        return None
+        return False
+    return True
 
+
+def get_image_metadata(vm_data: VmData) -> ImageMetadata:
+    image = openstack_api.get_image(vm_data)
     image_meta = ImageMetadata.from_dict(image.metadata)
     return image_meta
 
@@ -111,7 +115,7 @@ def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
         )
         return False
 
-    if not is_aq_managed_image(rabbit_message):
+    if not is_aq_managed_image(vm_data):
         logger.debug("Ignoring non AQ Image: %s", rabbit_message)
         return False
 
@@ -131,7 +135,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
 
     vm_data = VmData.from_message(rabbit_message)
 
-    image_meta = is_aq_managed_image(rabbit_message)
+    image_meta = get_image_metadata(vm_data)
     network_details = openstack_api.get_server_networks(vm_data)
 
     if not network_details or not network_details[0].hostname:
