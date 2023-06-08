@@ -1,4 +1,4 @@
-from unittest.mock import Mock, NonCallableMock, patch, call
+from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
@@ -344,13 +344,20 @@ def test_is_aq_managed_image_missing_key(openstack_api, vm_data):
 
 @patch("rabbit_consumer.message_consumer.AqMetadata")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_get_aq_build_metadata(openstack_api, image_metadata, vm_data):
+def test_get_aq_build_metadata(openstack_api, aq_metadata_class, vm_data):
     """
     Test that the function returns the correct metadata
     """
-    image_meta = get_aq_build_metadata(vm_data)
+    aq_metadata_obj: MagicMock = get_aq_build_metadata(vm_data)
 
-    assert image_meta == image_metadata.from_dict.return_value
-    image_metadata.from_dict.assert_called_once_with(
+    # We should first construct from an image
+    assert aq_metadata_obj == aq_metadata_class.from_dict.return_value
+    aq_metadata_class.from_dict.assert_called_once_with(
         openstack_api.get_image.return_value.metadata
+    )
+
+    # Then override with an object
+    openstack_api.get_server_metadata.assert_called_once_with(vm_data)
+    aq_metadata_obj.override_from_vm_meta.assert_called_once_with(
+        openstack_api.get_server_metadata.return_value
     )

@@ -40,6 +40,9 @@ def get_aq_build_metadata(vm_data: VmData) -> AqMetadata:
     """
     image = openstack_api.get_image(vm_data)
     image_meta = AqMetadata.from_dict(image.metadata)
+
+    vm_metadata = openstack_api.get_server_metadata(vm_data)
+    image_meta.override_from_vm_meta(vm_metadata)
     return image_meta
 
 
