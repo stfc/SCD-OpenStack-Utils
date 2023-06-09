@@ -1,13 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch, NonCallableMock
 from parameterized import parameterized
-from aq_zombie_finder import (
-    create_client,
-    ssh_command,
-    get_aq_ips,
-    check_openstack_ip,
-    check_aquilon_serial
-)
+import aq_zombie_finder
 
 
 class AQZombieFinderTests(unittest.TestCase):
@@ -23,7 +17,7 @@ class AQZombieFinderTests(unittest.TestCase):
         mock_paramiko.AutoAddPolicy = NonCallableMock()
         mock_paramiko.connect = MagicMock()
 
-        client = create_client(host, user, password)
+        client = aq_zombie_finder.create_client(host, user, password)
 
         client.connect.assert_called_once_with(
             hostname=host, username=user, password=password, timeout=60
@@ -40,7 +34,7 @@ class AQZombieFinderTests(unittest.TestCase):
         mock_stdout.channel.recv_exit_status.return_value = NonCallableMock()
         mock_stdout.readlines.return_value = NonCallableMock()
 
-        command_output = ssh_command(mock_client, command)
+        command_output = aq_zombie_finder.ssh_command(mock_client, command)
 
         mock_client.exec_command.assert_called_once_with(
             command, get_pty=True, timeout=60
@@ -55,10 +49,10 @@ class AQZombieFinderTests(unittest.TestCase):
 
         mock_ip_addresses = "192.168.1.1"
         with patch("aq_zombie_finder.ssh_command"):
-            mock_ssh_command = MagicMock()
-            mock_ssh_command.return_value = ["Internal=192.168.1.1"]
+            aq_zombie_finder.ssh_command = MagicMock()
+            aq_zombie_finder.ssh_command.return_value = ["Internal=192.168.1.1"]
 
-            ip_addresses = get_aq_ips(openstack_client)
+            ip_addresses = aq_zombie_finder.get_aq_ips(openstack_client)
 
         self.assertEqual(ip_addresses[0][0], mock_ip_addresses)
 
@@ -73,9 +67,9 @@ class AQZombieFinderTests(unittest.TestCase):
         aquilon_client = MagicMock()
         openstack_zombie_file = MagicMock()
         with patch("aq_zombie_finder.ssh_command"):
-            ssh_command.return_value = aq_host_return_value
+            aq_zombie_finder.ssh_command.return_value = aq_host_return_value
 
-            host_output = check_openstack_ip(
+            host_output = aq_zombie_finder.check_openstack_ip(
                 aq_ip, aquilon_client, openstack_zombie_file
             )
 
@@ -96,9 +90,9 @@ class AQZombieFinderTests(unittest.TestCase):
         aquilon_zombie_file.write = MagicMock()
 
         with patch("aq_zombie_finder.ssh_command"):
-            ssh_command.return_value = aq_host_return_value
+            aq_zombie_finder.ssh_command.return_value = aq_host_return_value
 
-            check_aquilon_serial(
+            aq_zombie_finder.check_aquilon_serial(
                 aq_host, aq_ip, aq_openstack_client, aquilon_zombie_file
             )
 
