@@ -30,4 +30,5 @@ jobs:
 
       - name: Test with unittest
         run: |
-            python3 -m unittest AQZombieFinder/test/test_aq_zombie_finder.py
+            cd AQZombieFinder
+            python3 -m unittest test/test_aq_zombie_finder.py
