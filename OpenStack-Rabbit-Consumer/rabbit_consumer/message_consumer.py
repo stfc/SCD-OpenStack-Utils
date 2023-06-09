@@ -151,7 +151,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
     aq_api.aq_manage(network_details, image_meta)
     aq_api.aq_make(network_details, image_meta)
 
-    add_hostname_to_metadata(vm_data, network_details)
+    add_aq_details_to_metadata(vm_data, network_details)
 
     logger.info(
         "=== Finished Aquilon creation hook for VM %s ===", vm_data.virtual_machine_id
@@ -188,7 +188,7 @@ def handle_machine_delete(rabbit_message: RabbitMessage) -> None:
     )
 
 
-def add_hostname_to_metadata(
+def add_aq_details_to_metadata(
     vm_data: VmData, network_details: List[OpenstackAddress]
 ) -> None:
     """
@@ -203,7 +203,11 @@ def add_hostname_to_metadata(
         return
 
     hostnames = [i.hostname for i in network_details]
-    metadata = {"HOSTNAMES": ",".join(hostnames), "AQ_STATUS": "SUCCESS"}
+    metadata = {
+        "HOSTNAMES": ",".join(hostnames),
+        "AQ_STATUS": "SUCCESS",
+        "AQ_MACHINE": aq_api.search_machine_by_serial(vm_data),
+    }
     openstack_api.update_metadata(vm_data, metadata)
 
 
