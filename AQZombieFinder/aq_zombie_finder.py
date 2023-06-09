@@ -22,9 +22,12 @@ def ssh_command(client, command):
 def get_aq_ips(openstack_client):
     # Run a command on the openstack VM to get a list of
     # all servers with "-aq" in their details that start with "172.16"
-    servers = ssh_command(openstack_client, "source admin-openrc.sh ; "
-                                            "openstack server list --all-projects --long --limit -1 --ip=172.16 | "
-                                            "grep -i '\\-aq'")
+    servers = ssh_command(
+        openstack_client,
+        "source admin-openrc.sh ; "
+        "openstack server list --all-projects --long --limit -1 --ip=172.16 | "
+        "grep -i '\\-aq'"
+    )
 
     # Define the Regex expression used to find the IP address
     ip_rexp = compile(r"((?<=Internal=)([0-9](\.)?)+)")
@@ -58,8 +61,9 @@ def check_aquilon_serial(aq_host, aq_ip, openstack_client, aquilon_zombie_file):
     serial = serial_rexp.findall(str(aq_host))[0][0]
 
     # Get the host assigned to that serial in Openstack
-    server_details = ssh_command(openstack_client, "source admin-openrc.sh ; "
-                                                   "openstack server show " + serial)
+    server_details = ssh_command(
+        openstack_client, "source admin-openrc.sh ; openstack server show " + serial
+    )
 
     if "No server with a name or ID of" in str(server_details):
         # If the serial doesn't return a host, save its serial and IP as a potential zombie
@@ -96,7 +100,9 @@ def aq_zombie_finder():
         # Check if an aquilon host exists
         if aq_host:
             # Check the serial number of the AQ host
-            check_aquilon_serial(aq_host, aq_ip[0], openstack_client, aquilon_zombie_file)
+            check_aquilon_serial(
+                aq_host, aq_ip[0], openstack_client, aquilon_zombie_file
+            )
 
     # Close the SSH clients
     openstack_client.close()
