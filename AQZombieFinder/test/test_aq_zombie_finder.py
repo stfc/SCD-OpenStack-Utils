@@ -6,7 +6,6 @@ import aq_zombie_finder
 
 
 class AQZombieFinderTests(unittest.TestCase):
-
     @patch("aq_zombie_finder.paramiko")
     def test_create_client(self, mock_paramiko):
         host = "test.aquilon.gridpp.rl.ac.uk"
@@ -38,7 +37,9 @@ class AQZombieFinderTests(unittest.TestCase):
 
         command_output = aq_zombie_finder.ssh_command(mock_client, command)
 
-        mock_client.exec_command.assert_called_once_with(command, get_pty=True, timeout=60)
+        mock_client.exec_command.assert_called_once_with(
+            command, get_pty=True, timeout=60
+        )
         mock_stdout.channel.recv_exit_status.assert_called_once()
         mock_stdout.readlines.assert_called_once()
 
@@ -56,10 +57,12 @@ class AQZombieFinderTests(unittest.TestCase):
 
         self.assertEqual(ip_addresses[0][0], mock_ip_addresses)
 
-    @parameterized.expand([
-        ("check not found", "Not Found:", False),
-        ("check found", "something-else", "something-else")
-    ])
+    @parameterized.expand(
+        [
+            ("check not found", "Not Found:", False),
+            ("check found", "something-else", "something-else"),
+        ]
+    )
     def test_check_openstack_ip(self, name, aq_host_return_value, expected_out):
         aq_ip = "test.192.168.1.1"
         aquilon_client = MagicMock()
@@ -67,14 +70,18 @@ class AQZombieFinderTests(unittest.TestCase):
         with patch("aq_zombie_finder.ssh_command"):
             aq_zombie_finder.ssh_command.return_value = aq_host_return_value
 
-            host_output = aq_zombie_finder.check_openstack_ip(aq_ip, aquilon_client, openstack_zombie_file)
+            host_output = aq_zombie_finder.check_openstack_ip(
+                aq_ip, aquilon_client, openstack_zombie_file
+            )
 
         self.assertEqual(host_output, expected_out)
 
-    @parameterized.expand([
-        ("check not found", "No server with a name or ID of", False),
-        ("check found", "Test", True)
-    ])
+    @parameterized.expand(
+        [
+            ("check not found", "No server with a name or ID of", False),
+            ("check found", "Test", True),
+        ]
+    )
     def test_check_aquilon_serial(self, name, aq_host_return_value, expected_out):
         aq_host = r"Serial: test\\r"
         aq_ip = "test.192.168.1.1"
@@ -86,7 +93,9 @@ class AQZombieFinderTests(unittest.TestCase):
         with patch("aq_zombie_finder.ssh_command"):
             aq_zombie_finder.ssh_command.return_value = aq_host_return_value
 
-            aq_zombie_finder.check_aquilon_serial(aq_host, aq_ip, aq_openstack_client, aquilon_zombie_file)
+            aq_zombie_finder.check_aquilon_serial(
+                aq_host, aq_ip, aq_openstack_client, aquilon_zombie_file
+            )
 
         if expected_out:
             aquilon_zombie_file.assert_not_called()
@@ -94,5 +103,5 @@ class AQZombieFinderTests(unittest.TestCase):
             aquilon_zombie_file.write.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
