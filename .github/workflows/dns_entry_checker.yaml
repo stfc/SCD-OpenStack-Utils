@@ -6,7 +6,7 @@ on:
       - master
   pull_request:
     paths:
-      - "DNSEntryChecker/**"
+      - "dns_entry_checker/**"
       - ".github/workflows/dns_entry_checker.yaml"
 
 jobs:
@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r DNSEntryChecker/requirements.txt
+          pip install -r dns_entry_checker/requirements.txt
       - name: Test with unittest
         run: |
-            cd DNSEntryChecker
+            cd dns_entry_checker
             python3 -m unittest discover -s ./test -p "test_*.py"

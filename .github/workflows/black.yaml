@@ -25,4 +25,4 @@ jobs:
       - name: DNS Entry Checker 
         uses: psf/black@stable
         with:
-            src: "DNSEntryChecker"
+            src: "dns_entry_checker"
