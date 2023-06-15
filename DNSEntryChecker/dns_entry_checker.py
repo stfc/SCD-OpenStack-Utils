@@ -25,7 +25,7 @@ def pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp):
 
     ips = ip_rexp.findall(dns_pair)
     ips = [ips[0][0], ips[1][0]]
-    
+
     order_values = last_rexp.findall(ips[1])[0].split(".")
     order_check_dict[order_values[0]].append(order_values[1])
     return ips
