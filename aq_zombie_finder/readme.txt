@@ -28,5 +28,5 @@ $ python3 aq_zombie_finder.py
 
 Running the unit tests:
 '''
-$ python3 -m unittest test/test_aq_zombie_finder.py
+$ python3 -m unittest discover -s ./test -p "test_*.py"
 '''

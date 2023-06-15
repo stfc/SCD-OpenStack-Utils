@@ -25,4 +25,4 @@ jobs:
       - name: Aquilon Zombie Finder 
         uses: psf/black@stable
         with:
-            src: "AQZombieFinder"
+            src: "aq_zombie_finder"
