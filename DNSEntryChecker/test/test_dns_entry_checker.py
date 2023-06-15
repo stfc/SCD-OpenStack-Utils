@@ -132,7 +132,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         ]
     )
     def test_check_ip_dns_mismatch_backwards_not_found(
-            self, name, returned_ips, expected_out
+        self, name, returned_ips, expected_out
     ):
         ips = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()

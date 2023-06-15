@@ -33,12 +33,12 @@ def pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp):
 
 # Checks if the DNS returns the matching IP
 def check_ip_dns_mismatch(
-        ips,
-        client,
-        ip_rexp,
-        backward_mismatch_file,
-        forward_mismatch_file,
-        backward_missing_file,
+    ips,
+    client,
+    ip_rexp,
+    backward_mismatch_file,
+    forward_mismatch_file,
+    backward_missing_file,
 ):
     if ips[0].replace("-", ".") == ips[1]:
         returned_dns = ssh_command(client, "dig -x {s} +short".format(s=ips[1]))
