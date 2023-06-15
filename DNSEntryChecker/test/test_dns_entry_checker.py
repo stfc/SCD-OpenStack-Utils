@@ -60,7 +60,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
 
         command_output = pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp)
-        self.assertEqual(command_output[0].replace('-', '.'), command_output[1])
+        self.assertEqual(command_output[0].replace("-", "."), command_output[1])
 
     @parameterized.expand(
         [
@@ -79,8 +79,14 @@ class DNSEntryCheckerTests(unittest.TestCase):
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = []
 
-            check_ip_dns_mismatch(ips, client, ip_rexp, backward_mismatch_file, forward_mismatch_file,
-                                  backward_missing_file)
+            check_ip_dns_mismatch(
+                ips,
+                client,
+                ip_rexp,
+                backward_mismatch_file,
+                forward_mismatch_file,
+                backward_missing_file,
+            )
 
         if expected_out:
             forward_mismatch_file.write.assert_not_called()
@@ -104,8 +110,14 @@ class DNSEntryCheckerTests(unittest.TestCase):
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_dns
 
-            check_ip_dns_mismatch(ips, client, ip_rexp, backward_mismatch_file, forward_mismatch_file,
-                                  backward_missing_file)
+            check_ip_dns_mismatch(
+                ips,
+                client,
+                ip_rexp,
+                backward_mismatch_file,
+                forward_mismatch_file,
+                backward_missing_file,
+            )
 
         if not expected_out:
             backward_missing_file.write.assert_called_once()
@@ -119,7 +131,9 @@ class DNSEntryCheckerTests(unittest.TestCase):
             ("Returned IP matches", ["test-host-172-16-1-1.nubes.stfc.ac.uk"], 2),
         ]
     )
-    def test_check_ip_dns_mismatch_backwards_not_found(self, name, returned_ips, expected_out):
+    def test_check_ip_dns_mismatch_backwards_not_found(
+            self, name, returned_ips, expected_out
+    ):
         ips = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
         ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
@@ -130,8 +144,14 @@ class DNSEntryCheckerTests(unittest.TestCase):
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_ips
 
-            check_ip_dns_mismatch(ips, client, ip_rexp, backward_mismatch_file, forward_mismatch_file,
-                                  backward_missing_file)
+            check_ip_dns_mismatch(
+                ips,
+                client,
+                ip_rexp,
+                backward_mismatch_file,
+                forward_mismatch_file,
+                backward_missing_file,
+            )
 
         if expected_out == 0:
             backward_missing_file.write.assert_called_once()

@@ -24,15 +24,22 @@ def pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp):
     last_rexp = compile(r"([0-9]{1,3}\.[0-9]{1,3}(?!.))")
 
     ips = ip_rexp.findall(dns_pair)
-    ips = ([ips[0][0], ips[1][0]])
-
+    ips = [ips[0][0], ips[1][0]]
+    
     order_values = last_rexp.findall(ips[1])[0].split(".")
     order_check_dict[order_values[0]].append(order_values[1])
     return ips
 
 
 # Checks if the DNS returns the matching IP
-def check_ip_dns_mismatch(ips, client, ip_rexp, backward_mismatch_file, forward_mismatch_file, backward_missing_file):
+def check_ip_dns_mismatch(
+        ips,
+        client,
+        ip_rexp,
+        backward_mismatch_file,
+        forward_mismatch_file,
+        backward_missing_file,
+):
     if ips[0].replace("-", ".") == ips[1]:
         returned_dns = ssh_command(client, "dig -x {s} +short".format(s=ips[1]))
         if returned_dns:
@@ -65,10 +72,13 @@ def dns_entry_checker():
     client = create_client(ip, user, password)
 
     # Run a command on the VM to get all IP addresses with their domain names
-    dns_list = ssh_command(client, "dig @ns1.rl.ac.uk stfc.ac.uk  axfr | "
-                                   "grep -i nubes.stfc.ac.uk | "
-                                   "grep -v CNAME | "
-                                   "grep '172.16.105'")
+    dns_list = ssh_command(
+        client,
+        "dig @ns1.rl.ac.uk stfc.ac.uk  axfr | "
+        "grep -i nubes.stfc.ac.uk | "
+        "grep -v CNAME | "
+        "grep '172.16.105'",
+    )
 
     # Create or clear, then open to append to, the output files
     open("output\\forward_mismatch_list.txt", "w").close()
@@ -94,8 +104,14 @@ def dns_entry_checker():
 
         ips = pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp)
 
-        check_ip_dns_mismatch(ips, client, ip_rexp,
-                              backward_mismatch_file, forward_mismatch_file, backward_missing_file)
+        check_ip_dns_mismatch(
+            ips,
+            client,
+            ip_rexp,
+            backward_mismatch_file,
+            forward_mismatch_file,
+            backward_missing_file,
+        )
 
     # Check through all IP addresses received for gaps
     for i, key in enumerate(order_check_dict.items()):
@@ -110,5 +126,5 @@ def dns_entry_checker():
     gap_missing_file.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dns_entry_checker()
