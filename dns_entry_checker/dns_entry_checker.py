@@ -77,18 +77,16 @@ def dns_entry_checker():
         "dig @ns1.rl.ac.uk stfc.ac.uk  axfr | "
         "grep -i nubes.stfc.ac.uk | "
         "grep -v CNAME | "
-        "grep '172.16.105'",
+        "grep '172.16.'",
     )
 
     # Create or clear, then open to append to, the output files
     open("output\\forward_mismatch_list.txt", "w").close()
     open("output\\backward_mismatch_list.txt", "w").close()
-    open("output\\forward_missing_list.txt", "w").close()
     open("output\\backward_missing_list.txt", "w").close()
     open("output\\gap_missing_list.txt", "w").close()
     forward_mismatch_file = open("output\\forward_mismatch_list.txt", "a")
     backward_mismatch_file = open("output\\backward_mismatch_list.txt", "a")
-    forward_missing_file = open("output\\forward_missing_list.txt", "a")
     backward_missing_file = open("output\\backward_missing_list.txt", "a")
     gap_missing_file = open("output\\gap_missing_list.txt", "a")
 
@@ -121,7 +119,6 @@ def dns_entry_checker():
     client.close()
     forward_mismatch_file.close()
     backward_mismatch_file.close()
-    forward_missing_file.close()
     backward_missing_file.close()
     gap_missing_file.close()
 
