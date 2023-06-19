@@ -114,31 +114,27 @@ def aq_zombie_finder():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        "-u",
-        "--user",
-        metavar="USER",
-        help="FedID of the user",
-        required=True
+        "-u", "--user", metavar="USER", help="FedID of the user", required=True
     )
     parser.add_argument(
         "-p",
         "--password",
         metavar="PASSWORD",
         help="Password of the user",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "-i",
         "--ip",
         metavar="IP",
         help="IP of the machine with Openstack to SSH to",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "-o",
         "--output",
         metavar="OUTPUT",
-        help="Directory to create the output files in"
+        help="Directory to create the output files in",
     )
 
     # Define the variables with the script arguments

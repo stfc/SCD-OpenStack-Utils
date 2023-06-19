@@ -88,7 +88,9 @@ class AQZombieFinderTests(unittest.TestCase):
         ]
     )
     @mock.patch("builtins.open", create=True)
-    def test_check_aquilon_serial(self, name, aq_host_return_value, expected_out, mocked):
+    def test_check_aquilon_serial(
+            self, name, aq_host_return_value, expected_out, mocked
+    ):
         aq_host = r"Serial: test\\r"
         aq_ip = "test.192.168.1.1"
         aq_openstack_client = MagicMock()
