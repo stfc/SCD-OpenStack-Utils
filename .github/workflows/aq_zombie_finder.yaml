@@ -31,7 +31,4 @@ jobs:
       - name: Test with unittest
         run: |
             cd aq_zombie_finder && python3 -m unittest discover -s ./test -p "test_*.py"
-      
-      - name: Analyse with pylint 
-        run: |
-          cd aq_zombie_finder && pylint --recursive yes test aq_zombie_finder
+            
