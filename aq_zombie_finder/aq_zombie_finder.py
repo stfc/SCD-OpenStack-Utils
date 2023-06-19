@@ -63,7 +63,7 @@ def check_openstack_ip(aq_ip, aquilon_client, openstack_zombie_filepath):
     aq_host = ssh_command(aquilon_client, "aq show_host --hostname " + ip_string)
     if "Not Found:" in str(aq_host):
         # If the VM doesn't have details in Aquilon, save its IP address as a potential zombie
-        with open(openstack_zombie_filepath, 'a') as openstack_zombie_file:
+        with open(openstack_zombie_filepath, "a") as openstack_zombie_file:
             openstack_zombie_file.write(ip_string + "\n")
         return False
 
@@ -92,7 +92,7 @@ def check_aquilon_serial(aq_host, aq_ip, openstack_client, aquilon_zombie_filepa
 
     if "No server with a name or ID of" in str(server_details):
         # If the serial doesn't return a host, save its serial and IP as a potential zombie
-        with open(aquilon_zombie_filepath, 'a') as aquilon_zombie_file:
+        with open(aquilon_zombie_filepath, "a") as aquilon_zombie_file:
             aquilon_zombie_file.write(serial + " | " + aq_ip + "\n")
 
 
@@ -110,11 +110,36 @@ def check_output_files(openstack_zombie_filepath, aquilon_zombie_filepath):
 
 def aq_zombie_finder():
     # Get arguments passed to the script
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-u", "--user", metavar="USER", help="FedID of the user", required=True)
-    parser.add_argument("-p", "--password", metavar="PASSWORD", help="Password of the user", required=True)
-    parser.add_argument("-i", "--ip", metavar="IP", help="IP of the machine with Openstack to SSH to", required=True)
-    parser.add_argument("-o", "--output", metavar="OUTPUT", help="Directory to create the output files in")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "-u",
+        "--user",
+        metavar="USER",
+        help="FedID of the user",
+        required=True
+    )
+    parser.add_argument(
+        "-p",
+        "--password",
+        metavar="PASSWORD",
+        help="Password of the user",
+        required=True
+    )
+    parser.add_argument(
+        "-i",
+        "--ip",
+        metavar="IP",
+        help="IP of the machine with Openstack to SSH to",
+        required=True
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="OUTPUT",
+        help="Directory to create the output files in"
+    )
 
     # Define the variables with the script arguments
     args = parser.parse_args()
@@ -128,8 +153,12 @@ def aq_zombie_finder():
     aquilon_client = create_client("aquilon.gridpp.rl.ac.uk", user, password)
 
     # Define the filepath for the output to be saved to
-    openstack_zombie_filepath = os.path.join(output or "output", "openstack_zombie_list.txt")
-    aquilon_zombie_filepath = os.path.join(output or "output", "aquilon_zombie_list.txt")
+    openstack_zombie_filepath = os.path.join(
+        output or "output", "openstack_zombie_list.txt"
+    )
+    aquilon_zombie_filepath = os.path.join(
+        output or "output", "aquilon_zombie_list.txt"
+    )
     check_output_files(openstack_zombie_filepath, aquilon_zombie_filepath)
 
     # Get a list of the IPs of AQ VMs
@@ -141,7 +170,9 @@ def aq_zombie_finder():
         print(i, "/", len(aq_ips))
 
         # Check the ip of the Aquilon VM
-        aq_host = check_openstack_ip(aq_ip[0], aquilon_client, openstack_zombie_filepath)
+        aq_host = check_openstack_ip(
+            aq_ip[0], aquilon_client, openstack_zombie_filepath
+        )
 
         # Check if an aquilon host exists
         if aq_host:
