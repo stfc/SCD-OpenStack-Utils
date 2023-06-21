@@ -98,7 +98,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
     )
     @mock.patch("builtins.open")
     def test_check_ip_dns_mismatch_dns_returned(
-            self, name, returned_dns, expected_out, mock_file
+        self, name, returned_dns, expected_out, mock_file
     ):
         ips_dns_pair = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
