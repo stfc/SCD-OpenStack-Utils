@@ -10,7 +10,7 @@ on:
       - ".github/workflows/aq_zombie_finder.yaml"
 
 jobs:
-  test_and_lint:
+  test_with_unit_test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,4 +31,3 @@ jobs:
       - name: Test with unittest
         run: |
             cd aq_zombie_finder && python3 -m unittest discover -s ./test -p "test_*.py"
-            

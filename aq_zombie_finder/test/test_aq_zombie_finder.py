@@ -1,7 +1,7 @@
 import aq_zombie_finder
 import unittest
 from unittest import mock
-from unittest.mock import MagicMock, patch, NonCallableMock
+from unittest.mock import MagicMock, patch, NonCallableMock, call
 from parameterized import parameterized
 
 
@@ -63,20 +63,17 @@ class AQZombieFinderTests(unittest.TestCase):
             ("check not found", "Not Found:", False),
         ]
     )
-    @mock.patch("builtins.open", create=True)
-    def test_check_openstack_ip(self, name, aq_host_return_value, expected_out, mocked):
+    @mock.patch("builtins.open")
+    def test_check_openstack_ip(self, name, aq_host_return_value, expected_out, mock_file):
         aq_ip = "test.192.168.1.1"
         aquilon_client = MagicMock()
-        openstack_zombie_filepath = MagicMock()
-
-        with open(openstack_zombie_filepath, "a") as openstack_zombie_file:
-            openstack_zombie_file.write = MagicMock()
+        openstack_zombie_filepath = NonCallableMock()
 
         with patch("aq_zombie_finder.ssh_command"):
             aq_zombie_finder.ssh_command.return_value = aq_host_return_value
 
             host_output = aq_zombie_finder.check_openstack_ip(
-                aq_ip, aquilon_client, openstack_zombie_file
+                aq_ip, aquilon_client, openstack_zombie_filepath
             )
 
         self.assertEqual(host_output, expected_out)
@@ -87,16 +84,14 @@ class AQZombieFinderTests(unittest.TestCase):
             ("check not found", "No server with a name or ID of", False),
         ]
     )
-    @mock.patch("builtins.open", create=True)
+    @mock.patch("builtins.open")
     def test_check_aquilon_serial(
-        self, name, aq_host_return_value, expected_out, mocked
+        self, name, aq_host_return_value, expected_out, mock_file
     ):
         aq_host = r"Serial: test\\r"
         aq_ip = "test.192.168.1.1"
         aq_openstack_client = MagicMock()
-        aquilon_zombie_filepath = NonCallableMock()
-        with open(aquilon_zombie_filepath, "a") as aquilon_zombie_file:
-            aquilon_zombie_file.write = MagicMock()
+        aquilon_zombie_filepath = "test/aquilon/zombie/filepath"
 
         with patch("aq_zombie_finder.ssh_command"):
             aq_zombie_finder.ssh_command.return_value = aq_host_return_value
@@ -106,9 +101,9 @@ class AQZombieFinderTests(unittest.TestCase):
             )
 
         if expected_out:
-            aquilon_zombie_file.write.assert_not_called()
+            assert call("test/aquilon/zombie/filepath", "a") not in mock_file.mock_calls
         else:
-            aquilon_zombie_file.write.assert_called_once()
+            assert call("test/aquilon/zombie/filepath", "a") in mock_file.mock_calls
 
 
 if __name__ == "__main__":
