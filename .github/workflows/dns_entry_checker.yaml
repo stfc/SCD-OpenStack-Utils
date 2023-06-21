@@ -10,7 +10,7 @@ on:
       - ".github/workflows/dns_entry_checker.yaml"
 
 jobs:
-  test_and_lint:
+  test_with_unit_test:
     runs-on: ubuntu-latest
     strategy:
       matrix:

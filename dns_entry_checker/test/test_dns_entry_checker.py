@@ -1,14 +1,12 @@
-import unittest
-from re import compile
-from unittest.mock import MagicMock, patch, NonCallableMock
-from parameterized import parameterized
-from collections import defaultdict
-
 import dns_entry_checker
+import unittest
+from unittest import mock
+from unittest.mock import MagicMock, patch, NonCallableMock, call
+from parameterized import parameterized
 from dns_entry_checker import (
     create_client,
     ssh_command,
-    pair_ip_and_dns,
+    find_ip_dns_pair,
     check_ip_dns_mismatch,
     check_missing_ips,
 )
@@ -56,10 +54,8 @@ class DNSEntryCheckerTests(unittest.TestCase):
 
     def test_pair_ip_and_dns(self):
         dns_pair = "test-host-172-16-1-1.nubes.stfc.ac.uk 7200 IN A\t172.16.1.1\r\n"
-        order_check_dict = defaultdict(list)
-        ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
 
-        command_output = pair_ip_and_dns(dns_pair, order_check_dict, ip_rexp)
+        command_output = find_ip_dns_pair(dns_pair)
         self.assertEqual(command_output[0].replace("-", "."), command_output[1])
 
     @parameterized.expand(
@@ -68,30 +64,29 @@ class DNSEntryCheckerTests(unittest.TestCase):
             ("IPs don't match", ["172-16-1-1", "172.16.1.0"], False),
         ]
     )
-    def test_check_ip_dns_mismatch(self, name, returned_ips, expected_out):
-        ips = returned_ips
+    @mock.patch("builtins.open")
+    def test_check_ip_dns_mismatch(self, name, returned_ips, expected_out, mock_file):
+        ips_dns_pair = returned_ips
         client = MagicMock()
-        ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
-        backward_mismatch_file = MagicMock()
-        forward_mismatch_file = MagicMock()
-        backward_missing_file = MagicMock()
+        backward_mismatch_filepath = "test/backward/mismatch/filepath"
+        forward_mismatch_filepath = "test/forward/mismatch/filepath"
+        backward_missing_filepath = "test/backward/missing/filepath"
 
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = []
 
             check_ip_dns_mismatch(
-                ips,
+                ips_dns_pair,
                 client,
-                ip_rexp,
-                backward_mismatch_file,
-                forward_mismatch_file,
-                backward_missing_file,
+                backward_mismatch_filepath,
+                forward_mismatch_filepath,
+                backward_missing_filepath,
             )
 
         if expected_out:
-            forward_mismatch_file.write.assert_not_called()
+            assert call("test/forward/mismatch/filepath", "a") not in mock_file.mock_calls
         else:
-            forward_mismatch_file.write.assert_called_once()
+            assert call("test/forward/mismatch/filepath", "a") in mock_file.mock_calls
 
     @parameterized.expand(
         [
@@ -99,30 +94,29 @@ class DNSEntryCheckerTests(unittest.TestCase):
             ("DNS not returned", [], False),
         ]
     )
-    def test_check_ip_dns_mismatch_dns_returned(self, name, returned_dns, expected_out):
-        ips = ["172-16-1-1", "172.16.1.1"]
+    @mock.patch("builtins.open")
+    def test_check_ip_dns_mismatch_dns_returned(self, name, returned_dns, expected_out, mock_file):
+        ips_dns_pair = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
-        ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
-        backward_mismatch_file = MagicMock()
-        forward_mismatch_file = MagicMock()
-        backward_missing_file = MagicMock()
+        backward_mismatch_filepath = "test/backward/mismatch/filepath"
+        forward_mismatch_filepath = "test/forward/mismatch/filepath"
+        backward_missing_filepath = "test/backward/missing/filepath"
 
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_dns
 
             check_ip_dns_mismatch(
-                ips,
+                ips_dns_pair,
                 client,
-                ip_rexp,
-                backward_mismatch_file,
-                forward_mismatch_file,
-                backward_missing_file,
+                backward_mismatch_filepath,
+                forward_mismatch_filepath,
+                backward_missing_filepath,
             )
 
         if not expected_out:
-            backward_missing_file.write.assert_called_once()
+            assert call("test/backward/missing/filepath", "a") in mock_file.mock_calls
         else:
-            backward_missing_file.write.asser_not_called()
+            assert call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
 
     @parameterized.expand(
         [
@@ -131,15 +125,19 @@ class DNSEntryCheckerTests(unittest.TestCase):
             ("Returned IP matches", ["test-host-172-16-1-1.nubes.stfc.ac.uk"], 2),
         ]
     )
+    @mock.patch("builtins.open")
     def test_check_ip_dns_mismatch_backwards_not_found(
-        self, name, returned_ips, expected_out
+            self,
+            name,
+            returned_ips,
+            expected_out,
+            mock_file,
     ):
         ips = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
-        ip_rexp = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
-        backward_mismatch_file = MagicMock()
-        forward_mismatch_file = MagicMock()
-        backward_missing_file = MagicMock()
+        backward_mismatch_filepath = "test/backward/mismatch/filepath"
+        forward_mismatch_filepath = "test/forward/mismatch/filepath"
+        backward_missing_filepath = "test/backward/missing/filepath"
 
         with patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_ips
@@ -147,19 +145,18 @@ class DNSEntryCheckerTests(unittest.TestCase):
             check_ip_dns_mismatch(
                 ips,
                 client,
-                ip_rexp,
-                backward_mismatch_file,
-                forward_mismatch_file,
-                backward_missing_file,
+                backward_mismatch_filepath,
+                forward_mismatch_filepath,
+                backward_missing_filepath,
             )
 
         if expected_out == 0:
-            backward_missing_file.write.assert_called_once()
+            assert call("test/backward/missing/filepath", "a") in mock_file.mock_calls
         elif expected_out == 1:
-            backward_mismatch_file.write.assert_called_once()
+            assert call("test/backward/mismatch/filepath", "a") in mock_file.mock_calls
         else:
-            backward_mismatch_file.write.assert_not_called()
-            backward_missing_file.write.assert_not_called()
+            assert call("test/backward/mismatch/filepath", "a") not in mock_file.mock_calls
+            assert call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
 
     @parameterized.expand(
         [
@@ -167,17 +164,19 @@ class DNSEntryCheckerTests(unittest.TestCase):
             ("No gaps", sorted(set(range(2, 255))), False),
         ]
     )
-    def test_check_missing_ips(self, name, ips, expected_out):
+    @mock.patch("builtins.open")
+    def test_check_missing_ips(self, name, ips, expected_out, mock_file):
         key = ("105", [str(x).zfill(0) for x in ips])
-        gap_missing_file = MagicMock()
-        i = 5
+        gap_missing_filepath = "test/gap/missing/filepath"
 
-        check_missing_ips(key, gap_missing_file, i)
+        check_missing_ips(key, gap_missing_filepath)
+
+        print(expected_out, mock_file.mock_calls)
 
         if expected_out:
-            gap_missing_file.write.assert_called()
+            assert call("test/gap/missing/filepath", "a") in mock_file.mock_calls
         else:
-            gap_missing_file.write.assert_not_called()
+            assert call("test/gap/missing/filepath", "a") not in mock_file.mock_calls
 
 
 if __name__ == "__main__":
