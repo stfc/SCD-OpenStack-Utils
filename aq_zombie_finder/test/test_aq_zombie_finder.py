@@ -64,7 +64,9 @@ class AQZombieFinderTests(unittest.TestCase):
         ]
     )
     @mock.patch("builtins.open")
-    def test_check_openstack_ip(self, name, aq_host_return_value, expected_out, mock_file):
+    def test_check_openstack_ip(
+        self, name, aq_host_return_value, expected_out, mock_file
+    ):
         aq_ip = "test.192.168.1.1"
         aquilon_client = MagicMock()
         openstack_zombie_filepath = NonCallableMock()
