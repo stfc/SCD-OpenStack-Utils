@@ -58,11 +58,11 @@ def populate_ip_dict(ips_dns_pair, order_check_dict):
 
 
 def check_ip_dns_mismatch(
-        ips_dns_pair,
-        client,
-        backward_mismatch_filepath,
-        forward_mismatch_filepath,
-        backward_missing_filepath,
+    ips_dns_pair,
+    client,
+    backward_mismatch_filepath,
+    forward_mismatch_filepath,
+    backward_missing_filepath,
 ):
     """
     Function to check if a DNS matches its IP
@@ -77,10 +77,7 @@ def check_ip_dns_mismatch(
         with open(forward_mismatch_filepath, "a") as forward_mismatch_file:
             forward_mismatch_file.write(f"{ips_dns_pair[1]}\n")
         return
-    returned_dns = ssh_command(
-        client,
-        "dig -x {s} +short".format(s=ips_dns_pair[1])
-    )
+    returned_dns = ssh_command(client, "dig -x {s} +short".format(s=ips_dns_pair[1]))
     if not returned_dns:
         with open(backward_missing_filepath, "a") as backward_missing_file:
             backward_missing_file.write(f"{ips_dns_pair[1]}\n")
@@ -108,10 +105,10 @@ def check_missing_ips(key, gap_missing_filepath):
 
 
 def check_output_files(
-        forward_mismatch_filepath,
-        backward_mismatch_filepath,
-        backward_missing_filepath,
-        gap_missing_filepath,
+    forward_mismatch_filepath,
+    backward_mismatch_filepath,
+    backward_missing_filepath,
+    gap_missing_filepath,
 ):
     """
     Function to check if output files already exist
@@ -188,9 +185,7 @@ def dns_entry_checker():
     backward_missing_filepath = os.path.join(
         output or "output", "backward_missing_list.txt"
     )
-    gap_missing_filepath = os.path.join(
-        output or "output", "gap_missing_list.txt"
-    )
+    gap_missing_filepath = os.path.join(output or "output", "gap_missing_list.txt")
     check_output_files(
         forward_mismatch_filepath,
         backward_mismatch_filepath,

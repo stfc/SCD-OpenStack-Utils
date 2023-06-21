@@ -84,7 +84,9 @@ class DNSEntryCheckerTests(unittest.TestCase):
             )
 
         if expected_out:
-            assert call("test/forward/mismatch/filepath", "a") not in mock_file.mock_calls
+            assert (
+                call("test/forward/mismatch/filepath", "a") not in mock_file.mock_calls
+            )
         else:
             assert call("test/forward/mismatch/filepath", "a") in mock_file.mock_calls
 
@@ -95,7 +97,9 @@ class DNSEntryCheckerTests(unittest.TestCase):
         ]
     )
     @mock.patch("builtins.open")
-    def test_check_ip_dns_mismatch_dns_returned(self, name, returned_dns, expected_out, mock_file):
+    def test_check_ip_dns_mismatch_dns_returned(
+            self, name, returned_dns, expected_out, mock_file
+    ):
         ips_dns_pair = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
         backward_mismatch_filepath = "test/backward/mismatch/filepath"
@@ -116,7 +120,9 @@ class DNSEntryCheckerTests(unittest.TestCase):
         if not expected_out:
             assert call("test/backward/missing/filepath", "a") in mock_file.mock_calls
         else:
-            assert call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
+            assert (
+                call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
+            )
 
     @parameterized.expand(
         [
@@ -127,11 +133,11 @@ class DNSEntryCheckerTests(unittest.TestCase):
     )
     @mock.patch("builtins.open")
     def test_check_ip_dns_mismatch_backwards_not_found(
-            self,
-            name,
-            returned_ips,
-            expected_out,
-            mock_file,
+        self,
+        name,
+        returned_ips,
+        expected_out,
+        mock_file,
     ):
         ips = ["172-16-1-1", "172.16.1.1"]
         client = MagicMock()
@@ -155,8 +161,12 @@ class DNSEntryCheckerTests(unittest.TestCase):
         elif expected_out == 1:
             assert call("test/backward/mismatch/filepath", "a") in mock_file.mock_calls
         else:
-            assert call("test/backward/mismatch/filepath", "a") not in mock_file.mock_calls
-            assert call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
+            assert (
+                call("test/backward/mismatch/filepath", "a") not in mock_file.mock_calls
+            )
+            assert (
+                call("test/backward/missing/filepath", "a") not in mock_file.mock_calls
+            )
 
     @parameterized.expand(
         [
