@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 DESCRIPTION = "python package for IRISCAST tools"
 
 LONG_DESCRIPTION = """Python package to get power and CPU/RAM usage statistics"""
