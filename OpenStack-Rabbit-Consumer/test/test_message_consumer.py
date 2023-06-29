@@ -22,6 +22,7 @@ from rabbit_consumer.message_consumer import (
     check_machine_valid,
     is_aq_managed_image,
     get_aq_build_metadata,
+    delete_machine,
 )
 from rabbit_consumer.vm_data import VmData
 
@@ -221,7 +222,7 @@ def test_consume_create_machine_hostnames_good_path(
         patch(
             "rabbit_consumer.message_consumer.get_aq_build_metadata"
         ) as get_image_meta,
-        patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine,
+        patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine_mock,
     ):
         check_machine.return_value = True
         get_image_meta.return_value = image_metadata
@@ -235,7 +236,7 @@ def test_consume_create_machine_hostnames_good_path(
     openstack.get_server_networks.assert_called_with(vm_data)
 
     # Check main Aq Flow
-    delete_machine.assert_called_once_with(vm_data, network_details[0])
+    delete_machine_mock.assert_called_once_with(vm_data, network_details[0])
     aq_api.create_machine.assert_called_once_with(rabbit_message, vm_data)
     machine_name = aq_api.create_machine.return_value
 
@@ -255,7 +256,7 @@ def test_consume_create_machine_hostnames_good_path(
 
 
 @patch("rabbit_consumer.message_consumer.delete_machine")
-def test_consume_delete_machine_good_path(delete_machine, rabbit_message):
+def test_consume_delete_machine_good_path(delete_machine_mock, rabbit_message):
     """
     Test that the function calls the correct functions in the correct order to delete a machine
     """
@@ -264,7 +265,9 @@ def test_consume_delete_machine_good_path(delete_machine, rabbit_message):
     with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
         handle_machine_delete(rabbit_message)
 
-    delete_machine.assert_called_once_with(vm_data=data_patch.from_message.return_value)
+    delete_machine_mock.assert_called_once_with(
+        vm_data=data_patch.from_message.return_value
+    )
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
@@ -361,3 +364,71 @@ def test_get_aq_build_metadata(openstack_api, aq_metadata_class, vm_data):
     aq_metadata_obj.override_from_vm_meta.assert_called_once_with(
         openstack_api.get_server_metadata.return_value
     )
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_delete_machine_hostname_only(aq_api, vm_data, openstack_address):
+    """
+    Tests that the function deletes a host then exits if no machine is found
+    """
+    aq_api.check_host_exists.return_value = True
+    aq_api.search_machine_by_serial.return_value = None
+
+    delete_machine(vm_data, openstack_address)
+    aq_api.delete_host.assert_called_once_with(openstack_address.hostname)
+    aq_api.delete_machine.assert_not_called()
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_delete_machine_by_serial(aq_api, vm_data, openstack_address):
+    """
+    Tests that the function deletes a host then a machine
+    assuming both were found
+    """
+    # Assume our host address doesn't match the machine record
+    # but the machine does have a hostname which is valid...
+    aq_api.check_host_exists.side_effect = [False, True]
+
+    aq_api.search_host_by_machine.return_value = "host.example.com"
+    aq_api.get_machine_details.return_value = ""
+
+    delete_machine(vm_data, openstack_address)
+
+    aq_api.check_host_exists.assert_has_calls(
+        [call(openstack_address.hostname), call("host.example.com")]
+    )
+    aq_api.delete_host.assert_called_once_with("host.example.com")
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+@patch("rabbit_consumer.message_consumer.socket")
+def test_delete_machine_no_hostname(socket_api, aq_api, vm_data):
+    aq_api.check_host_exists.return_value = False
+
+    ip_address = "127.0.0.1"
+    socket_api.gethostbyname.return_value = ip_address
+
+    machine_name = aq_api.search_machine_by_serial.return_value
+    aq_api.get_machine_details.return_value = f"eth0: {ip_address}"
+
+    delete_machine(vm_data, NonCallableMock())
+    aq_api.delete_address.assert_called_once_with(ip_address, machine_name)
+    aq_api.delete_interface.assert_called_once_with(machine_name)
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+@patch("rabbit_consumer.message_consumer.socket")
+def test_delete_machine_always_called(socket_api, aq_api, vm_data):
+    """
+    Tests that the function always calls the delete machine function
+    """
+    aq_api.check_host_exists.return_value = False
+    socket_api.gethostbyname.return_value = "123123"
+
+    aq_api.get_machine_details.return_value = "Machine Details"
+
+    machine_name = "machine_name"
+    aq_api.search_machine_by_serial.return_value = machine_name
+
+    delete_machine(vm_data, NonCallableMock())
+    aq_api.delete_machine.assert_called_once_with(machine_name)

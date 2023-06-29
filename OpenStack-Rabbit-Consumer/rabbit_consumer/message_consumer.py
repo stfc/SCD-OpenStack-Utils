@@ -86,23 +86,24 @@ def delete_machine(
     # of deletion orders which it enforces...
 
     hostname = aq_api.search_host_by_machine(machine_name)
+    machine_details = aq_api.get_machine_details(machine_name)
+
+    # We have to clean-up all the interfaces and addresses first
+    # we could have a machine which points to a different hostname
     if hostname:
         if aq_api.check_host_exists(hostname):
             # This is a different hostname to the one we have in the message
             # so, we need to delete it
             logger.info("Host exists for %s. Deleting old", hostname)
             aq_api.delete_host(hostname)
+        else:
+            # Delete the interfaces
+            ipv4_address = socket.gethostbyname(hostname)
+            if ipv4_address in machine_details:
+                aq_api.delete_address(ipv4_address, machine_name)
 
-        # We have to clean-up all the interfaces and addresses first
-        machine_details = aq_api.get_machine_details(machine_name)
-
-        # First delete the interfaces
-        ipv4_address = socket.gethostbyname(hostname)
-        if ipv4_address in machine_details:
-            aq_api.delete_address(ipv4_address, machine_name)
-
-        if "eth0" in machine_details:
-            aq_api.delete_interface(machine_name)
+            if "eth0" in machine_details:
+                aq_api.delete_interface(machine_name)
 
     logger.info("Machine exists for %s. Deleting old", vm_data.virtual_machine_id)
 
