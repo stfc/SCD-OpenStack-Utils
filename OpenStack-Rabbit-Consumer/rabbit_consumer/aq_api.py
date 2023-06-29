@@ -92,7 +92,7 @@ def aq_make(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
         "personality": image_meta.aq_personality,
         "osversion": image_meta.aq_os_version,
         "osname": image_meta.aq_os,
-        "archetype": "cloud",
+        "archetype": image_meta.aq_archetype,
     }
 
     assert all(

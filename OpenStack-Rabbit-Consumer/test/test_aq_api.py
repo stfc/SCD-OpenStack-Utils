@@ -143,7 +143,7 @@ def test_aq_make_calls(config, setup, openstack_address_list, image_metadata):
         "personality": image_metadata.aq_personality,
         "osversion": image_metadata.aq_os_version,
         "osname": image_metadata.aq_os,
-        "archetype": "cloud",
+        "archetype": image_metadata.aq_archetype,
     }
 
     expected_url = f"{domain}/host/{openstack_address_list[0].hostname}/command/make"
