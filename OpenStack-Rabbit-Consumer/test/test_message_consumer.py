@@ -1,4 +1,4 @@
-from unittest.mock import Mock, NonCallableMock, patch, call
+from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
@@ -21,6 +21,7 @@ from rabbit_consumer.message_consumer import (
     SUPPORTED_MESSAGE_TYPES,
     check_machine_valid,
     is_aq_managed_image,
+    get_aq_build_metadata,
 )
 from rabbit_consumer.vm_data import VmData
 
@@ -217,11 +218,13 @@ def test_consume_create_machine_hostnames_good_path(
     with (
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
         patch("rabbit_consumer.message_consumer.check_machine_valid") as check_machine,
-        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
+        patch(
+            "rabbit_consumer.message_consumer.get_aq_build_metadata"
+        ) as get_image_meta,
         patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine,
     ):
         check_machine.return_value = True
-        is_managed.return_value = image_metadata
+        get_image_meta.return_value = image_metadata
 
         handle_create_machine(rabbit_message)
 
@@ -272,13 +275,14 @@ def test_check_machine_valid(openstack_api, is_aq_managed):
     """
     mock_message = NonCallableMock()
     is_aq_managed.return_value = True
+
+    vm_data = VmData.from_message(mock_message)
+
     openstack_api.check_machine_exists.return_value = True
 
     assert check_machine_valid(mock_message)
-    is_aq_managed.assert_called_once_with(mock_message)
-    openstack_api.check_machine_exists.assert_called_once_with(
-        VmData.from_message(mock_message)
-    )
+    is_aq_managed.assert_called_once_with(vm_data)
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
@@ -290,13 +294,12 @@ def test_check_machine_invalid_image(openstack_api, is_aq_managed):
     mock_message = NonCallableMock()
     is_aq_managed.return_value = False
     openstack_api.check_machine_exists.return_value = True
+    vm_data = VmData.from_message(mock_message)
 
     assert not check_machine_valid(mock_message)
 
-    openstack_api.check_machine_exists.assert_called_once_with(
-        VmData.from_message(mock_message)
-    )
-    is_aq_managed.assert_called_once_with(mock_message)
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
+    is_aq_managed.assert_called_once_with(vm_data)
 
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
@@ -316,30 +319,45 @@ def test_check_machine_invalid_machine(openstack_api, is_aq_managed):
     )
 
 
-@patch("rabbit_consumer.message_consumer.VmData")
-@patch("rabbit_consumer.message_consumer.ImageMetadata")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_is_aq_managed_image(openstack_api, image_meta, vm_data):
+def test_is_aq_managed_image(openstack_api, vm_data):
     """
     Test that the function returns True when the image is AQ managed
     """
-    mock_message = NonCallableMock()
     openstack_api.get_image.return_value.metadata = {"AQ_OS": "True"}
 
-    assert is_aq_managed_image(mock_message) == image_meta.from_dict.return_value
-    openstack_api.get_image.assert_called_once_with(vm_data.from_message.return_value)
+    assert is_aq_managed_image(vm_data)
+    openstack_api.get_image.assert_called_once_with(vm_data)
 
 
 @patch("rabbit_consumer.message_consumer.VmData")
-@patch("rabbit_consumer.message_consumer.ImageMetadata")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_is_aq_managed_image_missing_key(openstack_api, image_meta, vm_data):
+def test_is_aq_managed_image_missing_key(openstack_api, vm_data):
     """
     Test that the function returns False when the image is not AQ managed
     """
-    mock_message = NonCallableMock()
     openstack_api.get_image.return_value.metadata = {}
 
-    assert not is_aq_managed_image(mock_message)
-    openstack_api.get_image.assert_called_once_with(vm_data.from_message.return_value)
-    image_meta.from_dict.assert_not_called()
+    assert not is_aq_managed_image(vm_data)
+    openstack_api.get_image.assert_called_once_with(vm_data)
+
+
+@patch("rabbit_consumer.message_consumer.AqMetadata")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_get_aq_build_metadata(openstack_api, aq_metadata_class, vm_data):
+    """
+    Test that the function returns the correct metadata
+    """
+    aq_metadata_obj: MagicMock = get_aq_build_metadata(vm_data)
+
+    # We should first construct from an image
+    assert aq_metadata_obj == aq_metadata_class.from_dict.return_value
+    aq_metadata_class.from_dict.assert_called_once_with(
+        openstack_api.get_image.return_value.metadata
+    )
+
+    # Then override with an object
+    openstack_api.get_server_metadata.assert_called_once_with(vm_data)
+    aq_metadata_obj.override_from_vm_meta.assert_called_once_with(
+        openstack_api.get_server_metadata.return_value
+    )

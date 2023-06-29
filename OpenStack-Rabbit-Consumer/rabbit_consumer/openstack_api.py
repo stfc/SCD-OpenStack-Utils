@@ -71,7 +71,7 @@ def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
     return OpenstackAddress.get_internal_networks(server.addresses)
 
 
-def get_metadata(vm_data: VmData) -> dict:
+def get_server_metadata(vm_data: VmData) -> dict:
     """
     Gets the metadata from Openstack for the virtual machine.
     """

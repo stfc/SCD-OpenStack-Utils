@@ -8,7 +8,7 @@ from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.image_metadata import ImageMetadata
+from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage
 from rabbit_consumer.vm_data import VmData
@@ -84,7 +84,7 @@ def setup_requests(
     return response.text
 
 
-def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+def aq_make(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
     """
     Runs AQ make against a list of addresses passed to build the default personality
     """
@@ -111,7 +111,7 @@ def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> Non
     setup_requests(url, "post", "Make Template: ", params)
 
 
-def aq_manage(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
     """
     Manages the list of Aquilon addresses passed to it back to the production domain
     """
@@ -159,7 +159,7 @@ def delete_machine(machine_name: str) -> None:
 
 
 def create_host(
-    image_meta: ImageMetadata, addresses: List[OpenstackAddress], machine_name: str
+    image_meta: AqMetadata, addresses: List[OpenstackAddress], machine_name: str
 ) -> None:
     """
     Creates a host in Aquilon
