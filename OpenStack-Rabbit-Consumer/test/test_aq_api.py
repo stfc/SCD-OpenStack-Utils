@@ -281,6 +281,38 @@ def test_aq_create_host(config, setup, openstack_address_list, image_metadata):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_aq_create_host_with_sandbox(
+    config, setup, openstack_address_list, image_metadata
+):
+    """
+    Test that aq_create_host calls the correct URL with the correct parameters
+    """
+    machine_name = "machine_name_str"
+
+    env_config = config.return_value
+    env_config.aq_url = "https://example.com"
+
+    image_metadata.aq_domain = "example/sandbox"
+
+    create_host(image_metadata, openstack_address_list, machine_name)
+    address = openstack_address_list[0]
+
+    expected_params = {
+        "machine": machine_name,
+        "ip": address.addr,
+        "archetype": image_metadata.aq_archetype,
+        "personality": image_metadata.aq_personality,
+        "osname": image_metadata.aq_os,
+        "osversion": image_metadata.aq_os_version,
+        "sandbox": image_metadata.aq_domain,
+    }
+
+    expected_url = f"https://example.com/host/{address.hostname}"
+    setup.assert_called_once_with(expected_url, "put", mock.ANY, params=expected_params)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
 def test_aq_delete_host(config, setup):
     """
     Test that aq_delete_host calls the correct URL with the correct parameters
