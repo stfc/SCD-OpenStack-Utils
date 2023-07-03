@@ -6,7 +6,9 @@ import vm_creation_v2
 class VmCreationTests(unittest.TestCase):
     @patch.object(vm_creation_v2, "conn")
     def test_get_image(self, mocked_conn):
-        # empty list check
+        """
+        test the function returns an empty list
+        """
         expected_value = []
         mocked_conn.image.images.return_value = []
         res = vm_creation_v2.get_image()
@@ -14,6 +16,9 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual(res, expected_value)
 
     def test_select_single_image(self):
+        """
+        test the function returns the correct item
+        """
         mock_image = NonCallableMock()
         mock_image.status = "active"
         mock_image_list = [mock_image]
@@ -22,7 +27,9 @@ class VmCreationTests(unittest.TestCase):
 
     @patch.object(vm_creation_v2, "conn")
     def test_get_flavors(self, mocked_conn):
-        # empty list check
+        """
+        test the function returns an empty list
+        """
         expected_value = []
         mocked_conn.compute.flavors.return_value = []
         res = vm_creation_v2.get_flavors()
@@ -31,6 +38,10 @@ class VmCreationTests(unittest.TestCase):
 
     @patch("vm_creation_v2.get_flavors")
     def test_find_flavors_with_hosttype(self, mocked_get_flavor):
+        """
+        test the function returns the correct item
+        with the extra_specs attribute
+        """
         # mock a value which will pass the test
         mock_extra_specs_true = NonCallableMock()
         mock_extra_specs_true.extra_specs = ["aggregate_instance_extra_specs:hosttype"]
@@ -44,7 +55,9 @@ class VmCreationTests(unittest.TestCase):
 
     @patch.object(vm_creation_v2, "conn")
     def test_get_aggregates(self, mocked_conn):
-        # empty list check
+        """
+        test the function returns an empty list
+        """
         expected_value = []
         mocked_conn.compute.aggregates.return_value = []
         res = vm_creation_v2.get_aggregates()
@@ -53,6 +66,10 @@ class VmCreationTests(unittest.TestCase):
 
     @patch("vm_creation_v2.get_aggregates")
     def test_find_aggregates_with_hosttype(self, mocked_get_aggregates):
+        """
+        Test the function returns the correct item
+        checking for the correct metadata attribute
+        """
         # mock a value which will pass the test
         mock_metadata_true = NonCallableMock()
         mock_metadata_true.metadata = ["hosttype"]
@@ -65,6 +82,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual(res, [mock_metadata_true])
 
     def test_find_smallest_flavor_different_hosttype(self):
+        """
+        Test the function separates the items corectly
+        depending on the extra_specs data
+        """
         mock_flavor1 = {
             "ram": 10,
             "extra_specs": {"aggregate_instance_extra_specs:hosttype": "test_type1"},
@@ -78,6 +99,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual({"test_type1": mock_flavor1, "test_type2": mock_flavor2}, res)
 
     def test_find_smallest_flavor_same_hosttype(self):
+        """
+        Test the function only returns one value
+        for each extra_specs data
+        """
         mock_flavor1 = {
             "ram": 10,
             "extra_specs": {"aggregate_instance_extra_specs:hosttype": "test_type1"},
@@ -93,6 +118,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual({"test_type1": mock_flavor1}, res)
 
     def test_find_smallest_flavor_for_each_aggregate(self):
+        """
+        Test the function creates a new dictionary
+        and returns correct values
+        """
         mock_flavor = {
             "extra_specs": {"aggregate_instance_extra_specs:hosttype": "test_type1"}
         }
@@ -108,6 +137,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual({"mock_aggregate": mock_flavor}, res)
 
     def test_create_dictionary_of_aggregates_to_hostname(self):
+        """
+        Test that the function creates a new dictionary
+        with the name against the list of hosts
+        """
         mock_aggregate = {"name": "aggregate1", "hosts": ["host1, host2, host3"]}
         mock_aggregate_input = [mock_aggregate]
         res = vm_creation_v2.create_dictionary_of_aggregates_to_hostnames(
@@ -116,6 +149,11 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual({"aggregate1": ["host1, host2, host3"]}, res)
 
     def test_remove_values(self):
+        """
+        test that function creates a new dictionary
+        of aggregate objects against a list of
+        hv objects that have status enabled
+        """
         aggregate = NonCallableMock()
         mock_hv1 = NonCallableMock()
         mock_hv1.status = "enabled"
@@ -127,7 +165,9 @@ class VmCreationTests(unittest.TestCase):
 
     @patch.object(vm_creation_v2, "conn")
     def test_list_all_hv_objects(self, mocked_conn):
-        # empty list check
+        """
+        test the function returns an empty list
+        """
         expected_value = []
         mocked_conn.compute.hypervisors.return_value = []
         res = vm_creation_v2.list_all_hv_objects()
@@ -135,6 +175,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual(res, expected_value)
 
     def test_create_dict_of_aggregate_to_hv_objects(self):
+        """
+        Test that the function returns a new dictionary
+        or aggregate name against a list of hv objects
+        """
         mocked_hv1 = NonCallableMock()
         mocked_hv1.name = "host1"
         mock_hv_list = [mocked_hv1]
@@ -155,6 +199,10 @@ class VmCreationTests(unittest.TestCase):
         self.assertEqual({"aggregate1": [mock_hv1]}, res)
 
     def test_create_vms_on_hvs_with_space(self):
+        """
+        Test that the function returns the correct string
+        checks that the logic is working correctly in the function using example values
+        """
         mock_image = NonCallableMock()
         mock_image.id = "2"
         mock_flavor1 = NonCallableMock()

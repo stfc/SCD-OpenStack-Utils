@@ -10,11 +10,17 @@ conn = openstack.connect("openstack")
 
 
 def get_image():
+    """
+    returns images based on the hard coded string
+    """
     ubuntu_images = conn.image.images(name="ubuntu-focal-20.04-nogui")
     return ubuntu_images
 
 
 def select_single_image(images):
+    """
+    returns a single image based on the metadata status
+    """
     for image in images:
         if image.status == "active":
             useable_image = image
@@ -22,11 +28,17 @@ def select_single_image(images):
 
 
 def get_flavors():
+    """
+    returns all flavors from the openstack instance
+    """
     all_flavors = list(conn.compute.flavors(get_extra_specs=True))
     return all_flavors
 
 
 def find_flavors_with_hosttype():
+    """
+    filters all flavors into flavors that have aggregate_instance_extra_specs:hosttype set
+    """
     host_typed_flavors = [
         i
         for i in get_flavors()
@@ -36,11 +48,17 @@ def find_flavors_with_hosttype():
 
 
 def get_aggregates():
+    """
+    returns all aggregates from the openstack instance
+    """
     all_aggregates = list(conn.compute.aggregates(get_extra_specs=True))
     return all_aggregates
 
 
 def find_aggregates_with_hosttype():
+    """
+    filters all aggregates into aggregates with hosttype set
+    """
     host_typed_aggregates: List[Aggregate] = [
         i for i in get_aggregates() if "hosttype" in i.metadata
     ]
@@ -48,6 +66,10 @@ def find_aggregates_with_hosttype():
 
 
 def find_smallest_flavors(flavor_list: object) -> object:
+    """
+    create a dictionary of flavors against the hosstype flag
+    in which the flavor selected is the smallest
+    """
     smallest_flavors = {}
     for flavors in flavor_list:
         host_type = flavors["extra_specs"]["aggregate_instance_extra_specs:hosttype"]
@@ -61,6 +83,10 @@ def find_smallest_flavors(flavor_list: object) -> object:
 
 
 def find_smallest_flavor_for_each_aggregate(flavors_list, aggregate_list):
+    """
+    create a dictionary of aggregate against
+    the smallest flavor for that aggregate
+    """
     aggregate_smallest_flavor = {
         aggre_objects["name"]: flavors
         for aggre_objects in aggregate_list
@@ -72,6 +98,10 @@ def find_smallest_flavor_for_each_aggregate(flavors_list, aggregate_list):
 
 
 def create_dictionary_of_aggregates_to_hostnames(aggr_list):
+    """
+    create a dictionary of aggregate
+    against a list of hypervisor hostnames
+    """
     dict_of_hv_names: Dict[Aggregate, List[str]] = {}
     for aggres in aggr_list:
         aggregate_name = aggres["name"]
@@ -80,11 +110,18 @@ def create_dictionary_of_aggregates_to_hostnames(aggr_list):
 
 
 def list_all_hv_objects():
+    """
+    get a list of all hypervisor objects in the openstack instance
+    """
     all_hypervisors: List[Hypervisor] = list(conn.compute.hypervisors(details=True))
     return all_hypervisors
 
 
 def create_dict_of_aggregate_to_hv_objects(hv_names_list, full_hv_list):
+    """
+    create a dictionary of aggregate
+    against all of its hypervisor objects
+    """
     hv_names: Dict[Aggregate, List[Hypervisor]] = {}
     for aggregate, hv_hostnames in hv_names_list.items():
         find_hvs = [i for i in full_hv_list if i.name in hv_hostnames]
@@ -92,21 +129,22 @@ def create_dict_of_aggregate_to_hv_objects(hv_names_list, full_hv_list):
     return hv_names
 
 
-def remove_values(dict_of_Agg_to_hvs):
+def remove_disabled_hvs(dict_of_Agg_to_hvs):
+    """
+    removes any hvs with the status "disabled"
+    """
     for key, values in dict_of_Agg_to_hvs.items():
         dict_of_Agg_to_hvs[key] = [obj for obj in values if obj.status == "enabled"]
     return dict_of_Agg_to_hvs
 
 
-def recontextualise_hvs(aggregate_flavor_list, hv_list):
-    dict_of_aggregate_to_hv_objects: Dict[Aggregate, List[Hypervisor]] = {}
-    for agg_name, flav in aggregate_flavor_list.items():
-        hvs = {agg_name: hv_list[agg_name]}
-        dict_of_aggregate_to_hv_objects.update(hvs)
-    return dict_of_aggregate_to_hv_objects
-
-
 def create_vms_on_hvs_with_space(hv_list, aggregate_flavor_list, image):
+    """
+    Create a vm on every hv
+    from every aggregate
+    if ram and vcpus have space
+    Returns a list of strings stating where VMs were created
+    """
     created_list = []
     security_group_id = "a64e8c5d-b99b-4f2b-96ea-2cd3da82c29b"  # default security group in prod-cloud admin project
     network_id = (
@@ -148,11 +186,7 @@ if __name__ == "__main__":
         aggregate_to_hostnames_dict, full_hypervisor_object_list
     )
 
-    dict_of_flavor_to_hypervisor_objects = recontextualise_hvs(
-        aggregate_to_smallest_flavor_dict, dict_of_aggregates_to_hv_objects
-    )
-
-    new_hv_agg_dict = remove_values(dict_of_flavor_to_hypervisor_objects)
+    new_hv_agg_dict = remove_disabled_hvs(dict_of_aggregate_to_hv_objects)
 
     image = get_image()
 
@@ -160,7 +194,7 @@ if __name__ == "__main__":
 
     print(
         create_vms_on_hvs_with_space(
-            dict_of_flavor_to_hypervisor_objects,
+            new_hv_agg_dict,
             aggregate_to_smallest_flavor_dict,
             current_image,
         )
