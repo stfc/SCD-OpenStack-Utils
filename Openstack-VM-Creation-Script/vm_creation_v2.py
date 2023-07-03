@@ -108,8 +108,10 @@ def recontextualise_hvs(aggregate_flavor_list, hv_list):
 
 def create_vms_on_hvs_with_space(hv_list, aggregate_flavor_list, image):
     created_list = []
-    security_group_id = "771352ca-41b7-4fb6-addc-882aa0d1d628"
-    network_id = "fa2f5ebe-d0e0-4465-9637-e9461de443f1"
+    security_group_id = "a64e8c5d-b99b-4f2b-96ea-2cd3da82c29b"  # default security group in prod-cloud admin project
+    network_id = (
+        "5be315b7-7ebd-4254-97fe-18c1df501538"  # Internal network id from prod-cloud
+    )
     for agg, hvs in hv_list.items():
         flavor = aggregate_flavor_list[agg]
         if hvs:
@@ -125,6 +127,7 @@ def create_vms_on_hvs_with_space(hv_list, aggregate_flavor_list, image):
     return created_list
 
 
+# script to create VMs on all Hypervisors in every aggregate with space for the smallest flavor available
 if __name__ == "__main__":
     flavors_with_hosttype = find_flavors_with_hosttype()
     aggregates_with_hosttype = find_aggregates_with_hosttype()
@@ -161,4 +164,4 @@ if __name__ == "__main__":
             aggregate_to_smallest_flavor_dict,
             current_image,
         )
-    )
+    )  # print list of strings stating where VMs were created
