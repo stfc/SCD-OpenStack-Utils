@@ -1,5 +1,8 @@
 import dns_entry_checker
 import unittest
+
+from argparse import Namespace
+from collections import defaultdict
 from unittest import mock
 from unittest.mock import MagicMock, patch, NonCallableMock, call
 from parameterized import parameterized
@@ -9,6 +12,8 @@ from dns_entry_checker import (
     find_ip_dns_pair,
     check_ip_dns_mismatch,
     check_missing_ips,
+    populate_ip_dict,
+    parse_args,
 )
 
 
@@ -21,12 +26,12 @@ class DNSEntryCheckerTests(unittest.TestCase):
 
         mock_client = MagicMock()
         mock_paramiko.client.SSHClient.return_value = mock_client
-        mock_paramiko.client.set_missing_host_key_policy = MagicMock()
         mock_paramiko.AutoAddPolicy = NonCallableMock()
         mock_paramiko.connect = MagicMock()
 
         client = create_client(host, user, password)
 
+        client.set_missing_host_key_policy.assert_called_once_with(mock_paramiko.AutoAddPolicy)
         client.connect.assert_called_once_with(
             hostname=host, username=user, password=password, timeout=60
         )
@@ -52,7 +57,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
 
         self.assertEqual(command_output, mock_stdout.readlines.return_value)
 
-    def test_pair_ip_and_dns(self):
+    def test_find_ip_dns_pair_valid(self):
         dns_pair = "test-host-172-16-1-1.nubes.stfc.ac.uk 7200 IN A\t172.16.1.1\r\n"
 
         command_output = find_ip_dns_pair(dns_pair)
@@ -72,7 +77,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         forward_mismatch_filepath = "test/forward/mismatch/filepath"
         backward_missing_filepath = "test/backward/missing/filepath"
 
-        with patch("dns_entry_checker.ssh_command"):
+        with mock.patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = []
 
             check_ip_dns_mismatch(
@@ -106,7 +111,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         forward_mismatch_filepath = "test/forward/mismatch/filepath"
         backward_missing_filepath = "test/backward/missing/filepath"
 
-        with patch("dns_entry_checker.ssh_command"):
+        with mock.patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_dns
 
             check_ip_dns_mismatch(
@@ -145,7 +150,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         forward_mismatch_filepath = "test/forward/mismatch/filepath"
         backward_missing_filepath = "test/backward/missing/filepath"
 
-        with patch("dns_entry_checker.ssh_command"):
+        with mock.patch("dns_entry_checker.ssh_command"):
             dns_entry_checker.ssh_command.return_value = returned_ips
 
             check_ip_dns_mismatch(
@@ -181,12 +186,26 @@ class DNSEntryCheckerTests(unittest.TestCase):
 
         check_missing_ips(key, gap_missing_filepath)
 
-        print(expected_out, mock_file.mock_calls)
-
         if expected_out:
             assert call("test/gap/missing/filepath", "a") in mock_file.mock_calls
         else:
             assert call("test/gap/missing/filepath", "a") not in mock_file.mock_calls
+
+    def test_populate_ip_dict(self):
+        ips_dns_pair = ["172-16-1-1", "172.16.1.1"]
+        order_check_dict = defaultdict(list)
+        populate_ip_dict(ips_dns_pair, order_check_dict)
+
+        self.assertEqual(order_check_dict, {'1': ['1']})
+
+    def test_parse_args(self):
+        inp_args = ['--user', 'test_user', '--password', 'test_pass', '--ip', 'test_ip']
+        args = parse_args(inp_args)
+
+        self.assertEqual(
+            args,
+            Namespace(user='test_user', password='test_pass', ip='test_ip', output=None),
+        )
 
 
 if __name__ == "__main__":

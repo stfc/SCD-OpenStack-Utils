@@ -1,6 +1,8 @@
 import argparse
 import os
+import sys
 import paramiko
+
 from collections import defaultdict
 from re import compile
 
@@ -104,30 +106,11 @@ def check_missing_ips(key, gap_missing_filepath):
             gap_missing_file.write(f"172.16.{key[0]}.{ip_last_byte}\n")
 
 
-def check_output_files(
-    forward_mismatch_filepath,
-    backward_mismatch_filepath,
-    backward_missing_filepath,
-    gap_missing_filepath,
-):
+def parse_args(inp_args):
     """
-    Function to check if output files already exist
-        :param forward_mismatch_filepath: The filepath of the forward mismatch output file (String)
-        :param backward_mismatch_filepath: The filepath of the backward mismatch output file (String)
-        :param backward_missing_filepath: The filepath of the backward missing output file (String)
-        :param gap_missing_filepath: The filepath of the gap missing output file (String)
+    Function to parse commandline args
+    :returns: A dictionary of parsed args
     """
-    if os.path.exists(forward_mismatch_filepath):
-        raise RuntimeError(f"{forward_mismatch_filepath} already exists")
-    if os.path.exists(backward_mismatch_filepath):
-        raise RuntimeError(f"{backward_mismatch_filepath} already exists")
-    if os.path.exists(backward_missing_filepath):
-        raise RuntimeError(f"{backward_missing_filepath} already exists")
-    if os.path.exists(gap_missing_filepath):
-        raise RuntimeError(f"{gap_missing_filepath} already exists")
-
-
-def dns_entry_checker():
     # Get arguments passed to the script
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -155,9 +138,13 @@ def dns_entry_checker():
         metavar="OUTPUT",
         help="Directory to create the output files in",
     )
+    args = parser.parse_args(inp_args)
+    return args
 
+
+def dns_entry_checker():
     # Define the variables with the script arguments
-    args = parser.parse_args()
+    args = parse_args(sys.argv[1:])
     user = args.user
     password = args.password
     ip = args.ip
@@ -186,12 +173,16 @@ def dns_entry_checker():
         output or "output", "backward_missing_list.txt"
     )
     gap_missing_filepath = os.path.join(output or "output", "gap_missing_list.txt")
-    check_output_files(
+
+    # Check if output files already exist
+    for filepath in [
         forward_mismatch_filepath,
         backward_mismatch_filepath,
         backward_missing_filepath,
         gap_missing_filepath,
-    )
+    ]:
+        if os.path.exists(filepath):
+            raise RuntimeError(f"{filepath} already exists")
 
     # Create a dictionary to store IPs for checking gaps
     order_check_dict = defaultdict(list)
