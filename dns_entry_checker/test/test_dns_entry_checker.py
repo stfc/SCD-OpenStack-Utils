@@ -31,7 +31,9 @@ class DNSEntryCheckerTests(unittest.TestCase):
 
         client = create_client(host, user, password)
 
-        client.set_missing_host_key_policy.assert_called_once_with(mock_paramiko.AutoAddPolicy)
+        client.set_missing_host_key_policy.assert_called_once_with(
+            mock_paramiko.AutoAddPolicy
+        )
         client.connect.assert_called_once_with(
             hostname=host, username=user, password=password, timeout=60
         )
@@ -196,15 +198,17 @@ class DNSEntryCheckerTests(unittest.TestCase):
         order_check_dict = defaultdict(list)
         populate_ip_dict(ips_dns_pair, order_check_dict)
 
-        self.assertEqual(order_check_dict, {'1': ['1']})
+        self.assertEqual(order_check_dict, {"1": ["1"]})
 
     def test_parse_args(self):
-        inp_args = ['--user', 'test_user', '--password', 'test_pass', '--ip', 'test_ip']
+        inp_args = ["--user", "test_user", "--password", "test_pass", "--ip", "test_ip"]
         args = parse_args(inp_args)
 
         self.assertEqual(
             args,
-            Namespace(user='test_user', password='test_pass', ip='test_ip', output=None),
+            Namespace(
+                user="test_user", password="test_pass", ip="test_ip", output=None
+            ),
         )
 
 
