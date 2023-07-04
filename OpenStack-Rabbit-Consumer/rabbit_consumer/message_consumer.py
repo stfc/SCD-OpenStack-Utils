@@ -160,8 +160,6 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
 
     # Manage host in Aquilon
     aq_api.create_host(image_meta, network_details, machine_name)
-
-    aq_api.aq_manage(network_details, image_meta)
     aq_api.aq_make(network_details, image_meta)
 
     add_aq_details_to_metadata(vm_data, network_details)
