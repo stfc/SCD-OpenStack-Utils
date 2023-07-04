@@ -130,45 +130,17 @@ def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_calls(config, setup, openstack_address_list, image_metadata):
+def test_aq_make_calls(config, setup, openstack_address_list):
     """
     Test that aq_make calls the correct URLs with the correct parameters
     """
     domain = "domain"
     config.return_value.aq_url = domain
 
-    aq_make(openstack_address_list, image_metadata)
-
-    expected_params = {
-        "personality": image_metadata.aq_personality,
-        "osversion": image_metadata.aq_os_version,
-        "osname": image_metadata.aq_os,
-        "archetype": image_metadata.aq_archetype,
-    }
+    aq_make(openstack_address_list)
 
     expected_url = f"{domain}/host/{openstack_address_list[0].hostname}/command/make"
-    setup.assert_called_once_with(expected_url, "post", mock.ANY, expected_params)
-
-
-@pytest.mark.parametrize(
-    "field_to_blank",
-    [
-        "aq_personality",
-        "aq_os_version",
-        "aq_os",
-    ],
-)
-def test_aq_make_missing_fields(field_to_blank, openstack_address_list, image_metadata):
-    """
-    Test that aq_make throws an exception when a required field is missing
-    """
-    with pytest.raises(AssertionError):
-        setattr(image_metadata, field_to_blank, None)
-        aq_make(openstack_address_list, image_metadata)
-
-    with pytest.raises(AssertionError):
-        setattr(image_metadata, field_to_blank, "")
-        aq_make(openstack_address_list, image_metadata)
+    setup.assert_called_once_with(expected_url, "post", mock.ANY)
 
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])
@@ -185,7 +157,7 @@ def test_aq_make_none_hostname(config, setup, openstack_address, hostname):
     address.hostname = hostname
 
     with pytest.raises(ValueError):
-        aq_make([address], NonCallableMock())
+        aq_make([address])
 
     setup.assert_not_called()
 

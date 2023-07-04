@@ -13,8 +13,6 @@ from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage
 from rabbit_consumer.vm_data import VmData
 
-MAKE_SUFFIX = "/host/{0}/command/make"
-
 HOST_CHECK_SUFFIX = "/host/{0}"
 
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
@@ -84,21 +82,11 @@ def setup_requests(
     return response.text
 
 
-def aq_make(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
+def aq_make(addresses: List[OpenstackAddress]) -> None:
     """
-    Runs AQ make against a list of addresses passed to build the default personality
+    Runs AQ make against a list of addresses passed to refresh
+    the given host
     """
-    params = {
-        "personality": image_meta.aq_personality,
-        "osversion": image_meta.aq_os_version,
-        "osname": image_meta.aq_os,
-        "archetype": image_meta.aq_archetype,
-    }
-
-    assert all(
-        i for i in params.values()
-    ), "Some fields were not set in the OS description"
-
     # Manage and make these back to default domain and personality
     address = addresses[0]
     hostname = address.hostname
@@ -107,8 +95,8 @@ def aq_make(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
     if not hostname or not hostname.strip():
         raise ValueError("Hostname cannot be empty")
 
-    url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
-    setup_requests(url, "post", "Make Template: ", params)
+    url = ConsumerConfig().aq_url + f"/host/{hostname}/command/make"
+    setup_requests(url, "post", "Make Template")
 
 
 def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
