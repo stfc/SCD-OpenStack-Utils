@@ -55,10 +55,10 @@ def test_aq_metadata_override_all(image_metadata):
     assert returned.aq_os_version == "osversion_mock"
 
 
-def test_aq_metadata_override_sandbox(image_metadata):
+def test_aq_metadata_sandbox(image_metadata):
     """
-    Tests overriding the sandbox value in an AQ metadata object
-    maps correctly onto the domain value
+    Tests the sandbox value in an AQ metadata object
+    maps correctly onto the sandbox value
     """
     returned = AqMetadata.from_dict(image_metadata)
     returned.override_from_vm_meta(
@@ -67,7 +67,7 @@ def test_aq_metadata_override_sandbox(image_metadata):
         }
     )
     # This should be the only value that has changed
-    assert returned.aq_domain == "sandbox_mock"
+    assert returned.aq_sandbox == "sandbox_mock"
 
     assert returned.aq_archetype == "archetype_mock"
     assert returned.aq_personality == "personality_mock"

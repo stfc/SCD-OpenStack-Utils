@@ -248,8 +248,7 @@ def test_consume_create_machine_hostnames_good_path(
     aq_api.create_host.assert_called_once_with(
         image_metadata, network_details, machine_name
     )
-    aq_api.aq_manage.assert_called_once_with(network_details, image_metadata)
-    aq_api.aq_make.assert_called_once_with(network_details, image_metadata)
+    aq_api.aq_make.assert_called_once_with(network_details)
 
     # Metadata
     metadata.assert_called_once_with(vm_data, network_details)

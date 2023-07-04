@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
@@ -16,12 +16,13 @@ class AqMetadata(DataClassDictMixin):
     """
 
     aq_archetype: str
-    # Aq domain can hold either a domain or sandbox reference
     aq_domain: str
 
     aq_personality: str
     aq_os_version: str
     aq_os: str
+
+    aq_sandbox: Optional[str] = None
 
     # pylint: disable=too-few-public-methods
     class Config(BaseConfig):
@@ -32,6 +33,7 @@ class AqMetadata(DataClassDictMixin):
         aliases = {
             "aq_archetype": "AQ_ARCHETYPE",
             "aq_domain": "AQ_DOMAIN",
+            "aq_sandbox": "AQ_SANDBOX",
             "aq_personality": "AQ_PERSONALITY",
             "aq_os_version": "AQ_OSVERSION",
             "aq_os": "AQ_OS",
@@ -45,6 +47,3 @@ class AqMetadata(DataClassDictMixin):
         for attr, alias in self.Config.aliases.items():
             if alias in vm_meta:
                 setattr(self, attr, vm_meta[alias])
-
-        if "AQ_SANDBOX" in vm_meta:
-            self.aq_domain = vm_meta["AQ_SANDBOX"]
