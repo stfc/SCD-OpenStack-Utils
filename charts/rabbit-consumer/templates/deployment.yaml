@@ -20,11 +20,31 @@ spec:
         app: rabbit-consumer
     spec:
       containers:
-        - name: consumer
+        - name: kerberos
+          image: "{{ .Values.kerberosSidecar.image.repository }}:{{ .Values.kerberosSidecar.image.tag }}"
+          command: ["/bin/sh", "-c", "/etc/entrypoints.d/sidecar-entrypoint.sh"]
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-kerberos-env
 
+          volumeMounts:
+            - name: entrypoints
+              mountPath: /etc/entrypoints.d
+            - name: shared
+              mountPath: /shared
+            # Kerberos related
+            - name: kerberos-conf-files
+              mountPath: /etc/krb5.conf
+              subPath: krb5.conf
+            - name: kerberos-keytab
+              mountPath: /etc/krb5.keytab
+              subPath: krb5.keytab
+              readOnly: true
+        
+        - name: consumer
           image: "{{ .Values.consumer.image.repository }}:{{ default .Chart.AppVersion .Values.consumer.image.tag }}"
           imagePullPolicy: {{ .Values.consumer.image.pullPolicy }}
-
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-consumer-env
@@ -43,29 +63,6 @@ spec:
               subPath: krb5.conf
             - name: trusted-certs
               mountPath: /etc/grid-security/certificates
-
-        - name: kerberos
-          image: "{{ .Values.kerberosSidecar.image.repository }}:{{ .Values.kerberosSidecar.image.tag }}"
-          command: ["/bin/sh", "-c", "/etc/entrypoints.d/sidecar-entrypoint.sh"]
-          imagePullPolicy: Always
-
-          envFrom:
-            - configMapRef:
-                name: {{ .Release.Name }}-kerberos-env
-
-          volumeMounts:
-            - name: entrypoints
-              mountPath: /etc/entrypoints.d
-            - name: shared
-              mountPath: /shared
-            # Kerberos related
-            - name: kerberos-conf-files
-              mountPath: /etc/krb5.conf
-              subPath: krb5.conf
-            - name: kerberos-keytab
-              mountPath: /etc/krb5.keytab
-              subPath: krb5.keytab
-              readOnly: true
 
       hostAliases:
       # Logon 04
