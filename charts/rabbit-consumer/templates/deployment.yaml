@@ -28,6 +28,26 @@ spec:
             - configMapRef:
                 name: {{ .Release.Name }}-kerberos-env
 
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - klist -s
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - klist -s
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
           volumeMounts:
             - name: entrypoints
               mountPath: /etc/entrypoints.d
