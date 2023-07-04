@@ -109,9 +109,13 @@ def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None
 
     params = {
         "hostname": hostname,
-        "domain": image_meta.aq_domain,
         "force": True,
     }
+    if image_meta.aq_sandbox:
+        params["sandbox"] = image_meta.aq_sandbox
+    else:
+        params["domain"] = image_meta.aq_domain
+
     url = ConsumerConfig().aq_url + f"/host/{hostname}/command/manage"
     setup_requests(url, "post", "Manage Host", params=params)
 

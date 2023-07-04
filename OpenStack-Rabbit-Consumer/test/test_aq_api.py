@@ -183,6 +183,30 @@ def test_aq_manage(config, setup, openstack_address_list, image_metadata):
     setup.assert_called_once_with(expected_url, "post", mock.ANY, params=expected_param)
 
 
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_aq_manage_with_sandbox(config, setup, openstack_address_list, image_metadata):
+    """
+    Test that aq_manage calls the correct URLs with the sandbox
+    instead of the domain
+    """
+    config.return_value.aq_url = "https://example.com"
+
+    image_metadata.aq_sandbox = "some_sandbox"
+
+    aq_manage(openstack_address_list, image_metadata)
+    address = openstack_address_list[0]
+
+    expected_param = {
+        "hostname": address.hostname,
+        "sandbox": image_metadata.aq_sandbox,
+        "force": True,
+    }
+
+    expected_url = f"https://example.com/host/{address.hostname}/command/manage"
+    setup.assert_called_once_with(expected_url, "post", mock.ANY, params=expected_param)
+
+
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
 @patch("rabbit_consumer.aq_api.setup_requests")
 def test_aq_create_machine(setup, config, rabbit_message, vm_data):
