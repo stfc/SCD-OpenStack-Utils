@@ -158,14 +158,6 @@ def delete_machine(machine_name: str) -> None:
     setup_requests(url, "delete", "Delete Machine")
 
 
-def _is_sandbox(image_meta: AqMetadata) -> bool:
-    """
-    Returns True if the image is a sandbox image
-    we do a simple test for a '/' in the domain name
-    """
-    return "/" in image_meta.aq_domain
-
-
 def create_host(
     image_meta: AqMetadata, addresses: List[OpenstackAddress], machine_name: str
 ) -> None:
@@ -184,8 +176,8 @@ def create_host(
         "osversion": image_meta.aq_os_version,
     }
 
-    if _is_sandbox(image_meta):
-        params["sandbox"] = image_meta.aq_domain
+    if image_meta.aq_sandbox:
+        params["sandbox"] = image_meta.aq_sandbox
     else:
         params["domain"] = image_meta.aq_domain
 

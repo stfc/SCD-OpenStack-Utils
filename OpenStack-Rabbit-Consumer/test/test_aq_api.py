@@ -292,7 +292,8 @@ def test_aq_create_host_with_sandbox(
     env_config = config.return_value
     env_config.aq_url = "https://example.com"
 
-    image_metadata.aq_domain = "example/sandbox"
+    image_metadata.aq_domain = "example_domain"
+    image_metadata.aq_sandbox = "example/sandbox"
 
     create_host(image_metadata, openstack_address_list, machine_name)
     address = openstack_address_list[0]
@@ -304,7 +305,7 @@ def test_aq_create_host_with_sandbox(
         "personality": image_metadata.aq_personality,
         "osname": image_metadata.aq_os,
         "osversion": image_metadata.aq_os_version,
-        "sandbox": image_metadata.aq_domain,
+        "sandbox": image_metadata.aq_sandbox,
     }
 
     expected_url = f"https://example.com/host/{address.hostname}"
