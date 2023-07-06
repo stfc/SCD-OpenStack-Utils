@@ -153,9 +153,7 @@ def aq_zombie_finder():
     openstack_zombie_filepath = os.path.join(
         output_location, "openstack_zombie_list.txt"
     )
-    aquilon_zombie_filepath = os.path.join(
-        output_location, "aquilon_zombie_list.txt"
-    )
+    aquilon_zombie_filepath = os.path.join(output_location, "aquilon_zombie_list.txt")
 
     # Check if output files already exist
     for filepath in [
