@@ -1,5 +1,6 @@
 from collections import defaultdict
 from re import compile as re_compile
+from pathlib import Path
 import argparse
 import os
 import sys
@@ -148,7 +149,7 @@ def dns_entry_checker():
     user = args.user
     password = args.password
     ip = args.ip
-    output = args.output
+    output_location = args.output or "output"
 
     # Create an SSH client with the credentials given
     client = create_client(ip, user, password)
@@ -162,17 +163,20 @@ def dns_entry_checker():
         "grep '172.16.'",
     )
 
+    # Ensure output directory exists
+    Path(output_location).mkdir(exist_ok=True)
+
     # Define the filepath for the output to be saved to
     forward_mismatch_filepath = os.path.join(
-        output or "output", "forward_mismatch_list.txt"
+        output_location, "forward_mismatch_list.txt"
     )
     backward_mismatch_filepath = os.path.join(
-        output or "output", "backward_mismatch_list.txt"
+        output_location, "backward_mismatch_list.txt"
     )
     backward_missing_filepath = os.path.join(
-        output or "output", "backward_missing_list.txt"
+        output_location, "backward_missing_list.txt"
     )
-    gap_missing_filepath = os.path.join(output or "output", "gap_missing_list.txt")
+    gap_missing_filepath = os.path.join(output_location, "gap_missing_list.txt")
 
     # Check if output files already exist
     for filepath in [

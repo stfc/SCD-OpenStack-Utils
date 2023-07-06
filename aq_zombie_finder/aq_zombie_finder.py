@@ -1,4 +1,5 @@
 from re import compile as re_compile
+from pathlib import Path
 import argparse
 import os
 import sys
@@ -139,18 +140,21 @@ def aq_zombie_finder():
     user = args.user
     password = args.password
     openstack_ip = args.ip
-    output = args.output
+    output_location = args.output or "output"
 
     # Create a paramiko SSH client to the VM running Openstack and to Aquilon
     openstack_client = create_client(openstack_ip, user, password)
     aquilon_client = create_client("aquilon.gridpp.rl.ac.uk", user, password)
 
+    # Ensure output directory exists
+    Path(output_location).mkdir(exist_ok=True)
+
     # Define the filepath for the output to be saved to
     openstack_zombie_filepath = os.path.join(
-        output or "output", "openstack_zombie_list.txt"
+        output_location, "openstack_zombie_list.txt"
     )
     aquilon_zombie_filepath = os.path.join(
-        output or "output", "aquilon_zombie_list.txt"
+        output_location, "aquilon_zombie_list.txt"
     )
 
     # Check if output files already exist
