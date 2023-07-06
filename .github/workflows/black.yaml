@@ -21,6 +21,11 @@ jobs:
         uses: psf/black@stable
         with:
           src: "iriscasttools/iriscasttools"
+
+      - name: Aquilon Zombie Finder 
+        uses: psf/black@stable
+        with:
+            src: "aq_zombie_finder"
           
       - name: DNS Entry Checker 
         uses: psf/black@stable
