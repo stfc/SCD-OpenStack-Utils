@@ -1,13 +1,12 @@
+from collections import defaultdict
+from re import compile as re_compile
 import argparse
 import os
 import sys
 import paramiko
 
-from collections import defaultdict
-from re import compile
-
 # Define the Regex used to identify IPs
-IP_REXP = compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
+IP_REXP = re_compile(r"(([0-9]{1,3}[.-]){3}[0-9]{1,3})")
 
 
 def create_client(host, user, password):
@@ -53,7 +52,7 @@ def populate_ip_dict(ips_dns_pair, order_check_dict):
         :param order_check_dict: Dictionary containing an IPs third byte as a key,
         and list of fourth bytes as an item (defaultdict)
     """
-    last_rexp = compile(r"([0-9]{1,3}\.[0-9]{1,3}(?!.))")
+    last_rexp = re_compile(r"([0-9]{1,3}\.[0-9]{1,3}(?!.))")
 
     order_values = last_rexp.findall(ips_dns_pair[1])[0].split(".")
     order_check_dict[order_values[0]].append(order_values[1])
@@ -109,6 +108,7 @@ def check_missing_ips(key, gap_missing_filepath):
 def parse_args(inp_args):
     """
     Function to parse commandline args
+    :param inp_args: a set of commandline args to parse (dict)
     :returns: A dictionary of parsed args
     """
     # Get arguments passed to the script

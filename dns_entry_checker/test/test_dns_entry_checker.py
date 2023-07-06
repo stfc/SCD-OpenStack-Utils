@@ -1,6 +1,3 @@
-import dns_entry_checker
-import unittest
-
 from argparse import Namespace
 from collections import defaultdict
 from unittest import mock
@@ -15,6 +12,8 @@ from dns_entry_checker import (
     populate_ip_dict,
     parse_args,
 )
+import dns_entry_checker
+import unittest
 
 
 class DNSEntryCheckerTests(unittest.TestCase):
