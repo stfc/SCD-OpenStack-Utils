@@ -129,6 +129,7 @@ def parse_args(inp_args):
         "--output",
         metavar="OUTPUT",
         help="Directory to create the output files in",
+        default="output",
     )
     args = parser.parse_args(inp_args)
     return args
@@ -140,7 +141,7 @@ def aq_zombie_finder():
     user = args.user
     password = args.password
     openstack_ip = args.ip
-    output_location = args.output or "output"
+    output_location = args.output
 
     # Create a paramiko SSH client to the VM running Openstack and to Aquilon
     openstack_client = create_client(openstack_ip, user, password)

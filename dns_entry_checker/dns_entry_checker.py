@@ -138,6 +138,7 @@ def parse_args(inp_args):
         "--output",
         metavar="OUTPUT",
         help="Directory to create the output files in",
+        default="output",
     )
     args = parser.parse_args(inp_args)
     return args
@@ -149,7 +150,7 @@ def dns_entry_checker():
     user = args.user
     password = args.password
     ip = args.ip
-    output_location = args.output or "output"
+    output_location = args.output
 
     # Create an SSH client with the credentials given
     client = create_client(ip, user, password)
