@@ -1,7 +1,8 @@
+from re import compile as re_compile
 import argparse
 import os
+import sys
 import paramiko
-from re import compile
 
 
 def create_client(host, user, password):
@@ -34,7 +35,8 @@ def get_aq_ips(openstack_client):
     """
     Function to run a command on the openstack VM
         :param openstack_client: Paramiko client (client)
-        :returns:   List of the IPs of machines using aq images from machines with IPs starting with "172.16."
+        :returns:   List of the IPs of machines using aq images
+         from machines with IPs starting with "172.16."
     """
     servers = ssh_command(
         openstack_client,
@@ -44,7 +46,7 @@ def get_aq_ips(openstack_client):
     )
 
     # Define the Regex expression used to find the IP address
-    ip_rexp = compile(r"((?<=Internal=)([0-9](\.)?)+)")
+    ip_rexp = re_compile(r"((?<=Internal=)([0-9](\.)?)+)")
 
     # Use Regex to find all instances of an IP address in the list of servers
     return ip_rexp.findall(str(servers))
@@ -66,9 +68,7 @@ def check_openstack_ip(aq_ip, aquilon_client, openstack_zombie_filepath):
         with open(openstack_zombie_filepath, "a") as openstack_zombie_file:
             openstack_zombie_file.write(ip_string + "\n")
         return False
-
-    else:
-        return aq_host
+    return aq_host
 
 
 def check_aquilon_serial(aq_host, aq_ip, openstack_client, aquilon_zombie_filepath):
@@ -80,7 +80,7 @@ def check_aquilon_serial(aq_host, aq_ip, openstack_client, aquilon_zombie_filepa
         :param aquilon_zombie_filepath: The filepath of the Aquilon output file (String)
     """
     # Define the Regex expression used to find the Serial number
-    serial_rexp = compile(r"((?<=Serial: )(.+?)(?=\\r))")
+    serial_rexp = re_compile(r"((?<=Serial: )(.+?)(?=\\r))")
 
     # Find the serial in the host information using Regex
     serial = serial_rexp.findall(str(aq_host))[0][0]
@@ -96,19 +96,12 @@ def check_aquilon_serial(aq_host, aq_ip, openstack_client, aquilon_zombie_filepa
             aquilon_zombie_file.write(serial + " | " + aq_ip + "\n")
 
 
-def check_output_files(openstack_zombie_filepath, aquilon_zombie_filepath):
+def parse_args(inp_args):
     """
-    Function to check if output files already exist
-        :param aquilon_zombie_filepath: The filepath of the Aquilon output file (String)
-        :param openstack_zombie_filepath: The filepath of the Openstack output file (String)
+    Function to parse commandline args
+    :param inp_args: a set of commandline args to parse (dict)
+    :returns: A dictionary of parsed args
     """
-    if os.path.exists(openstack_zombie_filepath):
-        raise RuntimeError(f"{openstack_zombie_filepath} already exists")
-    if os.path.exists(aquilon_zombie_filepath):
-        raise RuntimeError(f"{aquilon_zombie_filepath} already exists")
-
-
-def aq_zombie_finder():
     # Get arguments passed to the script
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -136,9 +129,13 @@ def aq_zombie_finder():
         metavar="OUTPUT",
         help="Directory to create the output files in",
     )
+    args = parser.parse_args(inp_args)
+    return args
 
+
+def aq_zombie_finder():
     # Define the variables with the script arguments
-    args = parser.parse_args()
+    args = parse_args(sys.argv[1:])
     user = args.user
     password = args.password
     openstack_ip = args.ip
@@ -155,7 +152,14 @@ def aq_zombie_finder():
     aquilon_zombie_filepath = os.path.join(
         output or "output", "aquilon_zombie_list.txt"
     )
-    check_output_files(openstack_zombie_filepath, aquilon_zombie_filepath)
+
+    # Check if output files already exist
+    for filepath in [
+        openstack_zombie_filepath,
+        aquilon_zombie_filepath,
+    ]:
+        if os.path.exists(filepath):
+            raise RuntimeError(f"{filepath} already exists")
 
     # Get a list of the IPs of AQ VMs
     aq_ips = get_aq_ips(openstack_client)

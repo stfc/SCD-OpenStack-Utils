@@ -1,8 +1,8 @@
-import aq_zombie_finder
-import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch, NonCallableMock, call
 from parameterized import parameterized
+import aq_zombie_finder
+import unittest
 
 
 class AQZombieFinderTests(unittest.TestCase):
@@ -14,7 +14,6 @@ class AQZombieFinderTests(unittest.TestCase):
 
         mock_client = MagicMock()
         mock_paramiko.client.SSHClient.return_value = mock_client
-        mock_paramiko.client.set_missing_host_key_policy = MagicMock()
         mock_paramiko.AutoAddPolicy = NonCallableMock()
         mock_paramiko.connect = MagicMock()
 
