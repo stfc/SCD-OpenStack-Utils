@@ -8,12 +8,10 @@ from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
 
 from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.image_metadata import ImageMetadata
+from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage
 from rabbit_consumer.vm_data import VmData
-
-MAKE_SUFFIX = "/host/{0}/command/make"
 
 HOST_CHECK_SUFFIX = "/host/{0}"
 
@@ -84,21 +82,11 @@ def setup_requests(
     return response.text
 
 
-def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+def aq_make(addresses: List[OpenstackAddress]) -> None:
     """
-    Runs AQ make against a list of addresses passed to build the default personality
+    Runs AQ make against a list of addresses passed to refresh
+    the given host
     """
-    params = {
-        "personality": image_meta.aq_personality,
-        "osversion": image_meta.aq_os_version,
-        "osname": image_meta.aq_os,
-        "archetype": "cloud",
-    }
-
-    assert all(
-        i for i in params.values()
-    ), "Some fields were not set in the OS description"
-
     # Manage and make these back to default domain and personality
     address = addresses[0]
     hostname = address.hostname
@@ -107,11 +95,11 @@ def aq_make(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> Non
     if not hostname or not hostname.strip():
         raise ValueError("Hostname cannot be empty")
 
-    url = ConsumerConfig().aq_url + MAKE_SUFFIX.format(hostname)
-    setup_requests(url, "post", "Make Template: ", params)
+    url = ConsumerConfig().aq_url + f"/host/{hostname}/command/make"
+    setup_requests(url, "post", "Make Template")
 
 
-def aq_manage(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> None:
+def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
     """
     Manages the list of Aquilon addresses passed to it back to the production domain
     """
@@ -121,9 +109,13 @@ def aq_manage(addresses: List[OpenstackAddress], image_meta: ImageMetadata) -> N
 
     params = {
         "hostname": hostname,
-        "domain": image_meta.aq_domain,
         "force": True,
     }
+    if image_meta.aq_sandbox:
+        params["sandbox"] = image_meta.aq_sandbox
+    else:
+        params["domain"] = image_meta.aq_domain
+
     url = ConsumerConfig().aq_url + f"/host/{hostname}/command/manage"
     setup_requests(url, "post", "Manage Host", params=params)
 
@@ -159,7 +151,7 @@ def delete_machine(machine_name: str) -> None:
 
 
 def create_host(
-    image_meta: ImageMetadata, addresses: List[OpenstackAddress], machine_name: str
+    image_meta: AqMetadata, addresses: List[OpenstackAddress], machine_name: str
 ) -> None:
     """
     Creates a host in Aquilon
@@ -170,12 +162,16 @@ def create_host(
     params = {
         "machine": machine_name,
         "ip": address.addr,
-        "domain": image_meta.aq_domain,
         "archetype": image_meta.aq_archetype,
         "personality": image_meta.aq_personality,
         "osname": image_meta.aq_os,
         "osversion": image_meta.aq_os_version,
     }
+
+    if image_meta.aq_sandbox:
+        params["sandbox"] = image_meta.aq_sandbox
+    else:
+        params["domain"] = image_meta.aq_domain
 
     logger.debug("Attempting to create host for %s ", address.hostname)
     url = config.aq_url + f"/host/{address.hostname}"
@@ -191,23 +187,23 @@ def delete_host(hostname: str) -> None:
     setup_requests(url, "delete", "Host Delete")
 
 
-def delete_address(address: OpenstackAddress, machine_name: str) -> None:
+def delete_address(address: str, machine_name: str) -> None:
     """
     Deletes an address in Aquilon
     """
-    logger.debug("Attempting to delete address for %s ", address.addr)
+    logger.debug("Attempting to delete address for %s ", address)
     url = ConsumerConfig().aq_url + "/interface_address"
-    params = {"ip": address.addr, "machine": machine_name, "interface": "eth0"}
+    params = {"ip": address, "machine": machine_name, "interface": "eth0"}
     setup_requests(url, "delete", "Address Delete", params=params)
 
 
-def delete_interface(address: OpenstackAddress) -> None:
+def delete_interface(machine_name: str) -> None:
     """
     Deletes a host interface in Aquilon
     """
-    logger.debug("Attempting to delete interface for %s ", address.mac_addr)
+    logger.debug("Attempting to delete interface for %s ", machine_name)
     url = ConsumerConfig().aq_url + "/interface/command/del"
-    params = {"mac": address.mac_addr}
+    params = {"interface": "eth0", "machine": machine_name}
     setup_requests(url, "post", "Interface Delete", params=params)
 
 
@@ -247,13 +243,27 @@ def set_interface_bootable(machine_name: str, interface_name: str) -> None:
     setup_requests(url, "post", "Update Machine Interface")
 
 
-def search_machine(mac_addr: str) -> Optional[str]:
+def search_machine_by_serial(vm_data: VmData) -> Optional[str]:
     """
-    Searches for a machine in Aquilon based on a MAC address
+    Searches for a machine in Aquilon based on a serial number
     """
-    logger.debug("Searching for host with MAC %s", mac_addr)
+    logger.debug("Searching for host with serial %s", vm_data.virtual_machine_id)
     url = ConsumerConfig().aq_url + "/find/machine"
-    params = {"mac": mac_addr}
+    params = {"serial": vm_data.virtual_machine_id}
+    response = setup_requests(url, "get", "Search Host", params=params).strip()
+
+    if response:
+        return response
+    return None
+
+
+def search_host_by_machine(machine_name: str) -> Optional[str]:
+    """
+    Searches for a host in Aquilon based on a machine name
+    """
+    logger.debug("Searching for host with machine name %s", machine_name)
+    url = ConsumerConfig().aq_url + "/find/host"
+    params = {"machine": machine_name}
     response = setup_requests(url, "get", "Search Host", params=params).strip()
 
     if response:

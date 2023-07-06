@@ -25,6 +25,8 @@ from rabbit_consumer.aq_api import (
     check_host_exists,
     AquilonError,
     add_machine_nics,
+    search_machine_by_serial,
+    search_host_by_machine,
 )
 
 
@@ -128,45 +130,17 @@ def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
 
 @patch("rabbit_consumer.aq_api.setup_requests")
 @patch("rabbit_consumer.aq_api.ConsumerConfig")
-def test_aq_make_calls(config, setup, openstack_address_list, image_metadata):
+def test_aq_make_calls(config, setup, openstack_address_list):
     """
     Test that aq_make calls the correct URLs with the correct parameters
     """
     domain = "domain"
     config.return_value.aq_url = domain
 
-    aq_make(openstack_address_list, image_metadata)
-
-    expected_params = {
-        "personality": image_metadata.aq_personality,
-        "osversion": image_metadata.aq_os_version,
-        "osname": image_metadata.aq_os,
-        "archetype": "cloud",
-    }
+    aq_make(openstack_address_list)
 
     expected_url = f"{domain}/host/{openstack_address_list[0].hostname}/command/make"
-    setup.assert_called_once_with(expected_url, "post", mock.ANY, expected_params)
-
-
-@pytest.mark.parametrize(
-    "field_to_blank",
-    [
-        "aq_personality",
-        "aq_os_version",
-        "aq_os",
-    ],
-)
-def test_aq_make_missing_fields(field_to_blank, openstack_address_list, image_metadata):
-    """
-    Test that aq_make throws an exception when a required field is missing
-    """
-    with pytest.raises(AssertionError):
-        setattr(image_metadata, field_to_blank, None)
-        aq_make(openstack_address_list, image_metadata)
-
-    with pytest.raises(AssertionError):
-        setattr(image_metadata, field_to_blank, "")
-        aq_make(openstack_address_list, image_metadata)
+    setup.assert_called_once_with(expected_url, "post", mock.ANY)
 
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])
@@ -183,7 +157,7 @@ def test_aq_make_none_hostname(config, setup, openstack_address, hostname):
     address.hostname = hostname
 
     with pytest.raises(ValueError):
-        aq_make([address], NonCallableMock())
+        aq_make([address])
 
     setup.assert_not_called()
 
@@ -202,6 +176,30 @@ def test_aq_manage(config, setup, openstack_address_list, image_metadata):
     expected_param = {
         "hostname": address.hostname,
         "domain": image_metadata.aq_domain,
+        "force": True,
+    }
+
+    expected_url = f"https://example.com/host/{address.hostname}/command/manage"
+    setup.assert_called_once_with(expected_url, "post", mock.ANY, params=expected_param)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_aq_manage_with_sandbox(config, setup, openstack_address_list, image_metadata):
+    """
+    Test that aq_manage calls the correct URLs with the sandbox
+    instead of the domain
+    """
+    config.return_value.aq_url = "https://example.com"
+
+    image_metadata.aq_sandbox = "some_sandbox"
+
+    aq_manage(openstack_address_list, image_metadata)
+    address = openstack_address_list[0]
+
+    expected_param = {
+        "hostname": address.hostname,
+        "sandbox": image_metadata.aq_sandbox,
         "force": True,
     }
 
@@ -271,6 +269,39 @@ def test_aq_create_host(config, setup, openstack_address_list, image_metadata):
         "personality": image_metadata.aq_personality,
         "osname": image_metadata.aq_os,
         "osversion": image_metadata.aq_os_version,
+    }
+
+    expected_url = f"https://example.com/host/{address.hostname}"
+    setup.assert_called_once_with(expected_url, "put", mock.ANY, params=expected_params)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_aq_create_host_with_sandbox(
+    config, setup, openstack_address_list, image_metadata
+):
+    """
+    Test that aq_create_host calls the correct URL with the correct parameters
+    """
+    machine_name = "machine_name_str"
+
+    env_config = config.return_value
+    env_config.aq_url = "https://example.com"
+
+    image_metadata.aq_domain = "example_domain"
+    image_metadata.aq_sandbox = "example/sandbox"
+
+    create_host(image_metadata, openstack_address_list, machine_name)
+    address = openstack_address_list[0]
+
+    expected_params = {
+        "machine": machine_name,
+        "ip": address.addr,
+        "archetype": image_metadata.aq_archetype,
+        "personality": image_metadata.aq_personality,
+        "osname": image_metadata.aq_os,
+        "osversion": image_metadata.aq_os_version,
+        "sandbox": image_metadata.aq_sandbox,
     }
 
     expected_url = f"https://example.com/host/{address.hostname}"
@@ -359,3 +390,67 @@ def test_check_host_exists_returns_false(config, setup):
     setup.side_effect = AquilonError(f"Error:\n Host {hostname} not found.")
 
     assert not check_host_exists(hostname)
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_search_machine_by_serial(config, setup, vm_data):
+    """
+    Test that search_machine_by_serial calls the correct URL with the correct parameters
+    """
+    config.return_value.aq_url = "https://example.com"
+    response = search_machine_by_serial(vm_data)
+
+    expected_url = "https://example.com/find/machine"
+    expected_args = {"serial": vm_data.virtual_machine_id}
+    setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
+    assert response == setup.return_value.strip.return_value
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_search_machine_by_serial_not_found(config, setup, vm_data):
+    """
+    Test that search_machine_by_serial calls the correct URL with the correct parameters
+    """
+    config.return_value.aq_url = "https://example.com"
+    setup.return_value = ""
+    response = search_machine_by_serial(vm_data)
+
+    expected_url = "https://example.com/find/machine"
+    expected_args = {"serial": vm_data.virtual_machine_id}
+    setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
+    assert response is None
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_search_host_by_machine(config, setup):
+    """
+    Test that search_host_by_machine calls the correct URL with the correct parameters
+    to return the host name
+    """
+    config.return_value.aq_url = "https://example.com"
+    response = search_host_by_machine("machine_name")
+
+    expected_url = "https://example.com/find/host"
+    expected_args = {"machine": "machine_name"}
+    setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
+    assert response == setup.return_value.strip.return_value
+
+
+@patch("rabbit_consumer.aq_api.setup_requests")
+@patch("rabbit_consumer.aq_api.ConsumerConfig")
+def test_search_host_by_machine_not_found(config, setup):
+    """
+    Test that search_host_by_machine calls the correct URL with the correct parameters
+    to return the host name
+    """
+    config.return_value.aq_url = "https://example.com"
+    setup.return_value = ""
+    response = search_host_by_machine("machine_name")
+
+    expected_url = "https://example.com/find/host"
+    expected_args = {"machine": "machine_name"}
+    setup.assert_called_once_with(expected_url, "get", mock.ANY, params=expected_args)
+    assert response is None

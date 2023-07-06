@@ -1,4 +1,4 @@
-from unittest.mock import Mock, NonCallableMock, patch, call
+from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
 
@@ -15,11 +15,16 @@ from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.message_consumer import (
     on_message,
     initiate_consumer,
-    add_hostname_to_metadata,
+    add_aq_details_to_metadata,
     handle_create_machine,
     handle_machine_delete,
     SUPPORTED_MESSAGE_TYPES,
+    check_machine_valid,
+    is_aq_managed_image,
+    get_aq_build_metadata,
+    delete_machine,
 )
+from rabbit_consumer.vm_data import VmData
 
 
 @pytest.fixture(name="valid_event_type")
@@ -90,38 +95,11 @@ def test_on_message_accepts_event_types(message_event_type, consume, event_type)
     with (
         patch("rabbit_consumer.message_consumer.RabbitMessage"),
         patch("rabbit_consumer.message_consumer.json"),
-        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
     ):
-        is_managed.return_value = True
         message = Mock()
         on_message(message)
 
-    is_managed.assert_called_once()
     consume.assert_called_once()
-    message.ack.assert_called_once()
-
-
-@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
-@patch("rabbit_consumer.message_consumer.consume")
-def test_on_message_ignores_non_aq(consume_mock, aq_message_mock, valid_event_type):
-    """
-    Test that the function ignores non-AQ messages and acks them
-    """
-    message = Mock()
-    aq_message_mock.return_value = False
-
-    with (
-        patch("rabbit_consumer.message_consumer.json"),
-        patch("rabbit_consumer.message_consumer.RabbitMessage"),
-        patch(
-            "rabbit_consumer.message_consumer.MessageEventType"
-        ) as message_event_type,
-    ):
-        message_event_type.from_json.return_value = valid_event_type
-        on_message(message)
-
-    aq_message_mock.assert_called_once()
-    consume_mock.assert_not_called()
     message.ack.assert_called_once()
 
 
@@ -179,20 +157,26 @@ def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
 
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_add_hostname_to_metadata_machine_exists(
-    openstack_api, vm_data, openstack_address_list
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_add_aq_details_to_metadata(
+    aq_api, openstack_api, vm_data, openstack_address_list
 ):
     """
     Test that the function adds the hostname to the metadata when the machine exists
     """
     openstack_api.check_machine_exists.return_value = True
-    add_hostname_to_metadata(vm_data, openstack_address_list)
+    add_aq_details_to_metadata(vm_data, openstack_address_list)
+
+    hostnames = [i.hostname for i in openstack_address_list]
+    expected = {
+        "HOSTNAMES": ",".join(hostnames),
+        "AQ_STATUS": "SUCCESS",
+        "AQ_MACHINE": aq_api.search_machine_by_serial.return_value,
+    }
 
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
-    hostnames = [i.hostname for i in openstack_address_list]
-    openstack_api.update_metadata.assert_called_with(
-        vm_data, {"HOSTNAMES": ",".join(hostnames), "AQ_STATUS": "SUCCESS"}
-    )
+    aq_api.search_machine_by_serial.assert_called_once_with(vm_data)
+    openstack_api.update_metadata.assert_called_with(vm_data, expected)
 
 
 @patch("rabbit_consumer.message_consumer.openstack_api")
@@ -201,29 +185,47 @@ def test_add_hostname_to_metadata_machine_does_not_exist(openstack_api, vm_data)
     Test that the function does not add the hostname to the metadata when the machine does not exist
     """
     openstack_api.check_machine_exists.return_value = False
-    add_hostname_to_metadata(vm_data, [])
+    add_aq_details_to_metadata(vm_data, [])
 
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
     openstack_api.update_metadata.assert_not_called()
 
 
+@patch("rabbit_consumer.message_consumer.check_machine_valid")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_handle_create_machine_skips_invalid(openstack_api, machine_valid):
+    """
+    Test that the function skips invalid machines
+    """
+    machine_valid.return_value = False
+    vm_data = Mock()
+
+    handle_create_machine(vm_data)
+
+    machine_valid.assert_called_once_with(vm_data)
+    openstack_api.get_server_networks.assert_not_called()
+
+
 @patch("rabbit_consumer.message_consumer.openstack_api")
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.add_hostname_to_metadata")
+@patch("rabbit_consumer.message_consumer.add_aq_details_to_metadata")
 # pylint: disable=too-many-arguments
 def test_consume_create_machine_hostnames_good_path(
-    metadata, aq_api, openstack, rabbit_message, valid_event_type, image_metadata
+    metadata, aq_api, openstack, rabbit_message, image_metadata
 ):
     """
     Test that the function calls the correct functions in the correct order to register a new machine
     """
     with (
         patch("rabbit_consumer.message_consumer.VmData") as data_patch,
-        patch("rabbit_consumer.message_consumer.is_aq_managed_image") as is_managed,
-        patch("rabbit_consumer.message_consumer.MessageEventType") as message_type,
+        patch("rabbit_consumer.message_consumer.check_machine_valid") as check_machine,
+        patch(
+            "rabbit_consumer.message_consumer.get_aq_build_metadata"
+        ) as get_image_meta,
+        patch("rabbit_consumer.message_consumer.delete_machine") as delete_machine_mock,
     ):
-        is_managed.return_value = image_metadata
-        message_type.from_json.return_value = valid_event_type
+        check_machine.return_value = True
+        get_image_meta.return_value = image_metadata
 
         handle_create_machine(rabbit_message)
 
@@ -234,6 +236,7 @@ def test_consume_create_machine_hostnames_good_path(
     openstack.get_server_networks.assert_called_with(vm_data)
 
     # Check main Aq Flow
+    delete_machine_mock.assert_called_once_with(vm_data, network_details[0])
     aq_api.create_machine.assert_called_once_with(rabbit_message, vm_data)
     machine_name = aq_api.create_machine.return_value
 
@@ -245,33 +248,186 @@ def test_consume_create_machine_hostnames_good_path(
     aq_api.create_host.assert_called_once_with(
         image_metadata, network_details, machine_name
     )
-    aq_api.aq_manage.assert_called_once_with(network_details, image_metadata)
-    aq_api.aq_make.assert_called_once_with(network_details, image_metadata)
+    aq_api.aq_make.assert_called_once_with(network_details)
 
     # Metadata
     metadata.assert_called_once_with(vm_data, network_details)
 
 
 @patch("rabbit_consumer.message_consumer.delete_machine")
-def test_consume_delete_machine_good_path(
-    delete_machine, rabbit_message, openstack_address_list
-):
+def test_consume_delete_machine_good_path(delete_machine_mock, rabbit_message):
     """
     Test that the function calls the correct functions in the correct order to delete a machine
     """
     rabbit_message.payload.metadata.machine_name = "AQ-HOST1"
 
-    with (
-        patch("rabbit_consumer.message_consumer.VmData") as data_patch,
-        patch("rabbit_consumer.message_consumer.openstack_api") as openstack,
-    ):
-        openstack.get_server_networks.return_value = openstack_address_list
-
+    with patch("rabbit_consumer.message_consumer.VmData") as data_patch:
         handle_machine_delete(rabbit_message)
 
-        data_patch.from_message.assert_called_with(rabbit_message)
-        openstack.get_server_networks.assert_called_with(
-            data_patch.from_message.return_value
-        )
+    delete_machine_mock.assert_called_once_with(
+        vm_data=data_patch.from_message.return_value
+    )
 
-    delete_machine.assert_called_once_with(addresses=openstack_address_list)
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_valid(openstack_api, is_aq_managed):
+    """
+    Test that the function returns True when the machine is valid
+    """
+    mock_message = NonCallableMock()
+    is_aq_managed.return_value = True
+
+    vm_data = VmData.from_message(mock_message)
+
+    openstack_api.check_machine_exists.return_value = True
+
+    assert check_machine_valid(mock_message)
+    is_aq_managed.assert_called_once_with(vm_data)
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_invalid_image(openstack_api, is_aq_managed):
+    """
+    Test that the function returns False when the image is not AQ managed
+    """
+    mock_message = NonCallableMock()
+    is_aq_managed.return_value = False
+    openstack_api.check_machine_exists.return_value = True
+    vm_data = VmData.from_message(mock_message)
+
+    assert not check_machine_valid(mock_message)
+
+    openstack_api.check_machine_exists.assert_called_once_with(vm_data)
+    is_aq_managed.assert_called_once_with(vm_data)
+
+
+@patch("rabbit_consumer.message_consumer.is_aq_managed_image")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_check_machine_invalid_machine(openstack_api, is_aq_managed):
+    """
+    Test that the function returns False when the machine does not exist
+    """
+    mock_message = NonCallableMock()
+    openstack_api.check_machine_exists.return_value = False
+
+    assert not check_machine_valid(mock_message)
+
+    is_aq_managed.assert_not_called()
+    openstack_api.check_machine_exists.assert_called_once_with(
+        VmData.from_message(mock_message)
+    )
+
+
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_is_aq_managed_image(openstack_api, vm_data):
+    """
+    Test that the function returns True when the image is AQ managed
+    """
+    openstack_api.get_image.return_value.metadata = {"AQ_OS": "True"}
+
+    assert is_aq_managed_image(vm_data)
+    openstack_api.get_image.assert_called_once_with(vm_data)
+
+
+@patch("rabbit_consumer.message_consumer.VmData")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_is_aq_managed_image_missing_key(openstack_api, vm_data):
+    """
+    Test that the function returns False when the image is not AQ managed
+    """
+    openstack_api.get_image.return_value.metadata = {}
+
+    assert not is_aq_managed_image(vm_data)
+    openstack_api.get_image.assert_called_once_with(vm_data)
+
+
+@patch("rabbit_consumer.message_consumer.AqMetadata")
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_get_aq_build_metadata(openstack_api, aq_metadata_class, vm_data):
+    """
+    Test that the function returns the correct metadata
+    """
+    aq_metadata_obj: MagicMock = get_aq_build_metadata(vm_data)
+
+    # We should first construct from an image
+    assert aq_metadata_obj == aq_metadata_class.from_dict.return_value
+    aq_metadata_class.from_dict.assert_called_once_with(
+        openstack_api.get_image.return_value.metadata
+    )
+
+    # Then override with an object
+    openstack_api.get_server_metadata.assert_called_once_with(vm_data)
+    aq_metadata_obj.override_from_vm_meta.assert_called_once_with(
+        openstack_api.get_server_metadata.return_value
+    )
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_delete_machine_hostname_only(aq_api, vm_data, openstack_address):
+    """
+    Tests that the function deletes a host then exits if no machine is found
+    """
+    aq_api.check_host_exists.return_value = True
+    aq_api.search_machine_by_serial.return_value = None
+
+    delete_machine(vm_data, openstack_address)
+    aq_api.delete_host.assert_called_once_with(openstack_address.hostname)
+    aq_api.delete_machine.assert_not_called()
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+def test_delete_machine_by_serial(aq_api, vm_data, openstack_address):
+    """
+    Tests that the function deletes a host then a machine
+    assuming both were found
+    """
+    # Assume our host address doesn't match the machine record
+    # but the machine does have a hostname which is valid...
+    aq_api.check_host_exists.side_effect = [False, True]
+
+    aq_api.search_host_by_machine.return_value = "host.example.com"
+    aq_api.get_machine_details.return_value = ""
+
+    delete_machine(vm_data, openstack_address)
+
+    aq_api.check_host_exists.assert_has_calls(
+        [call(openstack_address.hostname), call("host.example.com")]
+    )
+    aq_api.delete_host.assert_called_once_with("host.example.com")
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+@patch("rabbit_consumer.message_consumer.socket")
+def test_delete_machine_no_hostname(socket_api, aq_api, vm_data):
+    aq_api.check_host_exists.return_value = False
+
+    ip_address = "127.0.0.1"
+    socket_api.gethostbyname.return_value = ip_address
+
+    machine_name = aq_api.search_machine_by_serial.return_value
+    aq_api.get_machine_details.return_value = f"eth0: {ip_address}"
+
+    delete_machine(vm_data, NonCallableMock())
+    aq_api.delete_address.assert_called_once_with(ip_address, machine_name)
+    aq_api.delete_interface.assert_called_once_with(machine_name)
+
+
+@patch("rabbit_consumer.message_consumer.aq_api")
+@patch("rabbit_consumer.message_consumer.socket")
+def test_delete_machine_always_called(socket_api, aq_api, vm_data):
+    """
+    Tests that the function always calls the delete machine function
+    """
+    aq_api.check_host_exists.return_value = False
+    socket_api.gethostbyname.return_value = "123123"
+
+    aq_api.get_machine_details.return_value = "Machine Details"
+
+    machine_name = "machine_name"
+    aq_api.search_machine_by_serial.return_value = machine_name
+
+    delete_machine(vm_data, NonCallableMock())
+    aq_api.delete_machine.assert_called_once_with(machine_name)

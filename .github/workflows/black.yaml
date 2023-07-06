@@ -26,3 +26,8 @@ jobs:
         uses: psf/black@stable
         with:
             src: "aq_zombie_finder"
+          
+      - name: DNS Entry Checker 
+        uses: psf/black@stable
+        with:
+            src: "dns_entry_checker"
