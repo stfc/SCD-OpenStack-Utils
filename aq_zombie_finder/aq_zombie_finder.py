@@ -136,6 +136,13 @@ def parse_args(inp_args):
 
 
 def aq_zombie_finder():
+    """
+    Main Function to query aquilon to get a list of IPs of
+    VMs with Aquilon images, check if VMs that no longer
+    exist are still being managed by Aquilon or if VMs that
+    should be managed by Aquilon aren't, then output the IPs
+    into 2 files.
+    """
     # Define the variables with the script arguments
     args = parse_args(sys.argv[1:])
     user = args.user

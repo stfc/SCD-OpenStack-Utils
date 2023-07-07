@@ -145,6 +145,12 @@ def parse_args(inp_args):
 
 
 def dns_entry_checker():
+    """
+    Main Function to get a list of IP's and matching DNS'
+    and check whether there are mismatches, missing values
+    or gaps in the list, then output those IPs and DNS' into
+    4 files.
+    """
     # Define the variables with the script arguments
     args = parse_args(sys.argv[1:])
     user = args.user
