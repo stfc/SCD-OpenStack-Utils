@@ -1,37 +1,33 @@
 #!/usr/bin/python3
-import time
+"""
+Parses results from the rally task report and sends them to influxdb
+"""
 import json
-import requests
 import sys
-from configparser import SafeConfigParser
+import time
+from configparser import ConfigParser
 
+import requests
 
 # Read from config file
-parser = SafeConfigParser()
-try:
-    parser.read("/etc/openstack-utils/rally-tester.conf")
-    host = parser.get("db", "host")
-    database = parser.get("db", "database")
-    username = parser.get("auth", "username")
-    password = parser.get("auth", "password")
-    instance = parser.get("cloud", "instance")
-except:
-    print("Unable to read from config file")
-    sys.exit(1)
+parser = ConfigParser()
+parser.read("/etc/openstack-utils/rally-tester.conf")
+host = parser.get("db", "host")
+database = parser.get("db", "database")
+username = parser.get("auth", "username")
+password = parser.get("auth", "password")
+instance = parser.get("cloud", "instance")
 
 url = "http://" + host + "/write?db=" + database
 
 nowtime = time.localtime()
 
-if nowtime.tm_hour >= 9 and nowtime.tm_hour <= 16:
-    workhours = True
-else:
-    workhours = False
+workhours = 9 <= nowtime.tm_hour <= 16
 
-
-with open(sys.argv[1]) as data_file:
+with open(sys.argv[1], encoding="utf-8") as data_file:
     data = json.load(data_file)
 
+# pylint: disable=invalid-name
 datastring = ""
 metrics = []
 
@@ -45,7 +41,6 @@ if isinstance(data, dict):
         metrics.append(metric)
 else:
     for test in data:
-
         for result in test["result"]:
             metric = {}
             metric["fields"] = {}
@@ -53,7 +48,7 @@ else:
 
             metric["fields"]["success"] = 1
             for sla in test["sla"]:
-                if sla["success"] == False:
+                if not sla["success"]:
                     metric["fields"]["success"] = 0
 
             metric["fields"]["duration"] = result["duration"]
@@ -75,7 +70,6 @@ else:
 
             metrics.append(metric)
 
-
 json_metrics = []
 for metric in metrics:
     # print metric
@@ -92,13 +86,10 @@ for metric in metrics:
         datastring += " " + field.replace(".", "-") + "=" + str(metric["fields"][field])
         datastring += "\n"
 
-datastring = datastring
-
 print(json.dumps(json_metrics, indent=4, sort_keys=True))
 
 print(datastring)
 
-
-r = requests.post(url, data=datastring, auth=(username, password))
+r = requests.post(url, data=datastring, auth=(username, password), timeout=10)
 print(r.text)
 print(r)

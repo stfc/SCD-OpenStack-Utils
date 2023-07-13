@@ -1,4 +1,4 @@
-name: Rabbit Consumer
+name: Openstack-Rally-Tester
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - "OpenStack-Rally-Tester/**"
 
 jobs:
-  test_and_lint:
+  pylint:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,11 +24,12 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: |
+          cd OpenStack-Rally-Tester && python -m pip install -r requirements.txt
           python -m pip install pylint
       
       - name: Analyse with pylint
         run: |
-          cd OpenStack-Rally-Tester && pylint rally-extract-results.py
+          cd OpenStack-Rally-Tester/usr/local/bin && pylint rally_extract_results.py
 
   shellcheck:
     runs-on: ubuntu-latest
