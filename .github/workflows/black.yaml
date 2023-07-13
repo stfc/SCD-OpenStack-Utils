@@ -31,3 +31,8 @@ jobs:
         uses: psf/black@stable
         with:
             src: "dns_entry_checker"
+
+      - name: Openstack-Rally-Tester
+        uses: psf/black@stable
+        with:
+            src: "OpenStack-Rally-Tester"
