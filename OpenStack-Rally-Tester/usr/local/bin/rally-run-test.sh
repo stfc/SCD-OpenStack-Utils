@@ -18,7 +18,7 @@ else
     echo $rally_results_path
 fi
 echo $rally_results_path
-rally_extract_command="/usr/local/bin/rally-extract-results $rally_results_path"
+rally_extract_command="/usr/local/bin/rally-extract-results.py $rally_results_path"
 echo $rally_extract_command
 $rally_extract_command
 
