@@ -6,6 +6,7 @@ import json
 import sys
 import time
 from configparser import ConfigParser
+from datetime import datetime
 
 import requests
 
@@ -41,34 +42,48 @@ if isinstance(data, dict):
         metrics.append(metric)
 else:
     for test in data:
-        for result in test["result"]:
-            metric = {}
-            metric["fields"] = {}
-            metric["measurement"] = test["key"]["name"]
+        if len(test['result']) < 0:
+            for result in test["result"]:
+                metric = {}
+                metric["fields"] = {}
+                metric["measurement"] = test["key"]["name"]
 
-            metric["fields"]["success"] = 1
-            for sla in test["sla"]:
-                if not sla["success"]:
-                    metric["fields"]["success"] = 0
+                metric["fields"]["success"] = 1
+                for sla in test["sla"]:
+                    if not sla["success"]:
+                        metric["fields"]["success"] = 0
 
-            metric["fields"]["duration"] = result["duration"]
-            # metrics.append(metric)
-            for atomic_action in result["atomic_actions"]:
-                metric["fields"][atomic_action] = result["atomic_actions"][
-                    atomic_action
-                ]
+                metric["fields"]["duration"] = result["duration"]
+                # metrics.append(metric)
+                for atomic_action in result["atomic_actions"]:
+                    metric["fields"][atomic_action] = result["atomic_actions"][
+                        atomic_action
+                    ]
 
-            metric["fields"]["timestamp"] = result["timestamp"]
+                metric["fields"]["timestamp"] = result["timestamp"]
 
-            if test["key"]["name"] == "VMTasks.boot_runcommand_delete":
-                metric["fields"]["image"] = (
-                    '"' + test["key"]["kw"]["args"]["image"]["name"] + '"'
-                )
-                metric["fields"]["network"] = (
-                    '"' + test["key"]["kw"]["args"]["fixednetwork"] + '"'
-                )
+                if test["key"]["name"] == "VMTasks.boot_runcommand_delete":
+                    metric["fields"]["image"] = (
+                        '"' + test["key"]["kw"]["args"]["image"]["name"] + '"'
+                    )
+                    metric["fields"]["network"] = (
+                        '"' + test["key"]["kw"]["args"]["fixednetwork"] + '"'
+                    )
 
-            metrics.append(metric)
+                metrics.append(metric)
+            else:
+                metric = {}
+                metric['fields'] = {}
+                metric['measurement'] = test['key']['name']
+
+                metric['fields']['success'] = 0
+                for sla in test['sla']:
+                    if sla['success'] == False:
+                        metric['fields']['success'] = 0
+
+                metric['fields']['duration'] = test['full_duration']
+                metric['fields']['timestamp'] = datetime.strptime(test['created_at'], '%Y-%d-%mT%H:%M:%S').timestamp() * 1000
+                metrics.append(metric)
 
 json_metrics = []
 for metric in metrics:
