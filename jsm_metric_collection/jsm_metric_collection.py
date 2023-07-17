@@ -1,8 +1,11 @@
 import argparse
 import json
 import sys
+from time import sleep
+
 import requests
 import requests.exceptions
+import pandas as pd
 from requests.auth import HTTPBasicAuth
 
 
@@ -43,14 +46,26 @@ def parse_args(inp_args):
 
 def get_response_json(auth, headers, url):
 
-    response = requests.request(
-        "GET",
-        url,
-        headers=headers,
-        auth=auth
-    )
+    session = requests.session()
+    session.headers = headers
+    session.auth = auth
+
+    while True:
+        response = session.get(url)
+        if response.content != b'{"status":"RUNNING"}':
+            break
+        else:
+            sleep(1)
 
     return json.loads(response.text)
+
+
+def get_report_task_id(auth, headers, host, query):
+    url = f"{host}/rest/servicedesk/reports/1/reports/async/STFCCLOUD/{query}"
+
+    json_load = get_response_json(auth, headers, url)
+
+    return json_load.get("taskId")
 
 
 def get_issues_amount(auth, headers, host):
@@ -101,18 +116,27 @@ def jsm_metric_collection():
     }
 
     issues_amount = get_issues_amount(auth, headers, host)
-    weekly_created_vs_resolved = get_report_values(auth, headers, host, "54238")
-    monthly_created_vs_resolved = get_report_values(auth, headers, host, "54240")
-    weekly_sla = get_report_values(auth, headers, host, "54249")
-    monthly_sla = get_report_values(auth, headers, host, "54250")
+
+    weekly_cvr_task_id = get_report_task_id(auth, headers, host, "32?timescaleId=2")
+    weekly_created_vs_resolved = get_report_values(auth, headers, host, weekly_cvr_task_id)
+
+    monthly_cvr_task_id = get_report_task_id(auth, headers, host, "32?timescaleId=4")
+    monthly_created_vs_resolved = get_report_values(auth, headers, host, monthly_cvr_task_id)
+
+    weekly_sla_task_id = get_report_task_id(auth, headers, host, "36?timescaleId=2")
+    weekly_sla = get_report_values(auth, headers, host, weekly_sla_task_id)
+
+    monthly_sla_task_id = get_report_task_id(auth, headers, host, "36?timescaleId=4")
+    monthly_sla = get_report_values(auth, headers, host, monthly_sla_task_id)
+
     weekly_customer_satisfaction = get_customer_satisfaction(auth, headers, host, 2)
     monthly_customer_satisfaction = get_customer_satisfaction(auth, headers, host, 4)
 
     print(issues_amount)
     print(weekly_created_vs_resolved)
     print(monthly_created_vs_resolved)
-    print(weekly_sla[0]*100)
-    print(monthly_sla[0]*100)
+    print(weekly_sla)
+    print(monthly_sla)
     print(weekly_customer_satisfaction)
     print(monthly_customer_satisfaction)
 
