@@ -76,7 +76,7 @@ else:
                 metric['fields'] = {}
                 metric['measurement'] = test['key']['name']
 
-                metric['fields']['success'] = 0
+                metric['fields']['success'] = 1
                 for sla in test['sla']:
                     if sla['success'] == False:
                         metric['fields']['success'] = 0
