@@ -42,7 +42,7 @@ if isinstance(data, dict):
         metrics.append(metric)
 else:
     for test in data:
-        if len(test['result']) < 0:
+        if len(test['result']) > 0:
             for result in test["result"]:
                 metric = {}
                 metric["fields"] = {}
