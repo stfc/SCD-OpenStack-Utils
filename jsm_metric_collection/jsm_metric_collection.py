@@ -1,7 +1,9 @@
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from datetime import datetime
+from pathlib import Path
 from sys import argv
 from time import sleep
+from os import path
 
 import csv
 import json
@@ -46,6 +48,13 @@ def parse_args(inp_args):
 
 
 def get_response_json(auth, headers, url):
+    """
+    Function to send a get request to a url and return the response as json
+    :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
+    :param headers: A request Header (dict)
+    :param url: The URL to send the request (string)
+    :returns: A dictionary of JSON values
+    """
     session = requests.session()
     session.headers = headers
     session.auth = auth
@@ -61,6 +70,14 @@ def get_response_json(auth, headers, url):
 
 
 def get_report_task_id(auth, headers, host, query):
+    """
+    Function to get a report task ID so that task can be queried
+    :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
+    :param headers: A request Header (dict)
+    :param host: The host used to create the URL to send the request (string)
+    :param query: The section of the URL that signifies the task
+    :returns: A string containing the task ID
+    """
     url = f"{host}/rest/servicedesk/reports/1/reports/async/STFCCLOUD/{query}"
 
     json_load = get_response_json(auth, headers, url)
@@ -69,6 +86,13 @@ def get_report_task_id(auth, headers, host, query):
 
 
 def get_issues_amount(auth, headers, host):
+    """
+    Function to get the number of issues using a loop, as only 50 can be checked at a time
+    :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
+    :param headers: A request Header (dict)
+    :param host: The host used to create the URL to send the request (string)
+    :returns: A list with only a string containing the number of issues
+    """
     return_amount = 50
     issues_amount = 0
     while return_amount == 50:
@@ -83,6 +107,14 @@ def get_issues_amount(auth, headers, host):
 
 
 def get_report_values(auth, headers, host, job_id):
+    """
+    Function to get the value in a custom report using a job ID
+    :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
+    :param headers: A request Header (dict)
+    :param host: The host used to create the URL to send the request (string)
+    :param job_id: A string containing the ID of the report
+    :returns: A list with only a string containing the number of issues
+    """
     url = f"{host}/rest/servicedesk/reports/1/reports/async/STFCCLOUD/32/poll?jobID={job_id}"
 
     json_load = get_response_json(auth, headers, url)
@@ -95,6 +127,14 @@ def get_report_values(auth, headers, host, job_id):
 
 
 def get_customer_satisfaction(auth, headers, host, time_series):
+    """
+    Function to get the customer satisfaction over a period of time
+    :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
+    :param headers: A request Header (dict):
+    :param host: The host used to create the URL to send the request (string)
+    :param time_series: A string containing the timescale to check
+    :returns: A list with the ints for the number of issues created and resolved in a period
+    """
     url = f"{host}/rest/servicedesk/1/projects/STFCCLOUD/report/feedback?start=0&limit=20&jsonFilter={{" \
           f"%22timescaleId%22%3A{time_series}}}&expand=overall "
 
@@ -103,77 +143,123 @@ def get_customer_satisfaction(auth, headers, host, time_series):
     return [json_load.get("summary").get("average"), json_load.get("summary").get("count")]
 
 
-def generate_xlsx_file(filepath):
-    jsm_data = list(csv.reader(open("data.csv")))
-    data_len = len(jsm_data)
-    titles = ("Date", "Issues", "Created Weekly", "Resolved Weekly", "SLA Weekly", "Average Review Weekly",
-              "Reviews Weekly", "Created Monthly", "Resolved Monthly", "SLA Monthly", "Average Review Monthly",
-              "Reviews Monthly")
-
-    workbook = xlsxwriter.Workbook(filepath, {"strings_to_numbers": True})
-    jsm_data_worksheet = workbook.add_worksheet("JSM Data")
-
-    date_format = workbook.add_format({"num_format": "dd/mm/yyyy"})
-    percentage_format = workbook.add_format({"num_format": "0.00%"})
-
-    jsm_data_worksheet.add_table(f"A1:L{data_len + 1}", {"data": jsm_data,
-                                                         "style": "Table Style Light 15",
-                                                         "columns": [{"header": titles[0],
-                                                                      "format": date_format},
-                                                                     {"header": titles[1]},
-                                                                     {"header": titles[2]},
-                                                                     {"header": titles[3]},
-                                                                     {"header": titles[4],
-                                                                      "format": percentage_format},
-                                                                     {"header": titles[5]},
-                                                                     {"header": titles[6]},
-                                                                     {"header": titles[7]},
-                                                                     {"header": titles[8]},
-                                                                     {"header": titles[9],
-                                                                      "format": percentage_format},
-                                                                     {"header": titles[10]},
-                                                                     {"header": titles[11]},
-                                                                     ]
-                                                         })
-
-    jsm_data_worksheet.autofit()
-
-    graph_worksheet = workbook.add_worksheet("JSM Graphs")
-
-    for i in range(len(titles) - 1):
-        chart = workbook.add_chart({"type": "line"})
-        chart.add_series({"categories": f"='JSM Data'!$A$2:$A${data_len + 1}",
-                          "values": f"='JSM Data'!${chr(i + 66)}$2:${chr(i + 66)}${data_len + 1}"})
-        chart.set_x_axis({"name": "Date"})
-        chart.set_title({"name": titles[i + 1]})
-        chart.set_legend({"none": True})
-        graph_worksheet.insert_chart(f"{chr(66 + (8 * (i % 3)))}{2 + (16 * (i // 3))}", chart)
-
-    workbook.close()
-
-
-def save_csv(jsm_data):
+def save_csv(jsm_data, csv_output_location):
+    """
+    Function to create a csv file or append to one with a line of data
+    :param jsm_data: A list of all the data gotten (list)
+    :param csv_output_location: The location of the csv output file (string)
+    """
     data_not_exists = True
 
-    open("data.csv", "a+")
+    open(csv_output_location, "a+")
 
-    with open("data.csv", "r", newline="") as csv_file:
+    with open(csv_output_location, "r", newline="") as csv_file:
         reader = csv.reader(csv_file)
         for row in reader:
             if row[0] == jsm_data[0]:
                 data_not_exists = False
 
     if data_not_exists:
-        with open("data.csv", "a+", newline="") as csv_file:
+        with open(csv_output_location, "a+", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(jsm_data)
 
 
+def generate_xlsx_file(csv_output_location, xlsx_output_location):
+    """
+    Function to generate an Excel file using a csv file
+    :param csv_output_location: The location of the csv output file (string)
+    :param xlsx_output_location: The location of the Excel output file (string)
+    """
+    jsm_data = list(csv.reader(open(csv_output_location)))
+
+    titles = ("Date", "Issues", "Created Weekly", "Resolved Weekly", "SLA Weekly", "Average Review Weekly",
+              "Reviews Weekly", "Created Monthly", "Resolved Monthly", "SLA Monthly", "Average Review Monthly",
+              "Reviews Monthly")
+
+    workbook = xlsxwriter.Workbook(xlsx_output_location, {"strings_to_numbers": True})
+
+    generate_jsm_data_page(workbook, jsm_data, titles)
+
+    generate_jsm_graph_page(workbook, jsm_data, titles)
+
+    workbook.close()
+
+
+def generate_jsm_data_page(workbook, jsm_data, titles):
+    """
+    Function to generate page with a table containing data from a csv file for an excel file
+    :param workbook: The workbook in which to create the page (workbook)
+    :param jsm_data: The data from a csv file (list)
+    :param titles: The titles of the columns to be used for the table (list)
+    """
+    jsm_data_worksheet = workbook.add_worksheet("JSM Data")
+
+    date_format = workbook.add_format({"num_format": "dd/mm/yyyy"})
+    percentage_format = workbook.add_format({"num_format": "0.00%"})
+
+    jsm_data_worksheet.add_table(
+        f"A1:L{len(jsm_data) + 1}",
+        {"data": jsm_data,
+         "style": "Table Style Light 15",
+         "columns": [{"header": titles[0],
+                      "format": date_format},
+                     {"header": titles[1]},
+                     {"header": titles[2]},
+                     {"header": titles[3]},
+                     {"header": titles[4],
+                      "format": percentage_format},
+                     {"header": titles[5]},
+                     {"header": titles[6]},
+                     {"header": titles[7]},
+                     {"header": titles[8]},
+                     {"header": titles[9],
+                      "format": percentage_format},
+                     {"header": titles[10]},
+                     {"header": titles[11]},
+                     ]
+         })
+
+    jsm_data_worksheet.autofit()
+
+
+def generate_jsm_graph_page(workbook, jsm_data, titles):
+    """
+    Function to generate page with a table containing data from a csv file for an excel file
+    :param workbook: The workbook in which to create the page (workbook)
+    :param jsm_data: The data from a csv file (list)
+    :param titles: The titles to be used for the graphs (list)
+    """
+    graph_worksheet = workbook.add_worksheet("JSM Graphs")
+
+    for i in range(len(titles) - 1):
+        chart = workbook.add_chart({"type": "line"})
+        chart.add_series({
+            "categories": f"='JSM Data'!$A$2:$A${len(jsm_data) + 1}",
+            "values": f"='JSM Data'!${chr(i + 66)}$2:${chr(i + 66)}${len(jsm_data) + 1}",
+            "marker": {"type": "circle"},
+        })
+        chart.set_x_axis({"name": "Date"})
+        chart.set_title({"name": titles[i + 1]})
+        chart.set_legend({"none": True})
+        graph_worksheet.insert_chart(f"{chr(66 + (8 * (i % 3)))}{2 + (16 * (i // 3))}", chart)
+
+
 def jsm_metric_collection():
+    """
+    Main function to query the Service Desk for data, combine the data and save is in a CSV format and then
+    take that csv file to generate an excel spreadsheet for easy viewing of that data over time.
+    """
     args = parse_args(argv[1:])
     host = "https://stfc.atlassian.net"
     username = args.username
     password = args.password
+    output_location = args.output
+
+    Path(output_location).mkdir(exist_ok=True)
+
+    csv_output_location = path.join(output_location, "JSM Metric Data.csv")
+    xlsx_output_location = path.join(output_location, "JSM Metric Spreadsheet.xlsx")
 
     auth = requests.auth.HTTPBasicAuth(username, password)
     headers = {
@@ -198,13 +284,13 @@ def jsm_metric_collection():
     monthly_customer_satisfaction = get_customer_satisfaction(auth, headers, host, 4)
 
     jsm_data = [datetime.today().date().strftime("%Y-%m-%d")] + \
-               issues_amount + weekly_created_vs_resolved + weekly_sla + \
-               weekly_customer_satisfaction + monthly_created_vs_resolved + \
-               monthly_sla + monthly_customer_satisfaction
+        issues_amount + weekly_created_vs_resolved + weekly_sla + \
+        weekly_customer_satisfaction + monthly_created_vs_resolved + \
+        monthly_sla + monthly_customer_satisfaction
 
-    save_csv(jsm_data)
+    save_csv(jsm_data, csv_output_location)
 
-    generate_xlsx_file("test.xlsx")
+    generate_xlsx_file(csv_output_location, xlsx_output_location)
 
 
 if __name__ == '__main__':
