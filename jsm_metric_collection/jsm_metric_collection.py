@@ -59,12 +59,18 @@ def get_response_json(auth, headers, url):
     session.headers = headers
     session.auth = auth
 
-    while True:
-        response = session.get(url)
+    attempts = 5
+
+    while attempts > 0:
+        response = session.get(url, timeout=5)
         if response.content != b'{"status":"RUNNING"}' and response.content != b'{"status":"ENQUEUED"}':
             break
         else:
             sleep(1)
+            attempts = attempts-1
+
+    if attempts == 0:
+        raise requests.exceptions.Timeout("Get request status not completed before timeout")
 
     return json.loads(response.text)
 
@@ -149,7 +155,7 @@ def save_csv(jsm_data, csv_output_location):
     :param jsm_data: A list of all the data gotten (list)
     :param csv_output_location: The location of the csv output file (string)
     """
-    data_not_exists = True
+    data_exists = False
 
     open(csv_output_location, "a+")
 
@@ -157,9 +163,9 @@ def save_csv(jsm_data, csv_output_location):
         reader = csv.reader(csv_file)
         for row in reader:
             if row[0] == jsm_data[0]:
-                data_not_exists = False
+                data_exists = True
 
-    if data_not_exists:
+    if not data_exists:
         with open(csv_output_location, "a+", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(jsm_data)
