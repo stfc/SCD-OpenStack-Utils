@@ -31,3 +31,9 @@ jobs:
         uses: psf/black@stable
         with:
             src: "dns_entry_checker"
+
+      - name: JSM Metric Collection
+        uses: psf/black@stable
+        with:
+            src: "jsm_metric_collection"
+
