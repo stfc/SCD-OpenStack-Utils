@@ -37,3 +37,7 @@ jobs:
         with:
             src: "jsm_metric_collection"
 
+      - name: Openstack-Rally-Tester
+        uses: psf/black@stable
+        with:
+            src: "OpenStack-Rally-Tester"

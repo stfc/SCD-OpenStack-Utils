@@ -206,7 +206,7 @@ class DNSEntryCheckerTests(unittest.TestCase):
         self.assertEqual(
             args,
             Namespace(
-                user="test_user", password="test_pass", ip="test_ip", output=None
+                user="test_user", password="test_pass", ip="test_ip", output="output"
             ),
         )
 

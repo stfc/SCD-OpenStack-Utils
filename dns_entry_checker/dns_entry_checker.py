@@ -1,5 +1,6 @@
 from collections import defaultdict
 from re import compile as re_compile
+from pathlib import Path
 import argparse
 import os
 import sys
@@ -137,18 +138,25 @@ def parse_args(inp_args):
         "--output",
         metavar="OUTPUT",
         help="Directory to create the output files in",
+        default="output",
     )
     args = parser.parse_args(inp_args)
     return args
 
 
 def dns_entry_checker():
+    """
+    Main Function to get a list of IP's and matching DNS'
+    and check whether there are mismatches, missing values
+    or gaps in the list, then output those IPs and DNS' into
+    4 files.
+    """
     # Define the variables with the script arguments
     args = parse_args(sys.argv[1:])
     user = args.user
     password = args.password
     ip = args.ip
-    output = args.output
+    output_location = args.output
 
     # Create an SSH client with the credentials given
     client = create_client(ip, user, password)
@@ -162,17 +170,20 @@ def dns_entry_checker():
         "grep '172.16.'",
     )
 
+    # Ensure output directory exists
+    Path(output_location).mkdir(exist_ok=True)
+
     # Define the filepath for the output to be saved to
     forward_mismatch_filepath = os.path.join(
-        output or "output", "forward_mismatch_list.txt"
+        output_location, "forward_mismatch_list.txt"
     )
     backward_mismatch_filepath = os.path.join(
-        output or "output", "backward_mismatch_list.txt"
+        output_location, "backward_mismatch_list.txt"
     )
     backward_missing_filepath = os.path.join(
-        output or "output", "backward_missing_list.txt"
+        output_location, "backward_missing_list.txt"
     )
-    gap_missing_filepath = os.path.join(output or "output", "gap_missing_list.txt")
+    gap_missing_filepath = os.path.join(output_location, "gap_missing_list.txt")
 
     # Check if output files already exist
     for filepath in [

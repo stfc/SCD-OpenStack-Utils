@@ -1,4 +1,5 @@
 from re import compile as re_compile
+from pathlib import Path
 import argparse
 import os
 import sys
@@ -128,30 +129,39 @@ def parse_args(inp_args):
         "--output",
         metavar="OUTPUT",
         help="Directory to create the output files in",
+        default="output",
     )
     args = parser.parse_args(inp_args)
     return args
 
 
 def aq_zombie_finder():
+    """
+    Main Function to query aquilon to get a list of IPs of
+    VMs with Aquilon images, check if VMs that no longer
+    exist are still being managed by Aquilon or if VMs that
+    should be managed by Aquilon aren't, then output the IPs
+    into 2 files.
+    """
     # Define the variables with the script arguments
     args = parse_args(sys.argv[1:])
     user = args.user
     password = args.password
     openstack_ip = args.ip
-    output = args.output
+    output_location = args.output
 
     # Create a paramiko SSH client to the VM running Openstack and to Aquilon
     openstack_client = create_client(openstack_ip, user, password)
     aquilon_client = create_client("aquilon.gridpp.rl.ac.uk", user, password)
 
+    # Ensure output directory exists
+    Path(output_location).mkdir(exist_ok=True)
+
     # Define the filepath for the output to be saved to
     openstack_zombie_filepath = os.path.join(
-        output or "output", "openstack_zombie_list.txt"
+        output_location, "openstack_zombie_list.txt"
     )
-    aquilon_zombie_filepath = os.path.join(
-        output or "output", "aquilon_zombie_list.txt"
-    )
+    aquilon_zombie_filepath = os.path.join(output_location, "aquilon_zombie_list.txt")
 
     # Check if output files already exist
     for filepath in [
