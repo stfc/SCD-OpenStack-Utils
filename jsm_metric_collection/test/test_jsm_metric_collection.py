@@ -39,7 +39,7 @@ class JSMMetricCollectionTests(unittest.TestCase):
     def test_get_response_json(self, __, session_response_return_value, expected_out):
 
         with mock.patch("jsm_metric_collection.requests") and patch(
-                "jsm_metric_collection.json"
+            "jsm_metric_collection.json"
         ):
             jsm_metric_collection.requests.session = MagicMock()
             jsm_metric_collection.requests.session.return_value.get.return_value.content = (
@@ -76,8 +76,8 @@ class JSMMetricCollectionTests(unittest.TestCase):
         with mock.patch("jsm_metric_collection.get_response_json"):
             values = ChangingJson([{"size": 50}, {"size": 32}])
             jsm_metric_collection.get_response_json.return_value = values
-            self.assertEqual(jsm_metric_collection.get_issues_amount(
-                auth, headers, host), [82]
+            self.assertEqual(
+                jsm_metric_collection.get_issues_amount(auth, headers, host), [82]
             )
 
     def test_get_report_values(self):

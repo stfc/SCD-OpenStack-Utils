@@ -332,5 +332,5 @@ def jsm_metric_collection():
     generate_xlsx_file(csv_output_location, xlsx_output_location)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     jsm_metric_collection()
