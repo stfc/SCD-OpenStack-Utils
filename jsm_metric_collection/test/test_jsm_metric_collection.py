@@ -38,9 +38,13 @@ class JSMMetricCollectionTests(unittest.TestCase):
     )
     def test_get_response_json(self, __, session_response_return_value, expected_out):
 
-        with mock.patch("jsm_metric_collection.requests") and patch("jsm_metric_collection.json"):
+        with mock.patch("jsm_metric_collection.requests") and patch(
+                "jsm_metric_collection.json"
+        ):
             jsm_metric_collection.requests.session = MagicMock()
-            jsm_metric_collection.requests.session.return_value.get.return_value.content = session_response_return_value
+            jsm_metric_collection.requests.session.return_value.get.return_value.content = (
+                session_response_return_value
+            )
 
             jsm_metric_collection.json = MagicMock()
 
@@ -49,8 +53,13 @@ class JSMMetricCollectionTests(unittest.TestCase):
 
                 jsm_metric_collection.json.loads.assert_called_once()
             else:
-                self.assertRaises(requests.exceptions.Timeout, jsm_metric_collection.get_response_json,
-                                  auth, headers, host)
+                self.assertRaises(
+                    requests.exceptions.Timeout,
+                    jsm_metric_collection.get_response_json,
+                    auth,
+                    headers,
+                    host,
+                )
 
     def test_get_report_task_id(self):
         query = "test?timescaleId=2"
@@ -58,13 +67,18 @@ class JSMMetricCollectionTests(unittest.TestCase):
         with mock.patch("jsm_metric_collection.get_response_json"):
             jsm_metric_collection.get_response_json.return_value = {"taskId": "10000"}
 
-            self.assertEqual(jsm_metric_collection.get_report_task_id(auth, headers, host, query), "10000")
+            self.assertEqual(
+                jsm_metric_collection.get_report_task_id(auth, headers, host, query),
+                "10000",
+            )
 
     def test_get_issues_amount(self):
         with mock.patch("jsm_metric_collection.get_response_json"):
             values = ChangingJson([{"size": 50}, {"size": 32}])
             jsm_metric_collection.get_response_json.return_value = values
-            self.assertEqual(jsm_metric_collection.get_issues_amount(auth, headers, host), [82])
+            self.assertEqual(jsm_metric_collection.get_issues_amount(
+                auth, headers, host), [82]
+            )
 
     def test_get_report_values(self):
         job_id = "10000"
@@ -72,20 +86,28 @@ class JSMMetricCollectionTests(unittest.TestCase):
         with mock.patch("jsm_metric_collection.get_response_json"):
             jsm_metric_collection.get_response_json.return_value = {
                 "reportDataResponse": {
-                    "series": (
-                        {"seriesSummaryValue": 10}, {"seriesSummaryValue": 20})}}
-            self.assertEqual(jsm_metric_collection.get_report_values(auth, headers, host, job_id), [10, 20])
+                    "series": ({"seriesSummaryValue": 10}, {"seriesSummaryValue": 20})
+                }
+            }
+            self.assertEqual(
+                jsm_metric_collection.get_report_values(auth, headers, host, job_id),
+                [10, 20],
+            )
 
     def test_get_customer_satisfaction(self):
         time_series = 4
 
         with mock.patch("jsm_metric_collection.get_response_json"):
             jsm_metric_collection.get_response_json.return_value = {
-                "summary": {
-                    "average": 5, "count": 5
-                }}
+                "summary": {"average": 5, "count": 5}
+            }
 
-            self.assertEqual(jsm_metric_collection.get_customer_satisfaction(auth, headers, host, time_series), [5, 5])
+            self.assertEqual(
+                jsm_metric_collection.get_customer_satisfaction(
+                    auth, headers, host, time_series
+                ),
+                [5, 5],
+            )
 
     @parameterized.expand(
         [
@@ -104,9 +126,15 @@ class JSMMetricCollectionTests(unittest.TestCase):
             jsm_metric_collection.save_csv(jsm_data, csv_output_location)
 
             if expected_out:
-                assert call("csv_output_location", "a+", "newline=") not in csv_reader.mock_calls
+                assert (
+                    call("csv_output_location", "a+", "newline=")
+                    not in csv_reader.mock_calls
+                )
             else:
-                assert call("csv_output_location", "a+", "newline=") in csv_reader.mock_calls
+                assert (
+                    call("csv_output_location", "a+", "newline=")
+                    in csv_reader.mock_calls
+                )
 
     @mock.patch("builtins.open")
     def test_generate_xlsx_file(self, __):
@@ -117,7 +145,9 @@ class JSMMetricCollectionTests(unittest.TestCase):
             jsm_metric_collection.generate_jsm_data_page = MagicMock()
             jsm_metric_collection.generate_jsm_graph_page = MagicMock()
 
-            jsm_metric_collection.generate_xlsx_file(csv_output_location, xlsx_output_location)
+            jsm_metric_collection.generate_xlsx_file(
+                csv_output_location, xlsx_output_location
+            )
 
             jsm_metric_collection.generate_jsm_data_page.assert_called_once()
             jsm_metric_collection.generate_jsm_graph_page.assert_called_once()
@@ -131,7 +161,8 @@ class JSMMetricCollectionTests(unittest.TestCase):
         jsm_metric_collection.generate_jsm_data_page(workbook, jsm_data, titles)
 
         workbook.add_worksheet.return_value.add_table.assert_called_once_with(
-            "A1:L2", {
+            "A1:L2",
+            {
                 "data": [["test data"]],
                 "style": "Table Style Light 15",
                 "columns": [
@@ -139,16 +170,16 @@ class JSMMetricCollectionTests(unittest.TestCase):
                     {"header": 1},
                     {"header": 2},
                     {"header": 3},
-                    {"header": 4, 'format': "test_format"},
+                    {"header": 4, "format": "test_format"},
                     {"header": 5},
                     {"header": 6},
                     {"header": 7},
                     {"header": 8},
                     {"header": 9, "format": "test_format"},
                     {"header": 10},
-                    {"header": 11}
-                ]
-            }
+                    {"header": 11},
+                ],
+            },
         )
 
     def test_generate_jsm_graph_page(self):
@@ -157,7 +188,21 @@ class JSMMetricCollectionTests(unittest.TestCase):
 
         jsm_metric_collection.generate_jsm_graph_page(workbook, jsm_data, titles)
 
-        workbook.add_worksheet.return_value.insert_chart.assert_called_with("J50", workbook.add_chart())
+        workbook.add_worksheet.return_value.insert_chart.assert_has_calls(
+            [
+                call("B2", workbook.add_chart()),
+                call("J2", workbook.add_chart()),
+                call("R2", workbook.add_chart()),
+                call("B18", workbook.add_chart()),
+                call("J18", workbook.add_chart()),
+                call("R18", workbook.add_chart()),
+                call("B34", workbook.add_chart()),
+                call("J34", workbook.add_chart()),
+                call("R34", workbook.add_chart()),
+                call("B50", workbook.add_chart()),
+                call("J50", workbook.add_chart()),
+            ]
+        )
 
 
 if __name__ == "__main__":

@@ -19,9 +19,8 @@ def parse_args(inp_args):
     :returns: A dictionary of parsed args
     """
     # Get arguments passed to the script
-    parser = ArgumentParser(
-        formatter_class=RawDescriptionHelpFormatter
-    )
+    parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
+
     parser.add_argument(
         "-u",
         "--username",
@@ -63,14 +62,19 @@ def get_response_json(auth, headers, url):
 
     while attempts > 0:
         response = session.get(url, timeout=5)
-        if response.content != b'{"status":"RUNNING"}' and response.content != b'{"status":"ENQUEUED"}':
+        if (
+            response.content != b'{"status":"RUNNING"}'
+            and response.content != b'{"status":"ENQUEUED"}'
+        ):
             break
         else:
             sleep(1)
-            attempts = attempts-1
+            attempts = attempts - 1
 
     if attempts == 0:
-        raise requests.exceptions.Timeout("Get request status not completed before timeout")
+        raise requests.exceptions.Timeout(
+            "Get request status not completed before timeout"
+        )
 
     return json.loads(response.text)
 
@@ -141,12 +145,17 @@ def get_customer_satisfaction(auth, headers, host, time_series):
     :param time_series: A string containing the timescale to check
     :returns: A list with the ints for the number of issues created and resolved in a period
     """
-    url = f"{host}/rest/servicedesk/1/projects/STFCCLOUD/report/feedback?start=0&limit=20&jsonFilter={{" \
-          f"%22timescaleId%22%3A{time_series}}}&expand=overall "
+    url = (
+        f"{host}/rest/servicedesk/1/projects/STFCCLOUD/report/feedback?start=0&limit=20&jsonFilter={{"
+        f"%22timescaleId%22%3A{time_series}}}&expand=overall"
+    )
 
     json_load = get_response_json(auth, headers, url)
 
-    return [json_load.get("summary").get("average"), json_load.get("summary").get("count")]
+    return [
+        json_load.get("summary").get("average"),
+        json_load.get("summary").get("count"),
+    ]
 
 
 def save_csv(jsm_data, csv_output_location):
@@ -179,9 +188,20 @@ def generate_xlsx_file(csv_output_location, xlsx_output_location):
     """
     jsm_data = list(csv.reader(open(csv_output_location)))
 
-    titles = ("Date", "Issues", "Created Weekly", "Resolved Weekly", "SLA Weekly", "Average Review Weekly",
-              "Reviews Weekly", "Created Monthly", "Resolved Monthly", "SLA Monthly", "Average Review Monthly",
-              "Reviews Monthly")
+    titles = (
+        "Date",
+        "Issues",
+        "Created Weekly",
+        "Resolved Weekly",
+        "SLA Weekly",
+        "Average Review Weekly",
+        "Reviews Weekly",
+        "Created Monthly",
+        "Resolved Monthly",
+        "SLA Monthly",
+        "Average Review Monthly",
+        "Reviews Monthly",
+    )
 
     workbook = xlsxwriter.Workbook(xlsx_output_location, {"strings_to_numbers": True})
 
@@ -206,25 +226,25 @@ def generate_jsm_data_page(workbook, jsm_data, titles):
 
     jsm_data_worksheet.add_table(
         f"A1:L{len(jsm_data) + 1}",
-        {"data": jsm_data,
-         "style": "Table Style Light 15",
-         "columns": [{"header": titles[0],
-                      "format": date_format},
-                     {"header": titles[1]},
-                     {"header": titles[2]},
-                     {"header": titles[3]},
-                     {"header": titles[4],
-                      "format": percentage_format},
-                     {"header": titles[5]},
-                     {"header": titles[6]},
-                     {"header": titles[7]},
-                     {"header": titles[8]},
-                     {"header": titles[9],
-                      "format": percentage_format},
-                     {"header": titles[10]},
-                     {"header": titles[11]},
-                     ]
-         })
+        {
+            "data": jsm_data,
+            "style": "Table Style Light 15",
+            "columns": [
+                {"header": titles[0], "format": date_format},
+                {"header": titles[1]},
+                {"header": titles[2]},
+                {"header": titles[3]},
+                {"header": titles[4], "format": percentage_format},
+                {"header": titles[5]},
+                {"header": titles[6]},
+                {"header": titles[7]},
+                {"header": titles[8]},
+                {"header": titles[9], "format": percentage_format},
+                {"header": titles[10]},
+                {"header": titles[11]},
+            ],
+        },
+    )
 
     jsm_data_worksheet.autofit()
 
@@ -240,15 +260,19 @@ def generate_jsm_graph_page(workbook, jsm_data, titles):
 
     for i in range(len(titles) - 1):
         chart = workbook.add_chart({"type": "line"})
-        chart.add_series({
-            "categories": f"='JSM Data'!$A$2:$A${len(jsm_data) + 1}",
-            "values": f"='JSM Data'!${chr(i + 66)}$2:${chr(i + 66)}${len(jsm_data) + 1}",
-            "marker": {"type": "circle"},
-        })
+        chart.add_series(
+            {
+                "categories": f"='JSM Data'!$A$2:$A${len(jsm_data) + 1}",
+                "values": f"='JSM Data'!${chr(i + 66)}$2:${chr(i + 66)}${len(jsm_data) + 1}",
+                "marker": {"type": "circle"},
+            }
+        )
         chart.set_x_axis({"name": "Date"})
         chart.set_title({"name": titles[i + 1]})
         chart.set_legend({"none": True})
-        graph_worksheet.insert_chart(f"{chr(66 + (8 * (i % 3)))}{2 + (16 * (i // 3))}", chart)
+        graph_worksheet.insert_chart(
+            f"{chr(66 + (8 * (i % 3)))}{2 + (16 * (i // 3))}", chart
+        )
 
 
 def jsm_metric_collection():
@@ -275,11 +299,14 @@ def jsm_metric_collection():
     issues_amount = get_issues_amount(auth, headers, host)
 
     weekly_cvr_task_id = get_report_task_id(auth, headers, host, "32?timescaleId=2")
-    weekly_created_vs_resolved = get_report_values(auth, headers, host, weekly_cvr_task_id)
+    weekly_created_vs_resolved = get_report_values(
+        auth, headers, host, weekly_cvr_task_id
+    )
 
     monthly_cvr_task_id = get_report_task_id(auth, headers, host, "32?timescaleId=4")
-    monthly_created_vs_resolved = get_report_values(auth, headers, host, monthly_cvr_task_id)
-
+    monthly_created_vs_resolved = get_report_values(
+        auth, headers, host, monthly_cvr_task_id
+    )
     weekly_sla_task_id = get_report_task_id(auth, headers, host, "36?timescaleId=2")
     weekly_sla = get_report_values(auth, headers, host, weekly_sla_task_id)
 
@@ -289,10 +316,16 @@ def jsm_metric_collection():
     weekly_customer_satisfaction = get_customer_satisfaction(auth, headers, host, 2)
     monthly_customer_satisfaction = get_customer_satisfaction(auth, headers, host, 4)
 
-    jsm_data = [datetime.today().date().strftime("%Y-%m-%d")] + \
-        issues_amount + weekly_created_vs_resolved + weekly_sla + \
-        weekly_customer_satisfaction + monthly_created_vs_resolved + \
-        monthly_sla + monthly_customer_satisfaction
+    jsm_data = (
+        [datetime.today().date().strftime("%Y-%m-%d")]
+        + issues_amount
+        + weekly_created_vs_resolved
+        + weekly_sla
+        + weekly_customer_satisfaction
+        + monthly_created_vs_resolved
+        + monthly_sla
+        + monthly_customer_satisfaction
+    )
 
     save_csv(jsm_data, csv_output_location)
 
