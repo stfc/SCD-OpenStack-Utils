@@ -37,7 +37,6 @@ class JSMMetricCollectionTests(unittest.TestCase):
         ]
     )
     def test_get_response_json(self, __, session_response_return_value, expected_out):
-
         with mock.patch("jsm_metric_collection.requests") and patch(
             "jsm_metric_collection.json"
         ):
