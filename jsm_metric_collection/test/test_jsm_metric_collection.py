@@ -50,7 +50,7 @@ class JSMMetricCollectionTests(unittest.TestCase):
     """
     Class for the tests to be run against the functions from jsm_metric_collection.py
     """
-    
+
     @parameterized.expand(
         [
             ("check found", "something-else", True),
