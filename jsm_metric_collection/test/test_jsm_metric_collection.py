@@ -19,6 +19,7 @@ class ChangingJson:
     """
     Class to represent a json object which changes value when it's called.
     """
+
     def __init__(self, values):
         """
         Constructs the attributes for the ChangingJson object
@@ -49,6 +50,7 @@ class JSMMetricCollectionTests(unittest.TestCase):
     """
     Class for the tests to be run against the functions from jsm_metric_collection.py
     """
+    
     @parameterized.expand(
         [
             ("check found", "something-else", True),
