@@ -19,13 +19,13 @@ parameterized: 0.9.0
 
 ## Setup
 Running the script:
-'''
+```
 $ cd ../jsm_metric_collection
 $ pip install -r requirements.txt
 $ python3 jsm_metric_collection.py
-'''
+```
 
 Running the unit tests:
-'''
+```
 $ python3 -m unittest discover -s ./test -p "test_*.py"
-'''
+```
