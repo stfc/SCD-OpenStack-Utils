@@ -44,11 +44,36 @@ def parse_args(inp_args):
         default="output",
     )
     parser.add_argument(
-        "-d",
-        "--date",
-        metavar="Date",
-        help="Date to get issues since",
-        default=datetime.now() - relativedelta(months=1),
+        "-s",
+        "--start_date",
+        metavar="START_DATE",
+        help="Date to get issues from",
+        default=datetime.now().strftime("%Y-%m-%d"),
+    )
+    parser.add_argument(
+        "-e",
+        "--end_date",
+        metavar="END_DATE",
+        help="Date to get issues to",
+        default=(datetime.now() - relativedelta(months=1)).strftime("%Y-%m-%d"),
+    )
+    parser.add_argument(
+        "-a",
+        "--assigned",
+        metavar="ASSIGNED",
+        help="Assigned user to get tickets from",
+    )
+    parser.add_argument(
+        "-f",
+        "--filter_for",
+        metavar="FILTER_FOR",
+        help="Strings to filter the word cloud for",
+    )
+    parser.add_argument(
+        "-n",
+        "--filter_not",
+        metavar="FILTER_NOT",
+        help="Strings to filter the word cloud to not have",
     )
     args = parser.parse_args(inp_args)
     return args
@@ -87,14 +112,14 @@ def get_response_json(auth, headers, url):
     return json.loads(response.text)
 
 
-def get_issues_contents_after_time(auth, headers, host, date):
+def get_issues_contents_after_time(auth, headers, host, issue_filter):
     """
-    Function to get the number of issues using a loop, as only 50 can be checked at a time
-    :param date: Time to get issues since (datetime.datetime)
+    Function to get the contents of through issues using a loop, as only 50 can be checked at a time
+    :param issue_filter: Dict of filters to check the issues against (dict)
     :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
     :param headers: A request Header (dict)
     :param host: The host used to create the URL to send the request (string)
-    :returns: A list with only a string containing the number of issues
+    :returns: A list with the contents of all valid issues
     """
     issues_contents = []
     return_amount = 50
@@ -108,11 +133,12 @@ def get_issues_contents_after_time(auth, headers, host, date):
 
         for issue in issues:
             issue_date = datetime.strptime(issue.get("fields").get("created")[:10], "%Y-%m-%d")
-            if issue_date < date:
+            if issue_date < datetime.strptime(issue_filter.get("end_date"), "%Y-%m-%d"):
                 return issues_contents
-            issue_contents = issue.get("fields").get("summary")
-            if issue_contents:
-                issues_contents.append(issue_contents)
+            if filter_issue(issue, issue_filter, issue_date):
+                issue_contents = issue.get("fields").get("summary")
+                if issue_contents:
+                    issues_contents.append(issue_contents)
 
         return_amount = json_load.get("size")
         issues_amount = issues_amount + return_amount
@@ -120,9 +146,27 @@ def get_issues_contents_after_time(auth, headers, host, date):
     return issues_contents
 
 
-def generate_word_cloud(issues_contents):
+def filter_issue(issue, issue_filter, issue_date):
+    issue_assigned = issue.get("fields").get("assignee")
+    if issue_date > datetime.strptime(issue_filter.get("start_date"), "%Y-%m-%d"):
+        return False
+    if issue.get("assigned") and issue_assigned != issue_assigned.get("assigned"):
+        return False
+    return True
+
+
+def generate_word_cloud(issues_contents, issue_filter):
     matches = re.findall(r"((\w+([.'](?![ \n']))*[-_]*)+)", issues_contents)
-    issues_contents = " ".join(list(list(zip(*matches))[0]))
+    if matches:
+        issues_contents = " ".join(list(list(zip(*matches))[0]))
+    if issue_filter.get("filter_not"):
+        issues_contents = re.sub(issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I)
+    if issue_filter.get("filter_for"):
+        issues_contents = " ".join(re.findall(
+            issue_filter.get("filter_for").lower(),
+            issues_contents,
+            flags=re.IGNORECASE
+        ))
     word_cloud = WordCloud(
         width=2000,
         height=1000,
@@ -143,21 +187,23 @@ def word_cloud_generator():
     host = "https://stfc.atlassian.net"
     username = args.username
     password = args.password
-    output_location = args.output
-    date = args.date
+    issue_filter = {}
+    for arg in args.__dict__:
+        if args.__dict__[arg] is not None and arg != "username" and arg != "password":
+            issue_filter.update({arg: args.__dict__[arg]})
 
-    Path(output_location).mkdir(exist_ok=True)
+    Path(issue_filter.get("output")).mkdir(exist_ok=True)
 
-    word_cloud_output_location = path.join(output_location, "JSM Metric Data.csv")
+    word_cloud_output_location = path.join(issue_filter["output"], "JSM Metric Data.csv")
 
     auth = requests.auth.HTTPBasicAuth(username, password)
     headers = {
         "Accept": "application/json",
     }
 
-    issues_contents = get_issues_contents_after_time(auth, headers, host, date)
+    issues_contents = get_issues_contents_after_time(auth, headers, host, issue_filter)
 
-    generate_word_cloud(" ".join(issues_contents))
+    generate_word_cloud(" ".join(issues_contents), issue_filter)
 
 
 if __name__ == "__main__":
