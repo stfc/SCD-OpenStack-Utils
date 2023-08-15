@@ -62,7 +62,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param expected_out: The expected output of the function (bool)
         """
         with mock.patch("word_cloud_generator.requests") and patch(
-                "word_cloud_generator.json"
+            "word_cloud_generator.json"
         ):
             word_cloud_generator.requests.session = MagicMock()
             word_cloud_generator.requests.session.return_value.get.return_value.content = (
@@ -98,24 +98,48 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param filter_date: The mocked date to filter after (list)
         :param expected_out: The expected output of the function (bool)
         """
-        with mock.patch("word_cloud_generator.get_response_json"), mock.patch("word_cloud_generator.filter_issue"):
+        with mock.patch("word_cloud_generator.get_response_json"), mock.patch(
+            "word_cloud_generator.filter_issue"
+        ):
             issue_filter = {"end_date": filter_date}
-            values = ChangingJson((
-                {
-                    "values": (
-                        {"fields": {"summary": "test1", "created": "2023-01-01T00:00:00"}},
-                        {"fields": {"summary": "test2", "created": "2023-01-01T00:00:00"}},
-                    ),
-                    "size": 50
-                },
-                {
-                    "values": (
-                        {"fields": {"summary": "test3", "created": "2023-01-01T00:00:00"}},
-                        {"fields": {"summary": "test4", "created": "2023-01-01T00:00:00"}},
-                    ),
-                    "size": 32
-                }
-            ))
+            values = ChangingJson(
+                (
+                    {
+                        "values": (
+                            {
+                                "fields": {
+                                    "summary": "test1",
+                                    "created": "2023-01-01T00:00:00",
+                                }
+                            },
+                            {
+                                "fields": {
+                                    "summary": "test2",
+                                    "created": "2023-01-01T00:00:00",
+                                }
+                            },
+                        ),
+                        "size": 50
+                    },
+                    {
+                        "values": (
+                            {
+                                "fields": {
+                                    "summary": "test3",
+                                    "created": "2023-01-01T00:00:00",
+                                }
+                            },
+                            {
+                                "fields": {
+                                    "summary": "test4",
+                                    "created": "2023-01-01T00:00:00",
+                                }
+                            },
+                        ),
+                        "size": 32
+                    },
+                )
+            )
             word_cloud_generator.get_response_json.return_value = values
             word_cloud_generator.filter_issue.return_value = True
             self.assertEqual(
@@ -125,14 +149,18 @@ class WorldCloudGeneratorTests(unittest.TestCase):
                     host,
                     issue_filter,
                 ),
-                expected_out)
+                expected_out,
+            )
 
     @parameterized.expand(
         [
             ("dates valid", {"start_date": "2024-01-01", "assigned": "test"}, True),
             ("dates invalid", {"start_date": "2022-01-01", "assigned": "test"}, False),
             ("assigned valid", {"start_date": "2024-01-01", "assigned": "test"}, True),
-            ("assigned invalid", {"start_date": "2024-01-01", "assigned": "test failed"}, False),
+            ("assigned invalid",
+             {"start_date": "2024-01-01", "assigned": "test failed"},
+             False,
+             ),
         ]
     )
     def test_filter_issue(self, __, issue_filter, expected_out):
@@ -151,15 +179,17 @@ class WorldCloudGeneratorTests(unittest.TestCase):
                 issue_filter,
                 issue_date,
             ),
-            expected_out)
+            expected_out,
+        )
 
     def test_generate_word_cloud(self):
         """
         Function to test the functionality of generate_word_cloud by asserting that the function
         is called with specific inputs
         """
-        with mock.patch("word_cloud_generator.filter_word_cloud"), \
-                mock.patch("word_cloud_generator.WordCloud"):
+        with mock.patch("word_cloud_generator.filter_word_cloud"), mock.patch(
+                "word_cloud_generator.WordCloud"
+        ):
             issues_contents = "test data"
             issue_filter = ""
             word_cloud_output_location = "test"
@@ -171,7 +201,9 @@ class WorldCloudGeneratorTests(unittest.TestCase):
             word_cloud_generator.WordCloud.return_value.generate.assert_called_with(
                 word_cloud_generator.filter_word_cloud.return_value
             )
-            word_cloud_generator.WordCloud.return_value.to_file.assert_called_with("test")
+            word_cloud_generator.WordCloud.return_value.to_file.assert_called_with(
+                "test"
+            )
 
     def test_filter_word_cloud(self):
         """
@@ -183,8 +215,10 @@ class WorldCloudGeneratorTests(unittest.TestCase):
             "filter_for": "data|test|this|here|delete|not",
         }
         issues_contents = "test data delete this not here"
-        self.assertEqual(word_cloud_generator.filter_word_cloud(issue_filter, issues_contents),
-                         "test data not here")
+        self.assertEqual(
+            word_cloud_generator.filter_word_cloud(issue_filter, issues_contents),
+            "test data not here",
+        )
 
 
 if __name__ == "__main__":

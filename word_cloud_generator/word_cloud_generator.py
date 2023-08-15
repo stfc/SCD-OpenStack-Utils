@@ -131,7 +131,9 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
         issues = json_load.get("values")
 
         for issue in issues:
-            issue_date = datetime.strptime(issue.get("fields").get("created")[:10], "%Y-%m-%d")
+            issue_date = datetime.strptime(
+                issue.get("fields").get("created")[:10], "%Y-%m-%d"
+            )
             if issue_date < datetime.strptime(issue_filter.get("end_date"), "%Y-%m-%d"):
                 return issues_contents
             if filter_issue(issue, issue_filter, issue_date):
@@ -155,7 +157,9 @@ def filter_issue(issue, issue_filter, issue_date):
     """
     if issue.get("fields").get("assignee"):
         issue_assigned = issue.get("fields").get("assignee").get("displayName")
-        if issue_filter.get("assigned") and issue_assigned != issue_filter.get("assigned"):
+        if issue_filter.get("assigned") and issue_assigned != issue_filter.get(
+                "assigned"
+        ):
             return False
     else:
         return False
@@ -198,13 +202,17 @@ def filter_word_cloud(issue_filter, issues_contents):
     :returns: The filtered issues contents
     """
     if issue_filter.get("filter_not"):
-        issues_contents = re.sub(issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I)
+        issues_contents = re.sub(
+            issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I
+        )
     if issue_filter.get("filter_for"):
-        issues_contents = " ".join(re.findall(
-            issue_filter.get("filter_for").lower(),
-            issues_contents,
-            flags=re.IGNORECASE
-        ))
+        issues_contents = " ".join(
+            re.findall(
+                issue_filter.get("filter_for").lower(),
+                issues_contents,
+                flags=re.IGNORECASE
+            )
+        )
 
     return issues_contents
 
@@ -227,7 +235,7 @@ def word_cloud_generator():
 
     word_cloud_output_location = path.join(
         issue_filter["output"],
-        f"word cloud - {datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.png"
+        f"word cloud - {datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.png",
     )
 
     auth = requests.auth.HTTPBasicAuth(username, password)
@@ -237,7 +245,9 @@ def word_cloud_generator():
 
     issues_contents = get_issues_contents_after_time(auth, headers, host, issue_filter)
 
-    generate_word_cloud(" ".join(issues_contents), issue_filter, word_cloud_output_location)
+    generate_word_cloud(
+        " ".join(issues_contents), issue_filter, word_cloud_output_location
+    )
 
 
 if __name__ == "__main__":
