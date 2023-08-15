@@ -62,7 +62,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param expected_out: The expected output of the function (bool)
         """
         with mock.patch("word_cloud_generator.requests") and patch(
-                "word_cloud_generator.json"
+            "word_cloud_generator.json"
         ):
             word_cloud_generator.requests.session = MagicMock()
             word_cloud_generator.requests.session.return_value.get.return_value.content = (
@@ -99,7 +99,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param expected_out: The expected output of the function (bool)
         """
         with mock.patch("word_cloud_generator.get_response_json"), mock.patch(
-                "word_cloud_generator.filter_issue"
+            "word_cloud_generator.filter_issue"
         ):
             issue_filter = {"end_date": filter_date}
             values = ChangingJson(
