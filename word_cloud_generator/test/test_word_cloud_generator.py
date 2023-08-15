@@ -43,7 +43,7 @@ host = "https://test.com"
 
 class WorldCloudGeneratorTests(unittest.TestCase):
     """
-    Class for the tests to be run against the functions from word_cloud_generator.py
+    Class for the test to be run against the functions from word_cloud_generator.py
     """
 
     @parameterized.expand(
@@ -62,7 +62,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param expected_out: The expected output of the function (bool)
         """
         with mock.patch("word_cloud_generator.requests") and patch(
-            "word_cloud_generator.json"
+                "word_cloud_generator.json"
         ):
             word_cloud_generator.requests.session = MagicMock()
             word_cloud_generator.requests.session.return_value.get.return_value.content = (
@@ -99,7 +99,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         :param expected_out: The expected output of the function (bool)
         """
         with mock.patch("word_cloud_generator.get_response_json"), mock.patch(
-            "word_cloud_generator.filter_issue"
+                "word_cloud_generator.filter_issue"
         ):
             issue_filter = {"end_date": filter_date}
             values = ChangingJson(
@@ -119,7 +119,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
                                 }
                             },
                         ),
-                        "size": 50
+                        "size": 50,
                     },
                     {
                         "values": (
@@ -136,7 +136,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
                                 }
                             },
                         ),
-                        "size": 32
+                        "size": 32,
                     },
                 )
             )
@@ -157,10 +157,11 @@ class WorldCloudGeneratorTests(unittest.TestCase):
             ("dates valid", {"start_date": "2024-01-01", "assigned": "test"}, True),
             ("dates invalid", {"start_date": "2022-01-01", "assigned": "test"}, False),
             ("assigned valid", {"start_date": "2024-01-01", "assigned": "test"}, True),
-            ("assigned invalid",
-             {"start_date": "2024-01-01", "assigned": "test failed"},
-             False,
-             ),
+            (
+                "assigned invalid",
+                {"start_date": "2024-01-01", "assigned": "test failed"},
+                False,
+            ),
         ]
     )
     def test_filter_issue(self, __, issue_filter, expected_out):
@@ -188,7 +189,7 @@ class WorldCloudGeneratorTests(unittest.TestCase):
         is called with specific inputs
         """
         with mock.patch("word_cloud_generator.filter_word_cloud"), mock.patch(
-                "word_cloud_generator.WordCloud"
+            "word_cloud_generator.WordCloud"
         ):
             issues_contents = "test data"
             issue_filter = ""

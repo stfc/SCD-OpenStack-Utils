@@ -95,8 +95,8 @@ def get_response_json(auth, headers, url):
     while attempts > 0:
         response = session.get(url, timeout=5)
         if (
-                response.content != b'{"status":"RUNNING"}'
-                and response.content != b'{"status":"ENQUEUED"}'
+            response.content != b'{"status":"RUNNING"}'
+            and response.content != b'{"status":"ENQUEUED"}'
         ):
             break
         else:
@@ -158,7 +158,7 @@ def filter_issue(issue, issue_filter, issue_date):
     if issue.get("fields").get("assignee"):
         issue_assigned = issue.get("fields").get("assignee").get("displayName")
         if issue_filter.get("assigned") and issue_assigned != issue_filter.get(
-                "assigned"
+            "assigned"
         ):
             return False
     else:
@@ -210,7 +210,7 @@ def filter_word_cloud(issue_filter, issues_contents):
             re.findall(
                 issue_filter.get("filter_for").lower(),
                 issues_contents,
-                flags=re.IGNORECASE
+                flags=re.IGNORECASE,
             )
         )
 
