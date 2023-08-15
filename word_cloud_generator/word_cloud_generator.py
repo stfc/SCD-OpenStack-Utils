@@ -8,7 +8,6 @@ from os import path
 from wordcloud import WordCloud
 
 import json
-import matplotlib.pyplot as pyplot
 import requests
 import re
 
@@ -147,26 +146,35 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
 
 
 def filter_issue(issue, issue_filter, issue_date):
-    issue_assigned = issue.get("fields").get("assignee")
-    if issue_date > datetime.strptime(issue_filter.get("start_date"), "%Y-%m-%d"):
+    """
+    Function to check if an issue passes the set filters
+    :param issue: A dict of an issues contents (dict)
+    :param issue_filter: Dict of filters to check the issues against (dict)
+    :param issue_date: The date that the issue was created (string)
+    :returns: If the issue passes the filters
+    """
+    if issue.get("fields").get("assignee"):
+        issue_assigned = issue.get("fields").get("assignee").get("displayName")
+        if issue_filter.get("assigned") and issue_assigned != issue_filter.get("assigned"):
+            return False
+    else:
         return False
-    if issue.get("assigned") and issue_assigned != issue_assigned.get("assigned"):
+    if issue_date > datetime.strptime(issue_filter.get("start_date"), "%Y-%m-%d"):
         return False
     return True
 
 
-def generate_word_cloud(issues_contents, issue_filter):
+def generate_word_cloud(issues_contents, issue_filter, word_cloud_output_location):
+    """
+    Function to generate and save a word cloud
+    :param issues_contents: The summary of every valid issue (list)
+    :param issue_filter: Dict of filters to check the issues against (dict)
+    :param word_cloud_output_location: The output location for the word cloud to be saved to
+    """
     matches = re.findall(r"((\w+([.'](?![ \n']))*[-_]*)+)", issues_contents)
     if matches:
         issues_contents = " ".join(list(list(zip(*matches))[0]))
-    if issue_filter.get("filter_not"):
-        issues_contents = re.sub(issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I)
-    if issue_filter.get("filter_for"):
-        issues_contents = " ".join(re.findall(
-            issue_filter.get("filter_for").lower(),
-            issues_contents,
-            flags=re.IGNORECASE
-        ))
+    issues_contents = filter_word_cloud(issue_filter, issues_contents)
     word_cloud = WordCloud(
         width=2000,
         height=1000,
@@ -175,14 +183,37 @@ def generate_word_cloud(issues_contents, issue_filter):
         background_color="white",
         collocations=False,
         regexp=r"\w*\S*",
-    ).generate(issues_contents)
+    )
 
-    pyplot.imshow(word_cloud, interpolation="bilinear")
-    pyplot.axis("off")
-    pyplot.show()
+    word_cloud.generate(issues_contents)
+
+    word_cloud.to_file(word_cloud_output_location)
+
+
+def filter_word_cloud(issue_filter, issues_contents):
+    """
+    Function to filter the contents of the word cloud to or against certain strings
+    :param issues_contents: The summary of every valid issue (list)
+    :param issue_filter: Dict of filters to check the issues against (dict)
+    :returns: The filtered issues contents
+    """
+    if issue_filter.get("filter_not"):
+        issues_contents = re.sub(issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I)
+    if issue_filter.get("filter_for"):
+        issues_contents = " ".join(re.findall(
+            issue_filter.get("filter_for").lower(),
+            issues_contents,
+            flags=re.IGNORECASE
+        ))
+
+    return issues_contents
 
 
 def word_cloud_generator():
+    """
+    Function to take arguments, generate the output location and run the
+    functions to the data for the word cloud and generate it
+    """
     args = parse_args(argv[1:])
     host = "https://stfc.atlassian.net"
     username = args.username
@@ -194,7 +225,10 @@ def word_cloud_generator():
 
     Path(issue_filter.get("output")).mkdir(exist_ok=True)
 
-    word_cloud_output_location = path.join(issue_filter["output"], "JSM Metric Data.csv")
+    word_cloud_output_location = path.join(
+        issue_filter["output"],
+        f"word cloud - {datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.png"
+    )
 
     auth = requests.auth.HTTPBasicAuth(username, password)
     headers = {
@@ -203,7 +237,7 @@ def word_cloud_generator():
 
     issues_contents = get_issues_contents_after_time(auth, headers, host, issue_filter)
 
-    generate_word_cloud(" ".join(issues_contents), issue_filter)
+    generate_word_cloud(" ".join(issues_contents), issue_filter, word_cloud_output_location)
 
 
 if __name__ == "__main__":
