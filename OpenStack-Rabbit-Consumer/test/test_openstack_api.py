@@ -9,6 +9,7 @@ from rabbit_consumer.openstack_api import (
     check_machine_exists,
     get_server_details,
     get_server_networks,
+    get_image,
 )
 
 
@@ -121,4 +122,17 @@ def test_get_server_networks_no_internal(server_details, vm_data):
     server_details.return_value.addresses = {"public": []}
 
     result = get_server_networks(vm_data)
+    assert not result
+
+
+@patch("rabbit_consumer.openstack_api.get_server_details")
+def test_get_image_no_image_id(server_details, vm_data):
+    """
+    Tests that get image handles an empty image UUID
+    usually when a volume was used instead of an image
+    """
+    server_details.return_value = NonCallableMock()
+    server_details.return_value.image.id = None
+
+    result = get_image(vm_data)
     assert not result

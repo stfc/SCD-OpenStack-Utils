@@ -27,6 +27,10 @@ def is_aq_managed_image(vm_data: VmData) -> bool:
     is for an Aquilon VM.
     """
     image = openstack_api.get_image(vm_data)
+    if not image:
+        logger.info("No image found for %s", vm_data.virtual_machine_id)
+        return False
+
     if "AQ_OS" not in image.metadata:
         logger.debug("Skipping non-Aquilon image: %s", image.name)
         return False
