@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import openstack
 from openstack.compute.v2.image import Image
@@ -79,12 +79,15 @@ def get_server_metadata(vm_data: VmData) -> dict:
     return server.metadata
 
 
-def get_image(vm_data: VmData) -> Image:
+def get_image(vm_data: VmData) -> Optional[Image]:
     """
     Gets the image name from Openstack for the virtual machine.
     """
     server = get_server_details(vm_data)
     uuid = server.image.id
+    if not uuid:
+        return None
+
     with OpenstackConnection() as conn:
         image = conn.compute.find_image(uuid)
         return image
