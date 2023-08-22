@@ -1,3 +1,4 @@
+import re
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -6,10 +7,32 @@ from sys import argv
 from time import sleep
 from os import path
 from wordcloud import WordCloud
+from typing import Optional
+from dataclasses import dataclass
+from mashumaro import DataClassDictMixin
 
 import json
 import requests
-import re
+
+
+@dataclass
+class IssuesFilter(DataClassDictMixin):
+    output: str
+    start_date: str
+    end_date: str
+    word_cloud: str
+    assigned: Optional[str] = None
+    filter_for: Optional[str] = None
+    filter_not: Optional[str] = None
+
+
+def from_user_inputs(**kwargs):
+    """
+    Take the inputs from a argparse and populate a IssuesFilter dataclass and return it
+    :param kwargs: a dictionary of argparse values
+    """
+
+    return IssuesFilter.from_dict(kwargs)
 
 
 def parse_args(inp_args):
@@ -74,6 +97,13 @@ def parse_args(inp_args):
         metavar="FILTER_NOT",
         help="Strings to filter the word cloud to not have",
     )
+    parser.add_argument(
+        "-w",
+        "--word_cloud",
+        metavar="WORD_CLOUD",
+        help="Parameters to create the word cloud with",
+        default="2000, 1000, 25, 10000"
+    )
     args = parser.parse_args(inp_args)
     return args
 
@@ -91,12 +121,13 @@ def get_response_json(auth, headers, url):
     session.auth = auth
 
     attempts = 5
+    response = None
 
     while attempts > 0:
         response = session.get(url, timeout=5)
         if (
-            response.content != b'{"status":"RUNNING"}'
-            and response.content != b'{"status":"ENQUEUED"}'
+                response.content != b'{"status":"RUNNING"}'
+                and response.content != b'{"status":"ENQUEUED"}'
         ):
             break
         else:
@@ -120,30 +151,29 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
     :param host: The host used to create the URL to send the request (string)
     :returns: A list with the contents of all valid issues
     """
+    curr_marker = 0
+    check_limit = 50
     issues_contents = []
-    return_amount = 50
-    issues_amount = 0
-    while return_amount == 50:
-        url = f"{host}/rest/servicedeskapi/servicedesk/6/queue/182/issue?start={issues_amount}"
-
+    while True:
+        url = f"{host}/rest/servicedeskapi/servicedesk/6/queue/182/issue?start={curr_marker}"
         json_load = get_response_json(auth, headers, url)
-
         issues = json_load.get("values")
-
-        for issue in issues:
+        i = 0
+        for i, issue in enumerate(issues, 1):
             issue_date = datetime.strptime(
                 issue.get("fields").get("created")[:10], "%Y-%m-%d"
             )
-            if issue_date < datetime.strptime(issue_filter.get("end_date"), "%Y-%m-%d"):
+            if issue_date < datetime.strptime(issue_filter.end_date, "%Y-%m-%d"):
                 return issues_contents
             if filter_issue(issue, issue_filter, issue_date):
                 issue_contents = issue.get("fields").get("summary")
                 if issue_contents:
                     issues_contents.append(issue_contents)
 
-        return_amount = json_load.get("size")
-        issues_amount = issues_amount + return_amount
-
+        # break out of the loop if we reach the end of the issue list
+        if i < check_limit:
+            break
+        curr_marker += json_load.get("size")
     return issues_contents
 
 
@@ -155,35 +185,47 @@ def filter_issue(issue, issue_filter, issue_date):
     :param issue_date: The date that the issue was created (string)
     :returns: If the issue passes the filters
     """
-    if issue.get("fields").get("assignee"):
-        issue_assigned = issue.get("fields").get("assignee").get("displayName")
-        if issue_filter.get("assigned") and issue_assigned != issue_filter.get(
-            "assigned"
-        ):
-            return False
-    else:
+    fields = issue.get("fields", None)
+    if not fields:
         return False
-    if issue_date > datetime.strptime(issue_filter.get("start_date"), "%Y-%m-%d"):
+
+    assignee = fields.get("assignee", None)
+    if not assignee:
+        return False
+
+    issue_assigned = assignee.get("displayName", None)
+    assign_check = issue_filter.assigned
+    if (not issue_assigned or issue_assigned != assign_check) and assign_check:
+        return False
+
+    if issue_date > datetime.strptime(issue_filter.start_date, "%Y-%m-%d"):
         return False
     return True
 
 
-def generate_word_cloud(issues_contents, issue_filter, word_cloud_output_location):
+def generate_word_cloud(issues_contents, issue_filter, word_cloud_output_location, kwargs):
     """
     Function to generate and save a word cloud
     :param issues_contents: The summary of every valid issue (list)
     :param issue_filter: Dict of filters to check the issues against (dict)
     :param word_cloud_output_location: The output location for the word cloud to be saved to
+    :param kwargs: A set of kwargs to pass to WordCloud
+    - width
+    - height
+    - min_font_size
+    - max_words
     """
     matches = re.findall(r"((\w+([.'](?![ \n']))*[-_]*)+)", issues_contents)
+    # Regex to find all words and include words joined with certain characters, while not
+    # allowing certain characters to exist at the start or end of the word, such as dots.
     if matches:
         issues_contents = " ".join(list(list(zip(*matches))[0]))
     issues_contents = filter_word_cloud(issue_filter, issues_contents)
     word_cloud = WordCloud(
-        width=2000,
-        height=1000,
-        min_font_size=25,
-        max_words=10000,
+        width=kwargs["width"],
+        height=kwargs["height"],
+        min_font_size=kwargs["min_font_size"],
+        max_words=kwargs["max_words"],
         background_color="white",
         collocations=False,
         regexp=r"\w*\S*",
@@ -201,14 +243,14 @@ def filter_word_cloud(issue_filter, issues_contents):
     :param issue_filter: Dict of filters to check the issues against (dict)
     :returns: The filtered issues contents
     """
-    if issue_filter.get("filter_not"):
+    if issue_filter.filter_not:
         issues_contents = re.sub(
-            issue_filter.get("filter_not").lower(), "", issues_contents, flags=re.I
+            issue_filter.filter_not.lower(), "", issues_contents, flags=re.I
         )
-    if issue_filter.get("filter_for"):
+    if issue_filter.filter_for:
         issues_contents = " ".join(
             re.findall(
-                issue_filter.get("filter_for").lower(),
+                issue_filter.filter_for.lower(),
                 issues_contents,
                 flags=re.IGNORECASE,
             )
@@ -226,15 +268,21 @@ def word_cloud_generator():
     host = "https://stfc.atlassian.net"
     username = args.username
     password = args.password
-    issue_filter = {}
-    for arg in args.__dict__:
-        if args.__dict__[arg] is not None and arg != "username" and arg != "password":
-            issue_filter.update({arg: args.__dict__[arg]})
 
-    Path(issue_filter.get("output")).mkdir(exist_ok=True)
+    issue_filter = from_user_inputs(**args.__dict__)
+
+    parameters_list = issue_filter.word_cloud.split(", ")
+    word_cloud_parameters = {
+        "width": int(parameters_list[0]),
+        "height": int(parameters_list[1]),
+        "min_font_size": int(parameters_list[2]),
+        "max_words": int(parameters_list[3]),
+    }
+
+    Path(issue_filter.output).mkdir(exist_ok=True)
 
     word_cloud_output_location = path.join(
-        issue_filter["output"],
+        issue_filter.output,
         f"word cloud - {datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}.png",
     )
 
@@ -246,7 +294,10 @@ def word_cloud_generator():
     issues_contents = get_issues_contents_after_time(auth, headers, host, issue_filter)
 
     generate_word_cloud(
-        " ".join(issues_contents), issue_filter, word_cloud_output_location
+        " ".join(issues_contents),
+        issue_filter,
+        word_cloud_output_location,
+        word_cloud_parameters,
     )
 
 
