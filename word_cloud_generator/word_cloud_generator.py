@@ -126,8 +126,8 @@ def get_response_json(auth, headers, url):
     while attempts > 0:
         response = session.get(url, timeout=5)
         if (
-                response.content != b'{"status":"RUNNING"}'
-                and response.content != b'{"status":"ENQUEUED"}'
+            response.content != b'{"status":"RUNNING"}'
+            and response.content != b'{"status":"ENQUEUED"}'
         ):
             break
         else:
@@ -158,7 +158,7 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
         url = f"{host}/rest/servicedeskapi/servicedesk/6/queue/182/issue?start={curr_marker}"
         json_load = get_response_json(auth, headers, url)
         issues = json_load.get("values")
-        i = 0
+        issues_length = json_load.get("size")
         for i, issue in enumerate(issues, 1):
             issue_date = datetime.strptime(
                 issue.get("fields").get("created")[:10], "%Y-%m-%d"
@@ -171,9 +171,9 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
                     issues_contents.append(issue_contents)
 
         # break out of the loop if we reach the end of the issue list
-        if i < check_limit:
+        if issues_length < check_limit:
             break
-        curr_marker += json_load.get("size")
+        curr_marker += issues_length
     return issues_contents
 
 
@@ -203,7 +203,9 @@ def filter_issue(issue, issue_filter, issue_date):
     return True
 
 
-def generate_word_cloud(issues_contents, issue_filter, word_cloud_output_location, kwargs):
+def generate_word_cloud(
+        issues_contents, issue_filter, word_cloud_output_location, **kwargs
+):
     """
     Function to generate and save a word cloud
     :param issues_contents: The summary of every valid issue (list)
@@ -297,7 +299,7 @@ def word_cloud_generator():
         " ".join(issues_contents),
         issue_filter,
         word_cloud_output_location,
-        word_cloud_parameters,
+        **word_cloud_parameters,
     )
 
 
