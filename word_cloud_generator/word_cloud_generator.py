@@ -102,7 +102,7 @@ def parse_args(inp_args):
         "--word_cloud",
         metavar="WORD_CLOUD",
         help="Parameters to create the word cloud with",
-        default="2000, 1000, 25, 10000"
+        default="2000, 1000, 25, 10000",
     )
     args = parser.parse_args(inp_args)
     return args
@@ -204,7 +204,7 @@ def filter_issue(issue, issue_filter, issue_date):
 
 
 def generate_word_cloud(
-        issues_contents, issue_filter, word_cloud_output_location, **kwargs
+    issues_contents, issue_filter, word_cloud_output_location, **kwargs
 ):
     """
     Function to generate and save a word cloud
