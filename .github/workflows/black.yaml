@@ -32,6 +32,11 @@ jobs:
         with:
             src: "dns_entry_checker"
 
+      - name: JSM Metric Collection
+        uses: psf/black@stable
+        with:
+            src: "jsm_metric_collection"
+
       - name: Openstack-Rally-Tester
         uses: psf/black@stable
         with:
