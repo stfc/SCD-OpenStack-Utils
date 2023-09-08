@@ -7,9 +7,12 @@ import rabbitpy
 
 from rabbit_consumer import aq_api
 from rabbit_consumer import openstack_api
+from rabbit_consumer import vault_api
+from rabbit_consumer import etcd_api
 from rabbit_consumer.aq_api import verify_kerberos_ticket
 from rabbit_consumer.consumer_config import ConsumerConfig
 from rabbit_consumer.aq_metadata import AqMetadata
+from rabbit_consumer.vault_metadata import VaultMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, MessageEventType
 from rabbit_consumer.vm_data import VmData
@@ -37,6 +40,22 @@ def is_aq_managed_image(vm_data: VmData) -> bool:
     return True
 
 
+def is_vault_vm(vm_data: VmData) -> bool:
+    """
+    Check if vault metadata is set on VM
+    """
+    vault_metadata = get_vault_metadata(vm_data)
+
+    if not vault_metadata.get("VAULT_GROUP"):
+        logger.info("Skipping, No VAULT_GROUP defined")
+        return False
+
+    if not vault_metadata.get("VAULT_ROLE_NAME"):
+        logger.info("Skipping, No VAULT_ROLE_NAME defined")
+        return False
+    return True
+
+
 def get_aq_build_metadata(vm_data: VmData) -> AqMetadata:
     """
     Gets the Aq Metadata from either the image or VM (where
@@ -50,6 +69,15 @@ def get_aq_build_metadata(vm_data: VmData) -> AqMetadata:
     return image_meta
 
 
+def get_vault_metadata(vm_data: VmData) -> VaultMetadata:
+    """
+    Gets vault metadat from the VM
+    """
+    vault_metadata = openstack_api.get_server_metadata(vm_data)
+
+    return vault_metadata
+
+
 def consume(message: RabbitMessage) -> None:
     """
     Consumes a message from the rabbit queue and calls the appropriate
@@ -57,9 +85,11 @@ def consume(message: RabbitMessage) -> None:
     """
     if message.event_type == SUPPORTED_MESSAGE_TYPES["create"]:
         handle_create_machine(message)
+        vault_create_secretid(message)
 
     elif message.event_type == SUPPORTED_MESSAGE_TYPES["delete"]:
         handle_machine_delete(message)
+        vault_delete_secretid(message)
 
     else:
         raise ValueError(f"Unsupported message type: {message.event_type}")
@@ -134,6 +164,50 @@ def check_machine_valid(rabbit_message: RabbitMessage) -> bool:
     return True
 
 
+def check_valid_vault_role(rabbit_message: RabbitMessage) -> bool:
+    """
+    Checks that the VM has vault metadata and that the
+    vault group and approle exisit in vault
+    """
+    vm_data = VmData.from_message(rabbit_message)
+    vm_metadata = openstack_api.get_server_metadata(vm_data)
+    
+    is_vault_vm(vm_data)
+
+    vault_group = vm_metadata["VAULT_GROUP"]
+    vault_role = vm_metadata["VAULT_ROLE_NAME"]
+
+    if not vault_api.check_vault_group_exists(vault_group):
+        metadata = {
+            "VAULT_STATUS": f"ERROR: Invalid vault group, {vault_group}",
+        }
+        add_vault_details_to_metadata(vm_data, metadata)
+        return False
+
+    if not vault_api.check_approle_exists(vault_role, vault_group):
+        metadata = {
+            "VAULT_STATUS": f"ERROR: Invalid vault role name, {vault_role}",
+        }
+        add_vault_details_to_metadata(vm_data, metadata)
+        return False
+
+    return True
+
+def add_vault_details_to_metadata(vm_data: VmData, metadata) -> None:
+    """
+    Adds the vault metadata to the VM.
+    """
+    if not openstack_api.check_machine_exists(vm_data):
+        # User has likely deleted the machine since we got here
+        logger.warning(
+            "Machine %s does not exist, skipping metadata update",
+            vm_data.virtual_machine_id,
+        )
+        return
+
+    openstack_api.update_metadata(vm_data, metadata)
+
+
 def handle_create_machine(rabbit_message: RabbitMessage) -> None:
     """
     Handles the creation of a machine in Aquilon. This includes
@@ -170,6 +244,80 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
 
     logger.info(
         "=== Finished Aquilon creation hook for VM %s ===", vm_data.virtual_machine_id
+    )
+
+
+def vault_create_secretid(rabbit_message: RabbitMessage) -> None:
+    """
+    Handles requesting a wrapped secret-id from vault for a new VM
+    """
+    logger.info("=== Received Vault VM create message ===")
+    _print_debug_logging(rabbit_message)
+
+    vm_data = VmData.from_message(rabbit_message)
+    vault_metadata = get_vault_metadata(vm_data)
+
+    if not check_machine_valid(rabbit_message):
+        return
+
+    if not check_valid_vault_role(rabbit_message):
+        return
+
+    wrapped_secret_id = vault_api.get_wrapped_secret_id(
+        vault_group=vault_metadata["VAULT_GROUP"],
+        approle=vault_metadata["VAULT_ROLE_NAME"],
+        vm_uuid=vm_data.virtual_machine_id,
+    )
+
+    token = vault_api.get_secret_id_token(wrapped_secret_id=wrapped_secret_id)
+
+    etcd_api.etcd_put(key=vm_data.virtual_machine_id, value=token)
+
+    logger.info("Token set in etcd for VM %s ", vm_data.virtual_machine_id)
+
+    metadata = {
+        "VAULT_STATUS": "SUCCESS",
+    }
+
+    add_vault_details_to_metadata(vm_data, metadata)
+
+    logger.info(
+        "=== Finished Vault creation hook for VM %s ===", vm_data.virtual_machine_id
+    )
+
+def vault_delete_secretid(rabbit_message: RabbitMessage) -> None:
+    """
+    Handles revoking the secret-id for a VM and approle. 
+    """
+    logger.info("=== Received Vault VM delete message ===")
+    _print_debug_logging(rabbit_message)
+
+    vm_data = VmData.from_message(rabbit_message)
+    vault_metadata = get_vault_metadata(vm_data)
+
+    if not check_machine_valid(rabbit_message):
+        return
+
+    if not check_valid_vault_role(rabbit_message):
+        return
+
+    to_revoke = vault_api.get_vm_secret_accessors(
+        vault_group=vault_metadata["VAULT_GROUP"],
+        approle=vault_metadata["VAULT_ROLE_NAME"],
+        vm_uuid=vm_data.virtual_machine_id,
+    )
+
+    if to_revoke:
+        vault_api.revoke_secret_accessors(
+            vault_group=vault_metadata["VAULT_GROUP"],
+            approle=vault_metadata["VAULT_ROLE_NAME"],
+            secret_accessors=to_revoke,
+        )
+    else:
+        logging.info("No accessors to revoke for VM %s ", vm_data.virtual_machine_id)
+
+    logger.info(
+        "=== Finished Vault deletion hook for VM %s ===", vm_data.virtual_machine_id
     )
 
 
