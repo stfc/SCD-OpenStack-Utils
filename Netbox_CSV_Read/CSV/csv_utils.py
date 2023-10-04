@@ -1,12 +1,12 @@
 import pandas as pd
 
 
-class CSVtoDict:
+class CsvUtils:
 
     @staticmethod
     def csv_to_python(file_path: str) -> dict:
         """
-        This method organises data from CSV files into dictionaries for each row of data.
+        This method reads data from csv files and writes them to a dictionary.
         :param file_path: The file path of the CSV file to be read from.
         :return: Returns the data from the csv as a dictionary.
         """
@@ -17,7 +17,7 @@ class CSVtoDict:
     @staticmethod
     def separate_data(data: dict) -> list:
         """
-        This method takes the data dictionary and separates each row into a single dictionary.
+        This method reduces Pandas CSV to Dict conversion to individual dictionaries.
         :param data: The data from the CSV file
         :return: Returns a list of dictionaries which each represent a row of data from CSV.
         """
