@@ -1,4 +1,4 @@
-CREATE PROCEDURE `get_accounting_data`(IN starttime datetime, IN endtime datetime)
+CREATE DEFINER=`accounting-db`@`host-172-16-101-160.nubes.stfc.ac.uk` PROCEDURE `get_accounting_data`(IN starttime datetime, IN endtime datetime)
 BEGIN
 SELECT
     IFNULL(i.availability_zone,'nova') as AvailabilityZone,
@@ -34,9 +34,9 @@ SELECT
      it.swap   AS Swap,
      it.root_gb   AS Root_GB,
      it.ephemeral_gb AS Ephemeral_GB,
-     ifnull((select value from nova_api.flavor_extra_specs es where flavor_id = it.id and es.key like '%per_unit_cost%' and es.key like CONCAT('%',cast(YEAR(endtime) as NCHAR),'%')),0) as Per_Unit_Cost,
+     ifnull((select value from nova_api.flavor_extra_specs es where flavor_id = it.id and es.key like '%per_unit_cost%' and es.key like CONCAT('%',cast(YEAR(DATE_SUB(endtime, INTERVAL 3 MONTH)) as NCHAR),'%') limit 1),0) as Per_Unit_Cost, # for January to March pull in the previous year's price so we work to financial years
      ifnull((select value from nova_api.flavor_extra_specs es where flavor_id = it.id and es.key like 'accounting:unit%' ), "core") as Charge_Unit,
-     (select IFNULL(value,0) from nova_api.flavor_extra_specs es where flavor_id = it.id and es.key like '%gpu_num%' ) as GPU_Num
+     (select IFNULL(value,0) from nova_api.flavor_extra_specs es where flavor_id = it.id and es.key like 'accounting:gpu_num%' ) as GPU_Num
 FROM
     nova.instances i
         JOIN
