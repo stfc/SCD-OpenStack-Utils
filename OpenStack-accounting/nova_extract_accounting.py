@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import time
 import datetime
 #from datetime import datetime,time
@@ -8,37 +8,44 @@ import sys
 import sqlalchemy
 from sqlalchemy.sql import select
 from sqlalchemy.orm import sessionmaker
-from ConfigParser import SafeConfigParser
+import configparser
 
-#This config parsing needs rewriting to support python3
-#The parsing of the nova.conf seems to not work with the python3 version
+def ifnull(var, val):
+   if var is None:
+       return val
+   return var
 
 # Read from config file
-parser = SafeConfigParser()
+influx_parser = configparser.SafeConfigParser()
 try:
-   parser.read('/etc/influxdb.conf')
-   host = parser.get('db', 'host')
-   database = parser.get('db', 'database')
-   username = parser.get('auth', 'username')
-   password = parser.get('auth', 'password')
-   instance = parser.get('cloud','instance')
+   influx_parser.read('/etc/influxdb.conf')
+   host = influx_parser.get('db', 'host')
+   database = influx_parser.get('db', 'database')
+   username = influx_parser.get('auth', 'username')
+   password = influx_parser.get('auth', 'password')
+   instance = influx_parser.get('cloud','instance')
 except:
-   raise RuntimeError('Unable to read from config file')
+   print('Unable to read from influx config file')
    sys.exit(1)
 
 url = 'http://'+host+'/write?db='+database +'&precision=s'
 
 nowtime = time.localtime()
 
+nova_parser = configparser.RawConfigParser(strict=False)
+
+nova_parser.read('/etc/nova/nova.conf')
 try:
-   parser.read('/etc/nova/nova.conf')
-   connectionstring = parser.get('database','connection')
+   nova_parser.read('/etc/nova/nova.conf')
+   connectionstring = nova_parser.get('database','connection')
 except:
-   raise RuntimeError('Unable to read from config file')
+   print('Unable to read from nova config file')
    sys.exit(1)
 
+starttime='2017-04-19 12:00'
 starttime=sys.argv[1]
 print(starttime)
+endtime='2017-04-19 12:15'
 endtime=sys.argv[2]
 print(endtime)
 endyyyymm=datetime.datetime.strptime(endtime,"%Y-%m-%d %H:%M").strftime('%Y-%m')
@@ -49,7 +56,6 @@ engine = sqlalchemy.create_engine(connectionstring, encoding='utf-8')
 connection = engine.connect()
 sess = sessionmaker(bind=engine)()
 query = 'call get_accounting_data( "' + starttime +'","' + endtime + '")'
-
 
 print(query)
 results = sess.execute(query, { 'p1': starttime, 'p2': endtime })
@@ -96,7 +102,8 @@ for result in results:
     datastring += ",Root_GBs="+str(result["Root_GB"] * result["VMs"])
     datastring += ",Ephemeral_GB_Seconds="+str(result["Ephemeral_GB"]  * result['VM_Seconds'])
     datastring += ",Ephemeral_GBs="+str(result["Ephemeral_GB"] * result["VMs"])
-    if result["GPU_Num"] > 0:
+    print(str(ifnull(result["GPU_Num"],0)))
+    if int( ifnull(result["GPU_Num"],0)) > 0:
         datastring += ",GPU_Seconds="+str(float(result["GPU_Num"]) * float(result['VM_Seconds']))
         datastring += ",GPUs=" + str(float(result["GPU_Num"]) * float(result['VMs']))
         print(result)
@@ -106,12 +113,12 @@ for result in results:
         datastring += ",GPUs=" + str(0)
         datastring += ",GPU_Seconds=" + str(0)
 
-    datastring += " "+str(long(endtimestamp))
+
+    datastring += " "+str(int(endtimestamp))
     datastring += "\n"
 
+
 print(datastring)
-
-
 r = requests.post(url,data=datastring,auth=(username,password))
 print(r.text)
 print(r)
