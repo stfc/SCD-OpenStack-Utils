@@ -2,7 +2,9 @@ import pandas as pd
 
 
 class CsvUtils:
-
+    """
+    This class provides methods to read data from CSV files and allow the data to be easily read and used elsewhere.
+    """
     @staticmethod
     def csv_to_python(file_path: str) -> dict:
         """
