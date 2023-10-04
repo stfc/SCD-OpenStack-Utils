@@ -3,32 +3,22 @@ import accountinglib
 
 import time
 import datetime
-import json
-import requests
-import sys
-import sqlalchemy
-from sqlalchemy.sql import select
-from sqlalchemy.orm import sessionmaker
-import configparser
+
 
 nowtime = time.localtime()
 
-starttime='2017-04-19 12:00'
+print("Nova Accounting run start")
 starttime=sys.argv[1]
-print(starttime)
-endtime='2017-04-19 12:15'
+print("Start Time = " + starttime)
 endtime=sys.argv[2]
-print(endtime)
+print("End Time = " + endtime)
 endyyyymm=datetime.datetime.strptime(endtime,"%Y-%m-%d %H:%M").strftime('%Y-%m')
 endtimestamp = time.mktime(datetime.datetime.strptime(endtime, "%Y-%m-%d %H:%M").timetuple())
-print(endtimestamp)
+
 
 results = accountinglib.get_accounting_data("nova",starttime,endtime)
-print(results)
 datastring = ''
 for result in results:
-    print(result)
-
     try:
         if "rally" in result["Project"] :
             department="STFC Cloud"
@@ -66,7 +56,6 @@ for result in results:
     datastring += ",Root_GBs="+str(result["Root_GB"] * result["VMs"])
     datastring += ",Ephemeral_GB_Seconds="+str(result["Ephemeral_GB"]  * result['VM_Seconds'])
     datastring += ",Ephemeral_GBs="+str(result["Ephemeral_GB"] * result["VMs"])
-    print(str(accountinglib.ifnull(result["GPU_Num"],0)))
     if int( accountinglib.ifnull(result["GPU_Num"],0)) > 0:
         datastring += ",GPU_Seconds="+str(float(result["GPU_Num"]) * float(result['VM_Seconds']))
         datastring += ",GPUs=" + str(float(result["GPU_Num"]) * float(result['VMs']))
