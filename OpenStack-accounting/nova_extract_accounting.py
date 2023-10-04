@@ -1,7 +1,8 @@
 #!/usr/bin/python3
+import accountinglib
+
 import time
 import datetime
-#from datetime import datetime,time
 import json
 import requests
 import sys
@@ -10,37 +11,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.orm import sessionmaker
 import configparser
 
-def ifnull(var, val):
-   if var is None:
-       return val
-   return var
-
-# Read from config file
-influx_parser = configparser.SafeConfigParser()
-try:
-   influx_parser.read('/etc/influxdb.conf')
-   host = influx_parser.get('db', 'host')
-   database = influx_parser.get('db', 'database')
-   username = influx_parser.get('auth', 'username')
-   password = influx_parser.get('auth', 'password')
-   instance = influx_parser.get('cloud','instance')
-except:
-   print('Unable to read from influx config file')
-   sys.exit(1)
-
-url = 'http://'+host+'/write?db='+database +'&precision=s'
-
 nowtime = time.localtime()
-
-nova_parser = configparser.RawConfigParser(strict=False)
-
-nova_parser.read('/etc/nova/nova.conf')
-try:
-   nova_parser.read('/etc/nova/nova.conf')
-   connectionstring = nova_parser.get('database','connection')
-except:
-   print('Unable to read from nova config file')
-   sys.exit(1)
 
 starttime='2017-04-19 12:00'
 starttime=sys.argv[1]
@@ -52,15 +23,8 @@ endyyyymm=datetime.datetime.strptime(endtime,"%Y-%m-%d %H:%M").strftime('%Y-%m')
 endtimestamp = time.mktime(datetime.datetime.strptime(endtime, "%Y-%m-%d %H:%M").timetuple())
 print(endtimestamp)
 
-engine = sqlalchemy.create_engine(connectionstring, encoding='utf-8')
-connection = engine.connect()
-sess = sessionmaker(bind=engine)()
-query = 'call get_accounting_data( "' + starttime +'","' + endtime + '")'
-
-print(query)
-results = sess.execute(query, { 'p1': starttime, 'p2': endtime })
-
-
+results = accountinglib.get_accounting_data("nova",starttime,endtime)
+print(results)
 datastring = ''
 for result in results:
     print(result)
@@ -81,7 +45,7 @@ for result in results:
 
 
     datastring += "Accounting"
-    datastring += ",instance="+instance
+
     datastring += ",AvailabilityZone="+result["AvailabilityZone"]
     datastring += ",Project="+result["Project"].replace(' ','\ ')
     datastring += ",Department="+department.replace(' ','\ ')
@@ -102,8 +66,8 @@ for result in results:
     datastring += ",Root_GBs="+str(result["Root_GB"] * result["VMs"])
     datastring += ",Ephemeral_GB_Seconds="+str(result["Ephemeral_GB"]  * result['VM_Seconds'])
     datastring += ",Ephemeral_GBs="+str(result["Ephemeral_GB"] * result["VMs"])
-    print(str(ifnull(result["GPU_Num"],0)))
-    if int( ifnull(result["GPU_Num"],0)) > 0:
+    print(str(accountinglib.ifnull(result["GPU_Num"],0)))
+    if int( accountinglib.ifnull(result["GPU_Num"],0)) > 0:
         datastring += ",GPU_Seconds="+str(float(result["GPU_Num"]) * float(result['VM_Seconds']))
         datastring += ",GPUs=" + str(float(result["GPU_Num"]) * float(result['VMs']))
         print(result)
@@ -117,8 +81,7 @@ for result in results:
     datastring += " "+str(int(endtimestamp))
     datastring += "\n"
 
+r = accountinglib.send_to_influx(datastring)
 
-print(datastring)
-r = requests.post(url,data=datastring,auth=(username,password))
 print(r.text)
 print(r)
