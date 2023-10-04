@@ -19,6 +19,9 @@ do
     endtimeepoch=`date -d "$endtime" +%s`
     echo $starttime
     echo $endtime
-    /usr/local/bin/extract_accounting.py "$starttime" "$endtime"
+    for extractor in $(ls /usr/local/bin/*extract_accounting.py);
+    do
+        $extractor "$starttime" "$endtime";
+    done
     starttime=$endtime
 done;
