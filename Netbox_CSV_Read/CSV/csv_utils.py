@@ -10,8 +10,8 @@ class CsvUtils:
         :param file_path: The file path of the CSV file to be read from.
         :return: Returns the data from the csv as a dictionary.
         """
-        dataframe = pd.read_csv(file_path)
-        dataframe = dataframe.to_dict(orient="list")
+        with pd.read_csv(file_path) as dataframe:
+            dataframe = dataframe.to_dict(orient="list")
         return dataframe
 
     @staticmethod
