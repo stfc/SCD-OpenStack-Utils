@@ -4,7 +4,6 @@
 ## Prerequisites
 
 The following packages are required:
- - python-ConfigParser
  - python3-requests
  - python36-sqlalchemy
  - python36-PyMySQL
