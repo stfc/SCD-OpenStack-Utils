@@ -43,7 +43,7 @@ for result in results:
     datastring += ",YYYY-MM="+ endyyyymm
     datastring += " Volumes="+str(result["Volumes"])
     datastring += ",Volume_Seconds="+str(result["Volume_Seconds"])
-    datastring += ",CinderGBs="+str(result["Volume_GB"] * result['Volume_Seconds'])
+    datastring += ",CinderGBs="+str(result["Volume_GB"] * result['Volume_Seconds'] * result["Volumes"])
 
 
 

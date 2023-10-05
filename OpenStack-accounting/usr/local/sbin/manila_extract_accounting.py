@@ -44,7 +44,7 @@ for result in results:
     datastring += ",YYYY-MM="+ endyyyymm
     datastring += " Shares="+str(result["Shares"])
     datastring += ",Share_Seconds="+str(result["Share_Seconds"])
-    datastring += ",ManilaGBs="+str(result["Share_GB"] * result['Share_Seconds'])
+    datastring += ",ManilaGBs="+str(result["Share_GB"] * result['Share_Seconds'] * result["Shares"])
 
 
 
