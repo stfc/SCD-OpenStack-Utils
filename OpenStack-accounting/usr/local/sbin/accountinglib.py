@@ -11,11 +11,13 @@ from sqlalchemy.orm import sessionmaker
 import configparser
 
 def ifnull(var, val):
+    ```Returns the second argument if the first argument is Null/None```
     if var is None:
         return val
     return var
 
 def send_to_influx(datastring):
+    ```Takes a datastring formatted to send to InfluxDBs rest api. Loads necessary config, sends and returns the response```
      # Read from config file
      influx_parser = configparser.SafeConfigParser()
      try:
@@ -35,6 +37,7 @@ def send_to_influx(datastring):
      return response
 
 def get_accounting_data(database,starttime,endtime):
+    ```Takes a db name and a start and end time as arguments. Loads db config, creates a db connection and runs a stored procedure. Returns the results of the stored procedure```
     thecount_parser = configparser.RawConfigParser(strict=False)
 
     try:
