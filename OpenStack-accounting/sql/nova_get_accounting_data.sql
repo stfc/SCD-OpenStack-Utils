@@ -9,6 +9,7 @@ SELECT
     p.name AS Project,
     pp.name AS Department,
     it.name AS Flavor,
+    COUNT(i.uuid) as VMs,
     @VMSeconds:=SUM(IF(i.created_at <= starttime /* Captures VMs which were created outside of the period deleted out of the period */
             AND (i.deleted_at >= endtime
             OR ISNULL(i.deleted_at)),
