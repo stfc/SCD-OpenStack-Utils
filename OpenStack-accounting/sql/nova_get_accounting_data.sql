@@ -1,4 +1,4 @@
-CREATE DEFINER=`accounting-db`@`host-172-16-101-160.nubes.stfc.ac.uk` PROCEDURE `get_accounting_data`(IN starttime datetime, IN endtime datetime)
+CREATE PROCEDURE `get_accounting_data`(IN starttime datetime, IN endtime datetime)
 BEGIN
 SELECT
     IFNULL(i.availability_zone,'nova') as AvailabilityZone,
