@@ -8,7 +8,7 @@ import datetime
 
 nowtime = time.localtime()
 
-print("Cinder Accounting run start")
+print("Manila Accounting run start")
 starttime=sys.argv[1]
 print("Start Time = " + starttime)
 endtime=sys.argv[2]
