@@ -16,6 +16,9 @@ def instance_fixture(api_mock):
 
 
 def test_check_device_exists(instance):
+    """
+    This test ensures the .get method is called once with the correct argument.
+    """
     mock_device = MagicMock()
     device_name = NonCallableMock()
     instance.netbox.dcim.devices = mock_device
@@ -24,6 +27,9 @@ def test_check_device_exists(instance):
 
 
 def test_check_device_type_exists(instance):
+    """
+    This test ensures the .get method is called once with the correct argument.
+    """
     mock_device_types = MagicMock()
     device_type = NonCallableMock()
     instance.netbox.dcim.device_types = mock_device_types
@@ -32,6 +38,9 @@ def test_check_device_type_exists(instance):
 
 
 def test_create_device(instance):
+    """
+    This test ensures the .create method is called once with the correct argument.
+    """
     mock_device = MagicMock()
     mock_data = NonCallableMock()
     instance.netbox.dcim.devices = mock_device
@@ -40,6 +49,9 @@ def test_create_device(instance):
 
 
 def test_create_device_type(instance):
+    """
+    This test ensures the .creat method is called once with the correct arguments.
+    """
     mock_device_types = MagicMock()
     mock_model = NonCallableMock()
     mock_slug = NonCallableMock()
