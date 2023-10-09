@@ -1,4 +1,5 @@
 import pandas
+from typing import List, Dict
 
 
 class CsvUtils:
@@ -8,7 +9,7 @@ class CsvUtils:
     def __init__(self):
         self.pd = pandas
 
-    def csv_to_python(self, file_path: str) -> dict:
+    def csv_to_python(self, file_path: str) -> Dict:
         """
         This method reads data from csv files and writes them to a dictionary.
         :param file_path: The file path of the CSV file to be read from.
@@ -19,7 +20,7 @@ class CsvUtils:
         return dataframe
 
     @staticmethod
-    def separate_data(data: dict) -> list:
+    def separate_data(data: dict) -> List:
         """
         This method reduces Pandas CSV to Dict conversion to individual dictionaries.
         :param data: The data from the CSV file
