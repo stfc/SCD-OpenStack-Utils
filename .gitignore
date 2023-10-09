@@ -5,3 +5,4 @@ venv/
 
 .coverage
 coverage.xml
+Netbox_CSV_Read/DataFiles

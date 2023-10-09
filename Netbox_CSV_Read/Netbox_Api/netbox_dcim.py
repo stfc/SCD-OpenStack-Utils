@@ -1,5 +1,5 @@
 from typing import Optional
-from netbox_connect import NetboxConnect
+from Netbox_Api.netbox_connect import NetboxConnect
 
 
 class NetboxDCIM:

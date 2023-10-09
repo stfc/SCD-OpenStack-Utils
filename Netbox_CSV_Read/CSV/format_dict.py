@@ -6,7 +6,9 @@ from operator import attrgetter
 
 
 class FormatDict(NetboxConnect):
-
+    """
+    This class takes dictionaries with string values and changes those to ID values from Netbox.
+    """
     def __init__(self, url: str, token: str, dicts: list, api: Optional = None):
         """
         This method initialises the class with the following parameters.
