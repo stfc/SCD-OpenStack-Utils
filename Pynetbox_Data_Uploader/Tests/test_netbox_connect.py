@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, NonCallableMock, patch
+from unittest.mock import NonCallableMock, patch
 from Netbox_Api.netbox_connect import NetboxConnect
 import pytest
 

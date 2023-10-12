@@ -5,4 +5,4 @@ venv/
 
 .coverage
 coverage.xml
-Netbox_CSV_Read/DataFiles
+Pynetbox_Data_Uploader/DataFiles
