@@ -1,8 +1,9 @@
 from operator import attrgetter
-from typing import Optional
+from typing import Optional, Union
 from netbox_api.netbox_connect import NetboxConnect
 from enums.dcim_device_id import DeviceInfoID
 from enums.dcim_device_no_id import DeviceInfoNoID
+
 # pylint:disable = too-few-public-methods
 
 
@@ -10,6 +11,7 @@ class NetboxGetID(NetboxConnect):
     """
     This class retrieves field value ID's from Netbox.
     """
+
     def __init__(self, url: str, token: str, api: Optional = None):
         """
         This method initialises the class with the following parameters.
@@ -24,7 +26,9 @@ class NetboxGetID(NetboxConnect):
         self.enums_id = DeviceInfoID
         self.enums_no_id = DeviceInfoNoID
 
-    def get_id(self, attr_string: str, netbox_value: str, site_value: str) -> int | str:
+    def get_id(
+        self, attr_string: str, netbox_value: str, site_value: str
+    ) -> Union[int, str]:
         """
         This method uses Pynetbox Api .get() to retrieve the ID of a string value from Netbox.
         :param attr_string: The attribute string to get.

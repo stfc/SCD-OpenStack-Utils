@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, NonCallableMock, patch
+from unittest.mock import NonCallableMock, patch
 from csv_things.csv_utils import CsvUtils
 import pytest
 
@@ -23,8 +23,9 @@ def test_separate_data(instance):
     This test ensures that the dictionaries from panda formatted into row by row dictionaries.
     These are much more understandable and can be used individually or in bulk.
     """
-    test_data = {"key1": ["Adata1", "Bdata1"],
-                 "key2": ["Adata2", "Bdata2"]}
+    test_data = {"key1": ["Adata1", "Bdata1"], "key2": ["Adata2", "Bdata2"]}
     format_data = instance.separate_data(test_data)
-    assert format_data == [{"key1": "Adata1", "key2": "Adata2"},
-                           {"key1": "Bdata1", "key2": "Bdata2"}]
+    assert format_data == [
+        {"key1": "Adata1", "key2": "Adata2"},
+        {"key1": "Bdata1", "key2": "Bdata2"},
+    ]

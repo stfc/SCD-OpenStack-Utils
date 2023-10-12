@@ -9,6 +9,7 @@ class FormatDict(NetboxConnect):
     """
     This class takes dictionaries with string values and changes those to ID values from Netbox.
     """
+
     def __init__(self, dicts: list):
         """
         This method initialises the class with the following parameters.
