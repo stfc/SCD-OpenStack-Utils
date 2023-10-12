@@ -33,4 +33,4 @@ jobs:
 
       - name: Analyse with pylint
         run: |
-          pylint Pynetbox_Data_Uploader/lib
+          pylint --recursive yes test lib
