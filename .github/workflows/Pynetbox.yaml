@@ -29,7 +29,7 @@ jobs:
           pip install -r Pynetbox_Data_Uploader/requirements.txt
 
       - name: Run tests
-        run: cd Tests/ && python3 -m pytest .
+        run: cd Pynetbox_Data_Uploader && python3 -m pytest .
 
       - name: Analyse with pylint
         run: |
