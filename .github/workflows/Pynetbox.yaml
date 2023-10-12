@@ -26,11 +26,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r ./requirements.txt
+          pip install -r Pynetbox_Data_Uploader/requirements.txt
 
       - name: Run tests
         run: cd Tests/ && python3 -m pytest .
 
       - name: Analyse with pylint
         run: |
-          pylint lib
+          pylint Pynetbox_Data_Uploader/lib
