@@ -26,7 +26,7 @@ class NetboxGetID(NetboxConnect):
 
     def get_id(self, attr_string: str, netbox_value: str, site_value: str) -> int | str:
         """
-        This method uses the Pynetbox Api .get() method to retrieve the ID of a string value from Netbox.
+        This method uses Pynetbox Api .get() to retrieve the ID of a string value from Netbox.
         :param attr_string: The attribute string to get.
         :param netbox_value: The value to search for in Netbox.
         :param site_value: The value of the site key in the dictionary
