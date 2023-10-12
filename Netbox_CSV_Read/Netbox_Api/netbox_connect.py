@@ -1,4 +1,4 @@
-import pynetbox
+import pynetbox as nb
 
 
 class NetboxConnect:
@@ -14,12 +14,10 @@ class NetboxConnect:
         """
         self.url = url
         self.token = token
-        self.pnb = pynetbox
 
     def api_object(self):
         """
         This method returns the Pynetbox Api object.
         :return: Returns the Api object
         """
-        obj = self.pnb.api(self.url, self.token)
-        return obj
+        return nb.api(self.url, self.token)
