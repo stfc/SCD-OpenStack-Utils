@@ -33,4 +33,5 @@ jobs:
 
       - name: Analyse with pylint
         run: |
-          pylint --recursive yes test lib
+          pylint $(git ls-files '*.py')
+
