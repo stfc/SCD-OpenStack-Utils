@@ -33,5 +33,5 @@ jobs:
 
       - name: Analyse with pylint
         run: |
-          pylint $(git ls-files '*.py')
+         cd Pynetbox_Data_Uploader && pylint $(git ls-files '*.py') --rcfile=.pylintrc
 
