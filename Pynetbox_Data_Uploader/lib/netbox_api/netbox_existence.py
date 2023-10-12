@@ -1,5 +1,5 @@
 from typing import Optional
-from Netbox_Api.netbox_connect import NetboxConnect
+from netbox_api.netbox_connect import NetboxConnect
 
 
 class NetboxExistence:

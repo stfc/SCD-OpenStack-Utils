@@ -1,0 +1,13 @@
+[FORMAT]
+# Black will enforce 88 chars on Python code
+# this will enforce 120 chars on docs / comments
+max-line-length=120
+
+# Disable various warnings:
+# C0114: Missing module string - we don't need module strings for the small repo
+# C0115: Missing class doc string - a lot of the actions are self explanatory
+# W0511: TODOs they're well....to do later
+# R0801: Similar lines - Imports and method signatures will flag this, such as forwarding action args
+# C0116: Missing method docstring - Adds too much noise
+
+disable=C0114,C0115,E0401,W0511,R0801,C0116

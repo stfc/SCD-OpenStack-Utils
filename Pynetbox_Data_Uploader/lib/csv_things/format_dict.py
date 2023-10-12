@@ -1,8 +1,8 @@
 from typing import Dict, List
-from Enums.dcim_device_id import DeviceInfoID
-from Enums.dcim_device_no_id import DeviceInfoNoID
-from Netbox_Api.netbox_connect import NetboxConnect
-from Netbox_Api.netbox_data import NetboxGetID
+from enums.dcim_device_id import DeviceInfoID
+from enums.dcim_device_no_id import DeviceInfoNoID
+from netbox_api.netbox_connect import NetboxConnect
+from netbox_api.netbox_data import NetboxGetID
 
 
 class FormatDict(NetboxConnect):

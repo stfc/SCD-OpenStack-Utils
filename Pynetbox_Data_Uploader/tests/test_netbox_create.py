@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, NonCallableMock
-from Netbox_Api.netbox_create import NetboxDCIM
+from netbox_api.netbox_create import NetboxDCIM
 import pytest
 
 
