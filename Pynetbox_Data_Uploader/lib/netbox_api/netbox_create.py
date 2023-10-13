@@ -1,5 +1,5 @@
 from typing import Optional
-from Netbox_Api.netbox_connect import NetboxConnect
+from netbox_api.netbox_connect import NetboxConnect
 
 
 class NetboxDCIM:
@@ -23,7 +23,7 @@ class NetboxDCIM:
         return bool(devices)
 
     def create_device_type(
-            self, model: str, slug: str, manufacturer: str, u_height=1
+        self, model: str, slug: str, manufacturer: str, u_height: int = 1
     ) -> bool:
         """
         This method creates a new device type in Netbox.

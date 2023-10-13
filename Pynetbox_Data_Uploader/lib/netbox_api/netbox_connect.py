@@ -1,5 +1,7 @@
 import pynetbox as nb
 
+# pylint:disable = too-few-public-methods
+
 
 class NetboxConnect:
     """
