@@ -7,7 +7,7 @@ import pytest
 def instance_fixture():
     url = NonCallableMock()
     token = NonCallableMock()
-    return FormatDict(url, token)
+    return FormatDict()
 
 
 def test_iterate_dicts_no_items(instance):
@@ -16,7 +16,7 @@ def test_iterate_dicts_no_items(instance):
     """
     mock_dictionary = MagicMock()
     with patch("csv_things.format_dict.FormatDict.format_dict") as mock_format:
-        res = instance.csv_dict_to_netbox_dict([mock_dictionary])
+        res = instance.iterate_dicts([mock_dictionary])
     mock_format.assert_called_once_with(mock_dictionary)
     assert res == [mock_format.return_value]
 
@@ -27,7 +27,7 @@ def test_iterate_dicts_one_item(instance):
     """
     mock_dictionary = MagicMock()
     with patch("csv_things.format_dict.FormatDict.format_dict") as mock_format:
-        res = instance.csv_dict_to_netbox_dict([mock_dictionary])
+        res = instance.iterate_dicts([mock_dictionary])
     mock_format.assert_called_once_with(mock_dictionary)
     assert res == [mock_format.return_value]
 
@@ -40,7 +40,7 @@ def test_iterate_dicts_many_items(instance):
     mock_dictionary_3 = MagicMock()
     mock_dictionary_2 = MagicMock()
     with patch("csv_things.format_dict.FormatDict.format_dict") as mock_format:
-        res = instance.csv_dict_to_netbox_dict([
+        res = instance.iterate_dicts([
             mock_dictionary_1,
             mock_dictionary_2,
             mock_dictionary_3])

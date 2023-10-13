@@ -10,23 +10,21 @@ class FormatDict(NetboxConnect):
     This class takes dictionaries with string values and changes those to ID values from Netbox.
     """
 
-    def __init__(self, dicts: list):
+    def __init__(self):
         """
         This method initialises the class with the following parameters.
         Also, it allows dependency injection testing.
-        :param dicts: A list of dictionaries to format.
         """
-        self.dicts = dicts
         self.enums_id = DeviceInfoID
         self.enums_no_id = DeviceInfoNoID
 
-    def iterate_dicts(self) -> List:
+    def iterate_dicts(self, dicts: list) -> List:
         """
         This method iterates through each dictionary and calls a format method on each.
         :return: Returns the formatted dictionaries.
         """
         new_dicts = []
-        for dictionary in self.dicts:
+        for dictionary in dicts:
             new_dicts.append(self.format_dict(dictionary))
         return new_dicts
 
