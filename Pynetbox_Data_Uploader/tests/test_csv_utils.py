@@ -1,5 +1,5 @@
 from unittest.mock import NonCallableMock, patch
-from csv_things.csv_utils import CsvUtils
+from utils.csv_to_dict import CsvUtils
 import pytest
 
 
@@ -13,7 +13,7 @@ def test_csv_to_python(instance):
     This test ensures that the csv_read method is called once with the file_path arg.
     """
     file_path = NonCallableMock()
-    with patch("csv_things.csv_utils.pd") as mock_dataframe:
+    with patch("utils.csv_utils.pd") as mock_dataframe:
         instance.csv_to_python(file_path)
     mock_dataframe.read_csv.assert_called_once_with(file_path)
 
