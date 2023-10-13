@@ -10,5 +10,6 @@ max-line-length=120
 # R0801: Similar lines - Imports and method signatures will flag this, such as forwarding action args
 # C0116: Missing method docstring - Adds too much noise
 # E0401: Ignore import errors as imports work
+# F0010: Ignore __init__.py files
 
-disable=C0114,C0115,E0401,W0511,R0801,C0116,E0401
+disable=C0114,C0115,E0401,W0511,R0801,C0116,E0401,F0010
