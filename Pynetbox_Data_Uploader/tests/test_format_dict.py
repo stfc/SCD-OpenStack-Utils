@@ -10,7 +10,7 @@ def instance_fixture():
     return FormatDict(url, token)
 
 
-def test_csv_dict_to_netbox_dict_no_items(instance):
+def test_iterate_dicts_no_items(instance):
     """
     This test ensures that an empty list is returned when there are no dictionaries.
     """
@@ -21,7 +21,7 @@ def test_csv_dict_to_netbox_dict_no_items(instance):
     assert res == [mock_format.return_value]
 
 
-def test_csv_dict_to_netbox_dict_one_item(instance):
+def test_iterate_dicts_one_item(instance):
     """
     This test ensures the format method is called on the only dictionary.
     """
@@ -32,7 +32,7 @@ def test_csv_dict_to_netbox_dict_one_item(instance):
     assert res == [mock_format.return_value]
 
 
-def test_csv_dict_to_netbox_dict_many_items(instance):
+def test_iterate_dicts_many_items(instance):
     """
     This test ensures the format method is called each dictionary.
     """
