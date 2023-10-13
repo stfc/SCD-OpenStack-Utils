@@ -23,7 +23,7 @@ class NetboxDCIM:
         return bool(devices)
 
     def create_device_type(
-        self, model: str, slug: str, manufacturer: str, u_height=1
+        self, model: str, slug: str, manufacturer: str, u_height: int = 1
     ) -> bool:
         """
         This method creates a new device type in Netbox.
