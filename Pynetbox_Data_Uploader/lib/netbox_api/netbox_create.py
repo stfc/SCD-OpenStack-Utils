@@ -1,4 +1,4 @@
-from typing import Optional, Union, Dict, List
+from typing import Union, Dict, List
 
 
 class NetboxDCIM:

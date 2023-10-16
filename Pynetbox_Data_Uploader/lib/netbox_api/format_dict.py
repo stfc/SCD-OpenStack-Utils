@@ -1,5 +1,4 @@
 from typing import Dict, List, Union, Optional
-from enums.dcim_device_id import DeviceInfoID
 from enums.dcim_device_no_id import DeviceInfoNoID
 from netbox_api.netbox_data import NetboxGetID
 from pandas import read_csv
