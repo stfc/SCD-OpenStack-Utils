@@ -1,18 +1,12 @@
 from unittest.mock import MagicMock, NonCallableMock
-from netbox_api.netbox_check import NetboxExistence
+from netbox_api.netbox_check import NetboxCheck
 import pytest
 
 
-@pytest.fixture(name="api_mock", scope="function")
-def instance_api_fixture():
-    return MagicMock()
-
-
 @pytest.fixture(name="instance")
-def instance_fixture(api_mock):
-    url = "not real url"
-    token = "not real token"
-    return NetboxExistence(url, token, api_mock)
+def instance_fixture():
+    netbox = NonCallableMock()
+    return NetboxCheck(netbox)
 
 
 def test_check_device_exists(instance):

@@ -1,11 +1,11 @@
 from typing import Optional
 
 
-class NetboxExistence:
+class NetboxCheck:
     """
     This class contains methods that check if an object exists in Netbox.
     """
-    def __init__(self, url: str, token: str, netbox: Optional = None):
+    def __init__(self, netbox: Optional = None):
         self.netbox = netbox
 
     def check_device_exists(self, device_name: str) -> bool:

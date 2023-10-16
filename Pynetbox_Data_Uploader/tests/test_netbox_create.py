@@ -3,16 +3,10 @@ from netbox_api.netbox_create import NetboxDCIM
 import pytest
 
 
-@pytest.fixture(name="api_mock", scope="function")
-def instance_api_fixture():
-    return MagicMock()
-
-
 @pytest.fixture(name="instance")
-def instance_fixture(api_mock):
-    url = "not real url"
-    token = "not real token"
-    return NetboxDCIM(url, token, api_mock)
+def instance_fixture():
+    netbox = NonCallableMock()
+    return NetboxDCIM(netbox)
 
 
 def test_create_device(instance):
