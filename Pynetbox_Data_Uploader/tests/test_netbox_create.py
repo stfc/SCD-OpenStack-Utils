@@ -5,6 +5,10 @@ import pytest
 
 @pytest.fixture(name="instance")
 def instance_fixture():
+    """
+    This fixture method calls the class being tested.
+    :return: The class object.
+    """
     netbox = NonCallableMock()
     return NetboxDCIM(netbox)
 

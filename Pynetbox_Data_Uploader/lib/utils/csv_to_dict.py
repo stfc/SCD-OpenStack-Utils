@@ -41,11 +41,14 @@ class FormatDict:
 
     def get_id_from_key(self, key: str, dictionary: Dict) -> Union[str, int]:
         """
-        This method calls the get_id method to
+        This method calls the get_id method to retrieve the Netbox id of a value.
+        :param key: The attribute to look for.
+        :param dictionary: The device dictionary being referenced.
+        :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
         """
         if key not in list(self.enums_no_id.__members__):
             value = NetboxGetID(self.netbox).get_id(
-                key, dictionary[key], dictionary["site"]
+                attr_string=key, netbox_value=dictionary[key], site_value=dictionary["site"]
             )
             return value
         return dictionary[key]

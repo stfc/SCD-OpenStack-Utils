@@ -22,7 +22,7 @@ def test_csv_to_python(instance):
 
 def test_separate_data(instance):
     """
-    This test ensures that the dictionaries from panda formatted into row by row dictionaries.
+    This test ensures that the dictionaries from pandas formatted into row by row dictionaries.
     These are much more understandable and can be used individually or in bulk.
     """
     test_data = {"key1": ["Adata1", "Bdata1"], "key2": ["Adata2", "Bdata2"]}
