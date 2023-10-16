@@ -1,5 +1,5 @@
 from unittest.mock import NonCallableMock, patch, MagicMock
-from netbox_api.format_dict import FormatDict
+from utils.csv_to_dict import FormatDict
 import pytest
 
 
