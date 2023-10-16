@@ -5,6 +5,7 @@ class NetboxCheck:
     """
     This class contains methods that check if an object exists in Netbox.
     """
+
     def __init__(self, netbox: Optional = None):
         self.netbox = netbox
 

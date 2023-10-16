@@ -41,10 +41,12 @@ class FormatDict:
 
     def get_id_from_key(self, key: str, dictionary: Dict) -> Union[str, int]:
         """
-    This method calls the get_id method to
+        This method calls the get_id method to
         """
         if key not in list(self.enums_no_id.__members__):
-            value = NetboxGetID(self.netbox).get_id(key, dictionary[key], dictionary["site"])
+            value = NetboxGetID(self.netbox).get_id(
+                key, dictionary[key], dictionary["site"]
+            )
             return value
         return dictionary[key]
 

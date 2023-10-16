@@ -63,12 +63,15 @@ def test_iterate_dicts_many_items(instance):
     mock_dictionary_3 = MagicMock()
     mock_dictionary_2 = MagicMock()
     with patch("utils.csv_to_dict.FormatDict.format_dict") as mock_format:
-        res = instance.iterate_dicts([
-            mock_dictionary_1,
-            mock_dictionary_2,
-            mock_dictionary_3])
+        res = instance.iterate_dicts(
+            [mock_dictionary_1, mock_dictionary_2, mock_dictionary_3]
+        )
     mock_format.assert_any_call(mock_dictionary_1)
     mock_format.assert_any_call(mock_dictionary_2)
     mock_format.assert_any_call(mock_dictionary_3)
-    expected = [mock_format.return_value, mock_format.return_value, mock_format.return_value]
+    expected = [
+        mock_format.return_value,
+        mock_format.return_value,
+        mock_format.return_value,
+    ]
     assert res == expected
