@@ -1,30 +1,22 @@
 from operator import attrgetter
-from typing import Optional, Union
-from netbox_api.netbox_connect import NetboxConnect
+from typing import Optional, Union, Dict
 from enums.dcim_device_id import DeviceInfoID
 from enums.dcim_device_no_id import DeviceInfoNoID
 
 # pylint:disable = too-few-public-methods
 
 
-class NetboxGetID(NetboxConnect):
+class NetboxGetID:
     """
     This class retrieves field value ID's from Netbox.
     """
 
-    def __init__(self, url: str, token: str, api: Optional = None):
+    def __init__(self, netbox: Optional = None):
         """
-        This method initialises the class with the following parameters.
-        Also, it allows dependency injection testing.
-        :param url: Netbox website URL.
-        :param token: Netbox authentication token.
+        This method allows the Netbox Api Object and Enums to be accessible within the class.
         """
-        if not api:
-            self.netbox = NetboxConnect(url, token).api_object()
-        else:
-            self.netbox = api
+        self.netbox = netbox
         self.enums_id = DeviceInfoID
-        self.enums_no_id = DeviceInfoNoID
 
     def get_id(
         self, attr_string: str, netbox_value: str, site_value: str
@@ -45,7 +37,7 @@ class NetboxGetID(NetboxConnect):
             if isinstance(site_value, int):
                 site_name = self.netbox.dcim.sites.get(site_value).name
                 site_slug = site_name.replace(" ", "-").lower()
-            value = value.get(name=netbox_value, site=site_slug)
+                value = value.get(name=netbox_value, site=site_slug)
         else:
             value = value.get(name=netbox_value).id
         return value

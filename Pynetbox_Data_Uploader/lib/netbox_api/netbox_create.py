@@ -1,5 +1,4 @@
-from typing import Optional
-from netbox_api.netbox_connect import NetboxConnect
+from typing import Optional, Union, Dict, List
 
 
 class NetboxDCIM:
@@ -7,13 +6,10 @@ class NetboxDCIM:
     This class contains methods that will interact create objects in Netbox.
     """
 
-    def __init__(self, url: str, token: str, api: Optional = None):
-        if not api:
-            self.netbox = NetboxConnect(url, token).api_object()
-        else:
-            self.netbox = api
+    def __init__(self, netbox):
+        self.netbox = netbox
 
-    def create_device(self, data: dict | list) -> bool:
+    def create_device(self, data: Union[Dict, List]) -> bool:
         """
         This method uses the pynetbox Api to create a device in Netbox.
         :param data: A list of or a single dictionary.
