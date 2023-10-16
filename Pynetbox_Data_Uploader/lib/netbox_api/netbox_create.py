@@ -1,7 +1,7 @@
 from typing import Union, Dict, List
 
 
-class NetboxDCIM:
+class NetboxCreate:
     """
     This class contains methods that will interact create objects in Netbox.
     """
