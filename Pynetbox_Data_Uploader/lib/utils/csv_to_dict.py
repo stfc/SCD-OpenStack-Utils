@@ -48,7 +48,9 @@ class FormatDict:
         """
         if key not in list(self.enums_no_id.__members__):
             value = NetboxGetID(self.netbox).get_id(
-                attr_string=key, netbox_value=dictionary[key], site_value=dictionary["site"]
+                attr_string=key,
+                netbox_value=dictionary[key],
+                site_value=dictionary["site"],
             )
             return value
         return dictionary[key]
