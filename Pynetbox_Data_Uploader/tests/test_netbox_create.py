@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock, NonCallableMock
-from netbox_api.netbox_create import NetboxDCIM
+from netbox_api.netbox_create import NetboxCreate
 import pytest
 
 
 @pytest.fixture(name="instance")
 def instance_fixture():
     netbox = NonCallableMock()
-    return NetboxDCIM(netbox)
+    return NetboxCreate(netbox)
 
 
 def test_create_device(instance):
