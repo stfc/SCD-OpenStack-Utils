@@ -1,11 +1,11 @@
 from unittest.mock import NonCallableMock, patch
-from utils.csv_to_dict import CsvUtils
+from netbox_api.format_dict import FormatDict
 import pytest
 
 
 @pytest.fixture(name="instance")
 def instance_fixture():
-    return CsvUtils()
+    return FormatDict()
 
 
 def test_csv_to_python(instance):
@@ -13,9 +13,11 @@ def test_csv_to_python(instance):
     This test ensures that the csv_read method is called once with the file_path arg.
     """
     file_path = NonCallableMock()
-    with patch("utils.csv_to_dict.pd") as mock_dataframe:
-        instance.csv_to_python(file_path)
-    mock_dataframe.read_csv.assert_called_once_with(file_path)
+    with patch("netbox_api.format_dict.read_csv") as mock_read_csv:
+        res = instance.csv_to_python(file_path)
+    mock_read_csv.assert_called_once_with(file_path)
+    mock_read_csv.return_value.to_dict.assert_called_once_with(orient="list")
+    assert res == mock_read_csv.return_value.to_dict.return_value
 
 
 def test_separate_data(instance):
