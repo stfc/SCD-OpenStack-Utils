@@ -39,6 +39,9 @@ class NetboxGetID:
                 site_name = self.netbox.dcim.sites.get(site_value).name
                 site_slug = site_name.replace(" ", "-").lower()
                 value = value.get(name=netbox_value, site=site_slug)
+                list_value = list(value)
+                list_value = [item for item in list_value if item[0] == "id"]
+                value = list_value[0][1]
         else:
             value = value.get(name=netbox_value).id
         return value
