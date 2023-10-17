@@ -9,13 +9,13 @@ class FormatDict:
     This class takes dictionaries with string values and changes those to ID values from Netbox.
     """
 
-    def __init__(self, netbox: Optional = None):
+    def __init__(self, api: Optional = None):
         """
         This method initialises the class with the following parameters.
         Also, it allows dependency injection testing.
         """
         self.enums_no_id = DeviceInfoNoID
-        self.netbox = netbox
+        self.netbox = api
 
     def iterate_dicts(self, dicts: list) -> List:
         """

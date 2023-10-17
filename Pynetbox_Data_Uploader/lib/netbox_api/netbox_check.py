@@ -6,8 +6,8 @@ class NetboxCheck:
     This class contains methods that check if an object exists in Netbox.
     """
 
-    def __init__(self, netbox: Optional = None):
-        self.netbox = netbox
+    def __init__(self, api):
+        self.netbox = api
 
     def check_device_exists(self, device_name: str) -> bool:
         """

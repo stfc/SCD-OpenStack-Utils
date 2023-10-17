@@ -10,11 +10,11 @@ class NetboxGetID:
     This class retrieves field value ID's from Netbox.
     """
 
-    def __init__(self, netbox: Optional = None):
+    def __init__(self, api):
         """
         This method allows the Netbox Api Object and Enums to be accessible within the class.
         """
-        self.netbox = netbox
+        self.netbox = api
         self.enums_id = DeviceInfoID
 
     def get_id(
