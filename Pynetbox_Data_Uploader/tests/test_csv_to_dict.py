@@ -1,5 +1,5 @@
 from unittest.mock import NonCallableMock, patch, MagicMock
-from utils.csv_to_dict import FormatDict
+from lib.utils.csv_to_dict import FormatDict
 import pytest
 
 
@@ -13,7 +13,7 @@ def test_csv_to_python(instance):
     This test ensures that the csv_read method is called once with the file_path arg.
     """
     file_path = NonCallableMock()
-    with patch("utils.csv_to_dict.read_csv") as mock_read_csv:
+    with patch("lib.utils.csv_to_dict.read_csv") as mock_read_csv:
         res = instance.csv_to_python(file_path)
     mock_read_csv.assert_called_once_with(file_path)
     mock_read_csv.return_value.to_dict.assert_called_once_with(orient="list")
@@ -38,7 +38,7 @@ def test_iterate_dicts_no_items(instance):
     This test ensures that an empty list is returned when there are no dictionaries.
     """
     mock_dictionary = MagicMock()
-    with patch("utils.csv_to_dict.FormatDict.format_dict") as mock_format:
+    with patch("lib.utils.csv_to_dict.FormatDict.format_dict") as mock_format:
         res = instance.iterate_dicts([mock_dictionary])
     mock_format.assert_called_once_with(mock_dictionary)
     assert res == [mock_format.return_value]
@@ -49,7 +49,7 @@ def test_iterate_dicts_one_item(instance):
     This test ensures the format method is called on the only dictionary.
     """
     mock_dictionary = MagicMock()
-    with patch("utils.csv_to_dict.FormatDict.format_dict") as mock_format:
+    with patch("lib.utils.csv_to_dict.FormatDict.format_dict") as mock_format:
         res = instance.iterate_dicts([mock_dictionary])
     mock_format.assert_called_once_with(mock_dictionary)
     assert res == [mock_format.return_value]
@@ -62,7 +62,7 @@ def test_iterate_dicts_many_items(instance):
     mock_dictionary_1 = MagicMock()
     mock_dictionary_3 = MagicMock()
     mock_dictionary_2 = MagicMock()
-    with patch("utils.csv_to_dict.FormatDict.format_dict") as mock_format:
+    with patch("lib.utils.csv_to_dict.FormatDict.format_dict") as mock_format:
         res = instance.iterate_dicts(
             [mock_dictionary_1, mock_dictionary_2, mock_dictionary_3]
         )
