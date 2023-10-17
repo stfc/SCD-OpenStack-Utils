@@ -5,6 +5,10 @@ import pytest
 
 @pytest.fixture(name="instance")
 def instance_fixture():
+    """
+    This fixture method calls the class being tested with mock parameters.
+    :return: The class object.
+    """
     url = NonCallableMock()
     token = NonCallableMock
     return NetboxConnect(url, token)
