@@ -1,5 +1,4 @@
 from typing import Dict, List, Union, Optional
-from enums.dcim_device_no_id import DeviceInfoNoID
 from netbox_api.netbox_data import NetboxGetID
 from pandas import read_csv
 
@@ -9,12 +8,11 @@ class FormatDict:
     This class takes dictionaries with string values and changes those to ID values from Netbox.
     """
 
-    def __init__(self, netbox: Optional = None):
+    def __init__(self, netbox):
         """
         This method initialises the class with the following parameters.
-        Also, it allows dependency injection testing.
+        :param netbox: The Netbox object to pass into NetboxGetID
         """
-        self.enums_no_id = DeviceInfoNoID
         self.netbox = netbox
 
     def iterate_dicts(self, dicts: list) -> List:
@@ -35,25 +33,10 @@ class FormatDict:
         :return: Returns the formatted dictionary
         """
         for key in dictionary:
-            netbox_id = self.get_id_from_key(key=key, dictionary=dictionary)
+            netbox_id = NetboxGetID(self.netbox).get_id_from_key(key=key, dictionary=dictionary)
             dictionary[key] = netbox_id
         return dictionary
 
-    def get_id_from_key(self, key: str, dictionary: Dict) -> Union[str, int]:
-        """
-        This method calls the get_id method to retrieve the Netbox id of a value.
-        :param key: The attribute to look for.
-        :param dictionary: The device dictionary being referenced.
-        :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
-        """
-        if key not in list(self.enums_no_id.__members__):
-            value = NetboxGetID(self.netbox).get_id(
-                attr_string=key,
-                netbox_value=dictionary[key],
-                site_value=dictionary["site"],
-            )
-            return value
-        return dictionary[key]
 
     @staticmethod
     def csv_to_python(file_path: str) -> Dict:

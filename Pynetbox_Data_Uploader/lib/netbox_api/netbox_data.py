@@ -1,6 +1,7 @@
 from operator import attrgetter
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from enums.dcim_device_id import DeviceInfoID
+from enums.dcim_device_no_id import DeviceInfoNoID
 
 # pylint:disable = too-few-public-methods
 
@@ -10,12 +11,13 @@ class NetboxGetID:
     This class retrieves field value ID's from Netbox.
     """
 
-    def __init__(self, netbox: Optional = None):
+    def __init__(self, netbox):
         """
         This method allows the Netbox Api Object and Enums to be accessible within the class.
         """
         self.netbox = netbox
         self.enums_id = DeviceInfoID
+        self.enums_no_id = DeviceInfoNoID
 
     def get_id(
         self, attr_string: str, netbox_value: str, site_value: str
@@ -40,3 +42,19 @@ class NetboxGetID:
         else:
             value = value.get(name=netbox_value).id
         return value
+
+    def get_id_from_key(self, key: str, dictionary: Dict) -> Union[str, int]:
+        """
+        This method calls the get_id method to retrieve the Netbox id of a value.
+        :param key: The attribute to look for.
+        :param dictionary: The device dictionary being referenced.
+        :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
+        """
+        if key not in list(self.enums_no_id.__members__):
+            value = self.get_id(
+                attr_string=key,
+                netbox_value=dictionary[key],
+                site_value=dictionary["site"],
+            )
+            return value
+        return dictionary[key]
