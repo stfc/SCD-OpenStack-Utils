@@ -41,14 +41,14 @@ class CsvToNetbox:
 def arg_parser():
     parser = argparse.ArgumentParser(
         description="Create devices in Netbox from CSV files.",
-        usage="python csv_to_netbox.py url token file_path"
+        usage="python csv_to_netbox.py url token file_path",
     )
     parser.add_argument("url", help="The Netbox URL.")
     parser.add_argument("token", help="Your Netbox Token.")
     parser.add_argument("file_path", help="Your file path to csv files.")
     return parser.parse_args()
-    
-    
+
+
 def do_csv_to_netbox(args):
     class_object = CsvToNetbox(url=args.url, token=args.token, file_path=args.file_path)
     device_list = class_object.read_csv()
