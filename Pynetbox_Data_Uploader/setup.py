@@ -13,7 +13,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    package_dir={'Pynetbox_Data_Uploader': 'lib'},
+    package_dir={"Pynetbox_Data_Uploader": "lib"},
     python_requires=">=3.9",
     install_requires=[],
     keywords=["python"],
