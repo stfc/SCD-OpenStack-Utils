@@ -14,27 +14,25 @@ class CsvToNetbox:
     """
     This class contains organised methods in the 4 step proccess of reading csv's to then uploading to Netbox.
     """
-    def __init__(self, url: str, token: str, file_path: str):
+    def __init__(self, url: str, token: str):
         """
         This initialises the class with the following parameters.
         It also allows the rest of the class to access the imported Classes.
         :param url: The Netbox url.
         :param token: The Netbox auth token.
-        :param file_path: The file path to the csv file.
         """
         self.netbox = NetboxConnect(url, token).api_object()
-        self.file_path = file_path
         self.format_dict = FormatDict(api=self.netbox)
         self.exist = NetboxCheck(api=self.netbox)
         self.create = NetboxCreate(api=self.netbox)
 
-    def read_csv(self) -> List:
+    def read_csv(self, file_path) -> List:
         """
         This method calls the csv_to_python and seperate_data method.
         This will take the csv file and return a list of device dictionaries.
         :return: Returns a list of devices
         """
-        device_data = self.format_dict.csv_to_python(self.file_path)
+        device_data = self.format_dict.csv_to_python(file_path)
         device_list = self.format_dict.separate_data(device_data)
         return device_list
 
@@ -93,8 +91,8 @@ def do_csv_to_netbox(args) -> bool:
     :param args: The arguments from argparse. Supplied when the user runs the file from CLI.
     :return: Returns bool if devices where created or not.
     """
-    class_object = CsvToNetbox(url=args.url, token=args.token, file_path=args.file_path)
-    device_list = class_object.read_csv()
+    class_object = CsvToNetbox(url=args.url, token=args.token)
+    device_list = class_object.read_csv(args.file_path)
     class_object.check_netbox(device_list)
     format_list = class_object.convert_data(device_list)
     result = class_object.send_data(format_list)
