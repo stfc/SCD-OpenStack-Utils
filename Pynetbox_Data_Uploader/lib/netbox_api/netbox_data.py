@@ -1,5 +1,5 @@
 from operator import attrgetter
-from typing import Optional, Union
+from typing import Union
 from lib.enums.dcim_device_id import DeviceInfoID
 
 # pylint:disable = too-few-public-methods

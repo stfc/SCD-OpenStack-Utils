@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 class NetboxCheck:
     """
     This class contains methods that check if an object exists in Netbox.

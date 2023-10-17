@@ -1,9 +1,13 @@
+from typing import List
+import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
 from lib.netbox_api.netbox_check import NetboxCheck
 from lib.utils.csv_to_dict import FormatDict
-from typing import List
-import argparse
+
+# pylint:disable = broad-exception-raised 
+# Disabled this pylint warning as the exception doesn't catch an error.
+# We want it to stop the program if a device already exists in netbox.
 
 
 class CsvToNetbox:

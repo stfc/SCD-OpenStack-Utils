@@ -53,8 +53,7 @@ class FormatDict:
                 site_value=dictionary["site"],
             )
             return value
-        else:
-            return dictionary[key]
+        return dictionary[key]
 
     @staticmethod
     def csv_to_python(file_path: str) -> Dict:
