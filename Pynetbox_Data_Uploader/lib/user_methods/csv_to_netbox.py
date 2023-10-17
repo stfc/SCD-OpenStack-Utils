@@ -32,5 +32,24 @@ print(f'Device created: {res}')
 print("No Errors?")
 
 
+class CsvToDict(NetboxConnect):
+    def __init__(self, url: str, token: str, file_path: str):
+        self.netbox = super(url, token).api_object()
+        self.file_path = file_path
+
+    def read(self):
+        pass
+
+    def parse(self):
+        pass
+
+    def check(self):
+        pass
+
+    def convert(self):
+        pass
+
+    def send(self):
+        pass
 
 
