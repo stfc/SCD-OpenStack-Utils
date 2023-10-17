@@ -15,13 +15,13 @@ parser.add_argument("file_path", help="Your file path to csv files.")
 args = parser.parse_args()
 
 
-class CsvToDict(NetboxConnect):
+class CsvToDict:
     def __init__(self, url: str, token: str, file_path: str):
-        self.netbox = super(url, token).api_object()
+        self.netbox = NetboxConnect(url, token).api_object()
         self.file_path = file_path
-        self.format_dict = FormatDict(self.netbox)
-        self.exist = NetboxCheck(netbox=self.netbox)
-        self.create = NetboxCreate(netbox=self.netbox)
+        self.format_dict = FormatDict(api=self.netbox)
+        self.exist = NetboxCheck(api=self.netbox)
+        self.create = NetboxCreate(api=self.netbox)
 
     def read_csv(self) -> List:
         device_data = self.format_dict.csv_to_python(self.file_path)
