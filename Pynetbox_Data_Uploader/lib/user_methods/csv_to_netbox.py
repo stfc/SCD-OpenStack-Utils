@@ -5,17 +5,8 @@ from lib.utils.csv_to_dict import FormatDict
 from typing import List
 import argparse
 
-parser = argparse.ArgumentParser(
-    description="Create devices in Netbox from CSV files.",
-    usage="python csv_to_netbox.py url token file_path",
-)
-parser.add_argument("url", help="The Netbox URL.")
-parser.add_argument("token", help="Your Netbox Token.")
-parser.add_argument("file_path", help="Your file path to csv files.")
-args = parser.parse_args()
 
-
-class CsvToDict:
+class CsvToNetbox:
     def __init__(self, url: str, token: str, file_path: str):
         self.netbox = NetboxConnect(url, token).api_object()
         self.file_path = file_path
@@ -38,11 +29,38 @@ class CsvToDict:
                 raise Exception(f'Type {device["device_type"]} does not exist.')
         return True
 
-    def convert_data(self,device_list: List) -> List:
+    def convert_data(self, device_list: List) -> List:
         formatted_list = self.format_dict.iterate_dicts(device_list)
         return formatted_list
 
     def send_data(self, device_list: List) -> bool:
         devices = self.create.create_device(device_list)
-        result = bool(devices)
-        return result
+        return bool(devices)
+
+
+def arg_parser():
+    parser = argparse.ArgumentParser(
+        description="Create devices in Netbox from CSV files.",
+        usage="python csv_to_netbox.py url token file_path"
+    )
+    parser.add_argument("url", help="The Netbox URL.")
+    parser.add_argument("token", help="Your Netbox Token.")
+    parser.add_argument("file_path", help="Your file path to csv files.")
+    return parser.parse_args()
+    
+    
+def do_csv_to_netbox(args):
+    class_object = CsvToNetbox(url=args.url, token=args.token, file_path=args.file_path)
+    device_list = class_object.read_csv()
+    class_object.check_netbox(device_list)
+    format_list = class_object.convert_data(device_list)
+    result = class_object.send_data(format_list)
+    return result
+
+
+if __name__ == "__main__":
+    arguments = arg_parser()
+    if do_csv_to_netbox(arguments):
+        print("Done.")
+    else:
+        print("Uh Oh.")
