@@ -1,6 +1,6 @@
 from typing import Dict, List, Union, Optional
-from enums.dcim_device_no_id import DeviceInfoNoID
-from netbox_api.netbox_data import NetboxGetID
+from lib.enums.dcim_device_no_id import DeviceInfoNoID
+from lib.netbox_api.netbox_data import NetboxGetID
 from pandas import read_csv
 
 
@@ -46,14 +46,15 @@ class FormatDict:
         :param dictionary: The device dictionary being referenced.
         :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
         """
-        if key not in list(self.enums_no_id.__members__):
+        if key.upper() not in list(self.enums_no_id.__members__):
             value = NetboxGetID(self.netbox).get_id(
                 attr_string=key,
                 netbox_value=dictionary[key],
                 site_value=dictionary["site"],
             )
             return value
-        return dictionary[key]
+        else:
+            return dictionary[key]
 
     @staticmethod
     def csv_to_python(file_path: str) -> Dict:
