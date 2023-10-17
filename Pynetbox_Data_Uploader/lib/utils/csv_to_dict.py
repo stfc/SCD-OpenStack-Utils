@@ -1,7 +1,7 @@
 from typing import Dict, List, Union, Optional
+from pandas import read_csv
 from lib.enums.dcim_device_no_id import DeviceInfoNoID
 from lib.netbox_api.netbox_data import NetboxGetID
-from pandas import read_csv
 
 
 class FormatDict:
