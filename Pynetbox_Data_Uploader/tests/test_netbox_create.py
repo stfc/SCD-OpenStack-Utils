@@ -37,5 +37,5 @@ def test_create_device_type(instance):
         model=mock_model, manufacturer=mock_manufacturer, slug=mock_slug
     )
     mock_device_types.create.assert_called_once_with(
-        model=mock_model, slug=mock_slug, manufacturer=mock_manufacturer, u_height=1
+        model=mock_model, slug=mock_slug, manufacturer=mock_manufacturer, u_height=0
     )
