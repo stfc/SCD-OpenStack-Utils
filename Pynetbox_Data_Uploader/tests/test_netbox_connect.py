@@ -5,9 +5,8 @@ import pytest
 
 @pytest.fixture(name="instance")
 def instance_fixture():
-    url = NonCallableMock()
-    token = NonCallableMock
-    return NetboxConnect(url, token)
+    netbox = NonCallableMock()
+    return NetboxConnect(netbox)
 
 
 def test_api_object(instance):

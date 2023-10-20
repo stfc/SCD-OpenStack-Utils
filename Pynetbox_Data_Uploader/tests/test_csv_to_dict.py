@@ -5,7 +5,8 @@ import pytest
 
 @pytest.fixture(name="instance")
 def instance_fixture():
-    return FormatDict()
+    netbox = NonCallableMock()
+    return FormatDict(netbox)
 
 
 def test_csv_to_python(instance):
