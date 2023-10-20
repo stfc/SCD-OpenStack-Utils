@@ -1,17 +1,10 @@
-from typing import Optional
-from netbox_api.netbox_connect import NetboxConnect
-
-
-class NetboxExistence:
+class NetboxCheck:
     """
     This class contains methods that check if an object exists in Netbox.
     """
 
-    def __init__(self, url: str, token: str, api: Optional = None):
-        if not api:
-            self.netbox = NetboxConnect(url, token).api_object()
-        else:
-            self.netbox = api
+    def __init__(self, netbox):
+        self.netbox = netbox
 
     def check_device_exists(self, device_name: str) -> bool:
         """

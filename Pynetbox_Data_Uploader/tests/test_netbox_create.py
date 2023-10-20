@@ -1,18 +1,16 @@
 from unittest.mock import MagicMock, NonCallableMock
-from netbox_api.netbox_create import NetboxDCIM
 import pytest
-
-
-@pytest.fixture(name="api_mock", scope="function")
-def instance_api_fixture():
-    return MagicMock()
+from lib.netbox_api.netbox_create import NetboxCreate
 
 
 @pytest.fixture(name="instance")
-def instance_fixture(api_mock):
-    url = "not real url"
-    token = "not real token"
-    return NetboxDCIM(url, token, api_mock)
+def instance_fixture():
+    """
+    This fixture method calls the class being tested.
+    :return: The class object.
+    """
+    netbox = NonCallableMock()
+    return NetboxCreate(netbox)
 
 
 def test_create_device(instance):
