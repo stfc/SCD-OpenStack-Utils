@@ -18,6 +18,7 @@ class FormatDict:
     def iterate_dicts(self, dicts: list) -> List:
         """
         This method iterates through each dictionary and calls a format method on each.
+        :param dicts: A list of dictionaries to be formatted.
         :return: Returns the formatted dictionaries.
         """
         new_dicts = []

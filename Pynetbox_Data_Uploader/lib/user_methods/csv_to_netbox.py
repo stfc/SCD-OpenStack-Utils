@@ -30,6 +30,7 @@ class CsvToNetbox:
         """
         This method calls the csv_to_python and seperate_data method.
         This will take the csv file and return a list of device dictionaries.
+        :param file_path: The file path to the csv file to be read.
         :return: Returns a list of devices
         """
         print("Reading CSV...")
