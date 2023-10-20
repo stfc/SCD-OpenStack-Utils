@@ -1,12 +1,13 @@
 from unittest.mock import NonCallableMock, patch
-from netbox_api.netbox_connect import NetboxConnect
+from lib.netbox_api.netbox_connect import NetboxConnect
 import pytest
 
 
 @pytest.fixture(name="instance")
 def instance_fixture():
-    netbox = NonCallableMock()
-    return NetboxConnect(netbox)
+    url = NonCallableMock()
+    token = NonCallableMock()
+    return NetboxConnect(url, token)
 
 
 def test_api_object(instance):

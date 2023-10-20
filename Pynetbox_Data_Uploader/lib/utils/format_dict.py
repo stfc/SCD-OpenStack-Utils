@@ -1,5 +1,5 @@
 from typing import Dict, List, Union, Optional
-from netbox_api.netbox_data import NetboxGetID
+from lib.netbox_api.netbox_data import NetboxGetID
 from pandas import read_csv
 
 
