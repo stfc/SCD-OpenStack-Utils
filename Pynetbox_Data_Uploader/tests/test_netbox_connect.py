@@ -1,10 +1,14 @@
-import pytest
 from unittest.mock import NonCallableMock, patch
+import pytest
 from lib.netbox_api.netbox_connect import NetboxConnect
 
 
 @pytest.fixture(name="instance")
 def instance_fixture():
+    """
+    This fixture method calls the class being tested.
+    :return: The class object.
+    """
     url = NonCallableMock()
     token = NonCallableMock()
     return NetboxConnect(url, token)

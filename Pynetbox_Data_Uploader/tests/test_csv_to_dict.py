@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import NonCallableMock, patch, MagicMock
+import pytest
 from lib.utils.format_dict import FormatDict
 
 

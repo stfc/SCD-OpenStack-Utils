@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import NonCallableMock
+import pytest
 from lib.netbox_api.netbox_data import NetboxGetID
 
 
