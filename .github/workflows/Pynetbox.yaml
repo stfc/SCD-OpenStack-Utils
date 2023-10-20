@@ -35,3 +35,9 @@ jobs:
         run: |
          cd Pynetbox_Data_Uploader && pylint $(git ls-files '*.py') --rcfile=.pylintrc
 
+      - name: Run tests and collect coverage
+        run: pytest --cov app
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+
