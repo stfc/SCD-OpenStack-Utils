@@ -1,6 +1,6 @@
+import pytest
 from unittest.mock import NonCallableMock
 from lib.netbox_api.netbox_data import NetboxGetID
-import pytest
 
 
 @pytest.fixture(name="instance")

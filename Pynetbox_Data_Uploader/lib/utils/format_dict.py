@@ -1,6 +1,6 @@
-from typing import Dict, List, Union, Optional
-from lib.netbox_api.netbox_data import NetboxGetID
+from typing import Dict, List
 from pandas import read_csv
+from lib.netbox_api.netbox_data import NetboxGetID
 
 
 class FormatDict:

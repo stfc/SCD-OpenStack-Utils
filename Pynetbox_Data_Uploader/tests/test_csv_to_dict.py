@@ -1,10 +1,14 @@
+import pytest
 from unittest.mock import NonCallableMock, patch, MagicMock
 from lib.utils.format_dict import FormatDict
-import pytest
 
 
 @pytest.fixture(name="instance")
 def instance_fixture():
+    """
+    This fixture method calls the class being tested.
+    :return: The class object.
+    """
     netbox = NonCallableMock()
     return FormatDict(netbox)
 
