@@ -53,7 +53,7 @@ class NetboxGetID:
         :param dictionary: The device dictionary being referenced.
         :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
         """
-        if key not in list(self.enums_no_id.__members__):
+        if key.upper() not in list(self.enums_no_id.__members__):
             value = self.get_id(
                 attr_string=key,
                 netbox_value=dictionary[key],
