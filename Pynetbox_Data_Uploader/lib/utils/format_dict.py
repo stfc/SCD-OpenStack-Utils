@@ -8,12 +8,12 @@ class FormatDict:
     This class takes dictionaries with string values and changes those to ID values from Netbox.
     """
 
-    def __init__(self, netbox):
+    def __init__(self, api):
         """
         This method initialises the class with the following parameters.
-        :param netbox: The Netbox object to pass into NetboxGetID
+        :param api: The Netbox object to pass into NetboxGetID
         """
-        self.netbox = netbox
+        self.netbox = api
 
     def iterate_dicts(self, dicts: list) -> List:
         """

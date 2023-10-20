@@ -3,7 +3,7 @@ import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
 from lib.netbox_api.netbox_check import NetboxCheck
-from lib.utils.csv_to_dict import FormatDict
+from lib.utils.format_dict import FormatDict
 
 # pylint:disable = broad-exception-raised
 # Disabled this pylint warning as the exception doesn't catch an error.
@@ -22,9 +22,9 @@ class CsvToNetbox:
         :param token: The Netbox auth token.
         """
         self.netbox = NetboxConnect(url, token).api_object()
-        self.format_dict = FormatDict(api=self.netbox)
-        self.exist = NetboxCheck(api=self.netbox)
-        self.create = NetboxCreate(api=self.netbox)
+        self.format_dict = FormatDict(self.netbox)
+        self.exist = NetboxCheck(self.netbox)
+        self.create = NetboxCreate(self.netbox)
 
     def read_csv(self, file_path) -> List:
         """
@@ -32,8 +32,10 @@ class CsvToNetbox:
         This will take the csv file and return a list of device dictionaries.
         :return: Returns a list of devices
         """
+        print("Reading CSV...")
         device_data = self.format_dict.csv_to_python(file_path)
         device_list = self.format_dict.separate_data(device_data)
+        print("Read CSV.")
         return device_list
 
     def check_netbox(self, device_list: List) -> bool:
@@ -42,6 +44,7 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns True if the devices don't exist and device types do exist. Raises an Exception otherwise.
         """
+        print("Checking devices in Netbox...")
         for device in device_list:
             device_exist = self.exist.check_device_exists(device["name"])
             if device_exist:
@@ -49,6 +52,7 @@ class CsvToNetbox:
             type_exist = self.exist.check_device_type_exists(device["device_type"])
             if not type_exist:
                 raise Exception(f'Type {device["device_type"]} does not exist.')
+        print("Checked devices.")
         return True
 
     def convert_data(self, device_list: List) -> List:
@@ -57,7 +61,9 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns the updated list of devices.
         """
+        print("Formatting data...")
         formatted_list = self.format_dict.iterate_dicts(device_list)
+        print("Formatted data.")
         return formatted_list
 
     def send_data(self, device_list: List) -> bool:
@@ -66,7 +72,9 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns bool whether the devices where created.
         """
+        print("Sending data to Netbox...")
         devices = self.create.create_device(device_list)
+        print("Sent data.")
         return bool(devices)
 
 
