@@ -31,6 +31,7 @@ def main():
 
         datastring += ",Project="+result["Project"].replace(' ','\ ')
         datastring += ",Department="+department.replace(' ','\ ')
+        datastring += ",StorageBackend="+result["StorageBackend"]
         datastring += ",GlanceType="+result["GlanceType"]
         datastring += ",YYYY-MM="+ endyyyymm
         datastring += " Images="+str(result["Images"])
