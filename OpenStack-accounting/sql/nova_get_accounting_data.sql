@@ -30,7 +30,6 @@ SELECT
                 TIMESTAMPDIFF(SECOND,
                     i.created_at,
                     i.deleted_at))))) AS VM_Seconds, /* Generates a count of seconds VMs were running */
-    'something' AS testingstuff,
     it.memory_mb AS Memory_MB,
     it.vcpus AS VCPU,
     it.swap AS Swap,
@@ -107,7 +106,6 @@ GROUP BY i.availability_zone , p.name , it.name , SUBSTRING(it.name,
                     TIMESTAMPDIFF(SECOND,
                         i.created_at,
                         i.deleted_at))))) AS VM_Seconds, /* Generates a count of seconds VMs were running */
-        'something' AS testingstuff,
         it.memory_mb AS Memory_MB,
         it.vcpus AS VCPU,
         it.swap AS Swap,
