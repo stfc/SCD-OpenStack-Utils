@@ -9,7 +9,7 @@ SELECT
     COUNT(g.id) AS Images,
     ip.value as GlanceType,
     if(il.value like "%rbd%", "RBD" ,if(il.value like "%swift%","OBJECT","UNKNONWN")) as StorageBackend,
-    @VolumeSeconds:=SUM(IF(g.created_at <= starttime /* Captures Images which were created outside of the period deleted out of the period */
+    @ImageSeconds:=SUM(IF(g.created_at <= starttime /* Captures Images which were created outside of the period deleted out of the period */
             AND (g.deleted_at >= endtime
             OR ISNULL(g.deleted_at)),
         TIMESTAMPDIFF(SECOND,
