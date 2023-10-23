@@ -7,6 +7,7 @@ import datetime
 import logging
 
 def main():
+    '''Processes accounting from Manila'''
     nowtime = time.localtime()
     logger = accountinglib.get_logger("manila")
 

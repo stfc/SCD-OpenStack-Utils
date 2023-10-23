@@ -7,6 +7,7 @@ import datetime
 import logging
 
 def main():
+    '''Processes accounting from Glance'''
     nowtime = time.localtime()
     logger = accountinglib.get_logger("glance")
 
