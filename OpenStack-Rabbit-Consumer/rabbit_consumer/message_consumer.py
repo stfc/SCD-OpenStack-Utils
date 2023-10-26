@@ -1,3 +1,7 @@
+"""
+This file manages how rabbit messages stating AQ VM creation and deletion 
+should be handled and processed between the consumer and Aquilon
+"""
 import json
 import logging
 import socket
