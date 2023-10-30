@@ -11,11 +11,11 @@ class NetboxGetID:
     This class retrieves field value ID's from Netbox.
     """
 
-    def __init__(self, netbox):
+    def __init__(self, api):
         """
         This method allows the Netbox Api Object and Enums to be accessible within the class.
         """
-        self.netbox = netbox
+        self.netbox = api
         self.enums_id = DeviceInfoID
         self.enums_no_id = DeviceInfoNoID
 
@@ -39,6 +39,9 @@ class NetboxGetID:
                 site_name = self.netbox.dcim.sites.get(site_value).name
                 site_slug = site_name.replace(" ", "-").lower()
                 value = value.get(name=netbox_value, site=site_slug)
+                list_value = list(value)
+                list_value = [item for item in list_value if item[0] == "id"]
+                value = list_value[0][1]
         else:
             value = value.get(name=netbox_value).id
         return value
@@ -50,7 +53,7 @@ class NetboxGetID:
         :param dictionary: The device dictionary being referenced.
         :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
         """
-        if key not in list(self.enums_no_id.__members__):
+        if key.upper() not in list(self.enums_no_id.__members__):
             value = self.get_id(
                 attr_string=key,
                 netbox_value=dictionary[key],

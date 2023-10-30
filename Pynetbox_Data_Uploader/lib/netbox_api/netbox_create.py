@@ -6,8 +6,8 @@ class NetboxCreate:
     This class contains methods that will interact create objects in Netbox.
     """
 
-    def __init__(self, netbox):
-        self.netbox = netbox
+    def __init__(self, api):
+        self.netbox = api
 
     def create_device(self, data: Union[Dict, List]) -> bool:
         """
