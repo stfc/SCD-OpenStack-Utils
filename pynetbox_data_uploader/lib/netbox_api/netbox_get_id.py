@@ -1,7 +1,6 @@
 from operator import attrgetter
 from typing import Union, Dict
 from lib.enums.dcim_device_id import DeviceInfoID
-from lib.enums.dcim_device_no_id import DeviceInfoNoID
 
 # pylint:disable = too-few-public-methods
 
@@ -13,11 +12,9 @@ class NetboxGetID:
 
     def __init__(self, api):
         """
-        This method allows the Netbox Api Object and Enums to be accessible within the class.
+        This method allows the Netbox Api Object to be accessible within the class.
         """
         self.netbox = api
-        self.enums_id = DeviceInfoID
-        self.enums_no_id = DeviceInfoNoID
 
     def get_id(
         self, attr_string: str, netbox_value: str, site_value: str
@@ -30,7 +27,7 @@ class NetboxGetID:
         :return: Returns the value/ID
         """
         attr_string = attr_string.upper()
-        attr_to_look_for = getattr(self.enums_id, attr_string).value  # Gets enums value
+        attr_to_look_for = DeviceInfoID[attr_string].value  # Gets enums value
         value = attrgetter(attr_to_look_for)(self.netbox)  # Gets netbox attr
         if attr_string == "DEVICE_TYPE":
             value = value.get(slug=netbox_value).id
@@ -53,7 +50,7 @@ class NetboxGetID:
         :param dictionary: The device dictionary being referenced.
         :return: If an ID was needed and found it returns the ID. If an ID was not needed it returns the original value.
         """
-        if key.upper() not in list(self.enums_no_id.__members__):
+        if key.upper() in [prop.name for prop in DeviceInfoID]:
             value = self.get_id(
                 attr_string=key,
                 netbox_value=dictionary[key],
