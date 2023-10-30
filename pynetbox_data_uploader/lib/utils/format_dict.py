@@ -1,6 +1,6 @@
 from typing import Dict, List
 from pandas import read_csv
-from lib.netbox_api.netbox_data import NetboxGetID
+from lib.netbox_api.netbox_get_id import NetboxGetID
 
 
 class FormatDict:
