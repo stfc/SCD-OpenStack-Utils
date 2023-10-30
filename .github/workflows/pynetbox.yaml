@@ -10,7 +10,7 @@ on:
       - ".github/workflows/pynetbox.yaml"
 
 jobs:
-  test_and_lint:
+  lint_test_codecov:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -39,5 +39,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          token: ${{secrets.CODECOV_TOKEN}}
           files: ./pynetbox_data_uploader/coverage.xml
 
