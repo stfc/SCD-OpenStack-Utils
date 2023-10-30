@@ -16,6 +16,9 @@ def instance_fixture():
 
 
 def test_get_id_from_key_with_id_enums(instance):
+    """
+    This test ensures that the get_id method is called for all properties in the DeviceInfoID enum.
+    """
     with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id") as mock_get_id:
         for member in [prop.name for prop in DeviceInfoID]:
             mock_dictionary = {member: "abc",
@@ -26,6 +29,9 @@ def test_get_id_from_key_with_id_enums(instance):
 
 
 def test_get_id_from_key_with_no_id_enums(instance):
+    """
+    This test ensures that the get_id method is not called for all properties in the DeviceInfoNoID enum.
+    """
     with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id") as mock_get_id:
         for member in [prop.name for prop in DeviceInfoNoID]:
             mock_dictionary = {member: "abc",
