@@ -1,3 +1,7 @@
+"""
+This file deserializes a server's network address from an
+OpenStack API response
+"""
 import logging
 import socket
 from dataclasses import dataclass, field

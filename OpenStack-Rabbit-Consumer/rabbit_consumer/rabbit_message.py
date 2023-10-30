@@ -1,3 +1,7 @@
+"""
+This file handles how messages from Rabbit are processed and the 
+message extracted
+"""
 from dataclasses import dataclass, field
 from typing import Optional
 

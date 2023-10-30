@@ -1,3 +1,7 @@
+"""
+This file defines the class to handle deserialised metadata for 
+Aquilon
+"""
 import logging
 from dataclasses import dataclass
 from typing import Dict, Optional

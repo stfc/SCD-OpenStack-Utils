@@ -1,3 +1,7 @@
+"""
+This file defines methods to be used to interact with the 
+Aquilon API
+"""
 import logging
 import subprocess
 from typing import Optional, List
