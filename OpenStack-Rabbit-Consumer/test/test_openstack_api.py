@@ -1,3 +1,7 @@
+"""
+Tests that the Openstack API functions are invoked
+as expected with the correct params
+"""
 from unittest.mock import NonCallableMock, patch
 
 # noinspection PyUnresolvedReferences
@@ -29,9 +33,14 @@ def test_openstack_connection(mock_connect, mock_config):
             project_domain_name="default",
         )
 
+        # Pylint is unable to see that openstack.connect returns a mock
+        # pylint: disable=no-member
         assert conn == mock_connect.return_value
+        # pylint: disable=no-member
         assert conn.close.call_count == 0
 
+    # Check close is called when the context manager exits
+    # pylint: disable=no-member
     assert conn.close.call_count == 1
 
 

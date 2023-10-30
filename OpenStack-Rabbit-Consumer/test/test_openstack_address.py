@@ -1,3 +1,6 @@
+"""
+Tests the dataclass representing OpenStack network addresses
+"""
 import copy
 from unittest.mock import patch
 
