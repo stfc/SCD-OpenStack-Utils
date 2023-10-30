@@ -6,15 +6,15 @@ on:
       - master
   pull_request:
     paths:
-      - "Pynetbox_Data_Uploader/**"
-      - ".github/workflows/Pynetbox.yaml"
+      - "pynetbox_data_uploader/**"
+      - ".github/workflows/pynetbox.yaml"
 
 jobs:
   test_and_lint:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ["3.x"]
+        python-version: ["3.8", "3.x"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -26,20 +26,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r Pynetbox_Data_Uploader/requirements.txt
-
-      - name: Run tests
-        run: cd Pynetbox_Data_Uploader && python3 -m pytest .
+          cd pynetbox_data_uploader
+          pip install -r requirements.txt
+          
 
       - name: Analyse with pylint
-        run: |
-         cd Pynetbox_Data_Uploader && pylint $(git ls-files '*.py') --rcfile=.pylintrc
+        run: cd pynetbox_data_uploader && pylint . --rcfile=.pylintrc
 
       - name: Run tests and collect coverage
-        run: cd Pynetbox_Data_Uploader && python3 -m pytest --cov-report xml:coverage.xml --cov
+        run: cd pynetbox_data_uploader && python3 -m pytest --cov-report xml:coverage.xml --cov
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: ./Pynetbox_Data_Uploader/coverage.xml
+          files: ./pynetbox_data_uploader/coverage.xml
 
