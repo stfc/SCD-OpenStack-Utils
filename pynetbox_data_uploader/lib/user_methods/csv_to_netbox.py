@@ -1,10 +1,13 @@
 from typing import List
 import pathlib
+from dataclasses import asdict
 import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
 from lib.netbox_api.netbox_check import NetboxCheck
-from lib.utils.format_dict import FormatDict
+from lib.utils.csv_to_dataclass import open_file, separate_data
+from lib.utils.query_dataclass import QueryDataclass
+from lib.utils.dataclass_data import Device
 
 # pylint:disable = broad-exception-raised
 # Disabled this pylint warning as the exception doesn't catch an error.
@@ -24,11 +27,11 @@ class CsvToNetbox:
         :param token: The Netbox auth token.
         """
         self.netbox = NetboxConnect(url, token).api_object()
-        self.format_dict = FormatDict(self.netbox)
         self.exist = NetboxCheck(self.netbox)
         self.create = NetboxCreate(self.netbox)
+        self.query_dataclass = QueryDataclass(self.netbox)
 
-    def read_csv(self, file_path) -> List:
+    def read_csv(self, file_path) -> List[Device]:
         """
         This method calls the csv_to_python and seperate_data method.
         This will take the csv file and return a list of device dictionaries.
@@ -40,12 +43,12 @@ class CsvToNetbox:
             pathlib.Path(file_path).exists()
         except FileNotFoundError:
             raise Exception("The given path is not valid.", FileNotFoundError)
-        device_data = self.format_dict.csv_to_python(file_path)
-        device_list = self.format_dict.separate_data(device_data)
+        dict_reader_class = open_file(file_path)
+        device_list = separate_data(dict_reader_class)
         print("Read CSV.")
         return device_list
 
-    def check_netbox(self, device_list: List) -> bool:
+    def check_netbox(self, device_list: List[Device]) -> bool:
         """
         This method calls the check_device_exists and check_device_type_exists method on each device in the list.
         :param device_list: A list of devices.
@@ -53,34 +56,37 @@ class CsvToNetbox:
         """
         print("Checking devices in Netbox...")
         for device in device_list:
-            device_exist = self.exist.check_device_exists(device["name"])
+            device_exist = self.exist.check_device_exists(device.name)
             if device_exist:
-                raise Exception(f'Device {device["name"]} already exists in Netbox.')
-            type_exist = self.exist.check_device_type_exists(device["device_type"])
+                raise Exception(f"Device {device.name} already exists in Netbox.")
+            type_exist = self.exist.check_device_type_exists(device.device_type)
             if not type_exist:
-                raise Exception(f'Type {device["device_type"]} does not exist.')
+                raise Exception(f"Type {device.device_type} does not exist.")
         print("Checked devices.")
         return True
 
-    def convert_data(self, device_list: List) -> List:
+    def convert_data(self, device_list: List[Device]) -> List[Device]:
         """
         This method calls the iterate_dict method.
         :param device_list: A list of devices.
         :return: Returns the updated list of devices.
         """
         print("Formatting data...")
-        formatted_list = self.format_dict.iterate_dicts(device_list)
+        queried_list = self.query_dataclass.query_list(device_list)
         print("Formatted data.")
-        return formatted_list
+        return queried_list
 
-    def send_data(self, device_list: List) -> bool:
+    def send_data(self, device_list: List[Device]) -> bool:
         """
         This method calls the device create method to create devices in Netbox.
         :param device_list: A list of devices.
         :return: Returns bool whether the devices where created.
         """
         print("Sending data to Netbox...")
-        devices = self.create.create_device(device_list)
+        dict_list = []
+        for device in device_list:
+            dict_list.append(asdict(device))
+        devices = self.create.create_device(dict_list)
         print("Sent data.")
         return bool(devices)
 

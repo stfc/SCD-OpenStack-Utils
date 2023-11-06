@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional
 
 
@@ -22,3 +22,10 @@ class Device:
     serial: str
     face: Optional[str] = None
     airflow: Optional[str] = None
+
+    def return_attrs(self):
+        """
+        This method returns a list of the names of the fields above.
+        """
+
+        return [field.name for field in list(fields(self))]
