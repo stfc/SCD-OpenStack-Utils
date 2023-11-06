@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from typing import Optional
 
 # pylint: disable = R0902
 @dataclass
@@ -16,8 +16,8 @@ class Device:
     site: str
     location: str
     rack: str
-    face: str
-    airflow: str
+    face: Optional[str]
+    airflow: Optional[str]
     position: str
     name: str
     serial: str
