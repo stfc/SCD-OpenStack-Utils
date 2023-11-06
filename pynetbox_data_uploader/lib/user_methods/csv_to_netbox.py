@@ -14,6 +14,7 @@ class CsvToNetbox:
     """
     This class contains organised methods in the 4 step proccess of reading csv's to then uploading to Netbox.
     """
+
     def __init__(self, url: str, token: str):
         """
         This initialises the class with the following parameters.

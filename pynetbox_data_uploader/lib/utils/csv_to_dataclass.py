@@ -1,32 +1,41 @@
-from csv import reader
+import csv
 from typing import List
-from pynetbox_data_uploader.lib.utils.dataclass_data import Device
+from lib.utils.dataclass_data import Device
 
 
-def separate_data(file_path: str) -> List[Device]:
+def open_file(file_path: str) -> csv.DictReader:
+    """
+    This function opens the specified csv file and returns the DictReader class on it.
+    :param file_path: The file path to the csv file.
+    :return: Returns an instance of the DictReader Class.
+    """
+    with open(file_path, encoding="UTF-8") as file:
+        csv_reader_obj = csv.DictReader(file)
+    return csv_reader_obj
+
+
+def separate_data(csv_reader_obj: csv.DictReader) -> List[Device]:
     """
     This method separates the data from the iterator object into a list of dataclasses for each device.
-    :param file_path: The file path to the csv file.
+    :param csv_reader_obj: The DictReader class with the data.
     :return: Returns a list of dataclass objects.
     """
-    with open(file_path) as file:
-        csv_reader_obj = reader(file)
-        column_headers = next(csv_reader_obj)
-        devices = []
-        for row in csv_reader_obj:
-            device = Device(
-                TENANT=row[column_headers.index('tenant')],
-                DEVICE_ROLE=row[column_headers.index('device_role')],
-                MANUFACTURER=row[column_headers.index('manufacturer')],
-                DEVICE_TYPE=row[column_headers.index('device_type')],
-                STATUS=row[column_headers.index('status')],
-                SITE=row[column_headers.index('site')],
-                LOCATION=row[column_headers.index('location')],
-                RACK=row[column_headers.index('rack')],
-                FACE=row[column_headers.index('face')],
-                AIRFLOW=row[column_headers.index('airflow')],
-                POSITION=row[column_headers.index('position')],
-                NAME=row[column_headers.index('name')],
-                SERIAL=row[column_headers.index('serial')])
-            devices.append(device)
+    devices = []
+    for row in csv_reader_obj:
+        device = Device(
+            tenant=row["tenant"],
+            device_role=row["device_role"],
+            manufacturer=row["manufacturer"],
+            device_type=row["device_type"],
+            status=row["status"],
+            site=row["site"],
+            location=row["location"],
+            rack=row["rack"],
+            face=row["face"],
+            airflow=row["airflow"],
+            position=row["position"],
+            name=row["name"],
+            serial=row["serial"],
+        )
+        devices.append(device)
     return devices

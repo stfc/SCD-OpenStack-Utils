@@ -1,18 +1,23 @@
 from dataclasses import dataclass
 
 
+# pylint: disable = R0902
 @dataclass
 class Device:
-    TENANT: str
-    DEVICE_ROLE: str
-    MANUFACTURER: str
-    DEVICE_TYPE: str
-    STATUS: str
-    SITE: str
-    LOCATION: str
-    RACK: str
-    FACE: str
-    AIRFLOW: str
-    POSITION: str
-    NAME: str
-    SERIAL: str
+    """
+    This class instantiates device objects with the device data.
+    """
+
+    tenant: str
+    device_role: str
+    manufacturer: str
+    device_type: str
+    status: str
+    site: str
+    location: str
+    rack: str
+    face: str
+    airflow: str
+    position: str
+    name: str
+    serial: str
