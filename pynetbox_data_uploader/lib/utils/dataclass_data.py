@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 # pylint: disable = R0902
@@ -21,3 +21,10 @@ class Device:
     position: str
     name: str
     serial: str
+
+    def return_attrs(self):
+        """
+        This method returns a list of the names of the fields above.
+        """
+
+        return [field.name for field in list(fields(self))]

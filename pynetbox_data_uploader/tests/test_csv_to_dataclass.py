@@ -52,9 +52,11 @@ def test_open_file():
     """
     This test ensures the csv file is opened appropriately and the DictReader method is called.
     """
-    with patch("builtins.open", mock_open(read_data="mock_file_path")) as mock_file:
-        with patch("csv.DictReader") as mock_dict_reader:
-            res = open_file("mock_file_path")
+    mock_data = ("tenant,device_role,manufacturer,device_type,status,site,location,rack,face,airflow,position,name,"
+                 "serial\nt1,dr1,m1,dt1,st1,si1,l1,r1,f1,a1,p1,n1,se1\nt2,dr2,m2,dt2,st2,si2,l2,r2,f2,a2,p2,n2,se2")
+
+    with patch("builtins.open", mock_open(read_data=mock_data)) as mock_file:
+        res = open_file("mock_file_path")
     mock_file.assert_called_once_with("mock_file_path", encoding="UTF-8")
-    mock_dict_reader.assert_called_once_with(mock_file.return_value)
-    assert res == mock_dict_reader.return_value
+    expected = [row for row in DictReader(mock_data.splitlines())]
+    assert res == expected
