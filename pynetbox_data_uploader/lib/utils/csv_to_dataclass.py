@@ -11,7 +11,7 @@ def open_file(file_path: str) -> List[Dict]:
     """
     with open(file_path, encoding="UTF-8") as file:
         csv_reader_obj = csv.DictReader(file)
-        csv_dicts = [row for row in csv_reader_obj]
+        csv_dicts = list(csv_reader_obj)
     return csv_dicts
 
 
