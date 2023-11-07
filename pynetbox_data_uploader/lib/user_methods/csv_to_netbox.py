@@ -1,5 +1,5 @@
 from typing import List
-import pathlib
+from pathlib import Path
 from dataclasses import asdict
 import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
@@ -31,7 +31,20 @@ class CsvToNetbox:
         self.create = NetboxCreate(self.netbox)
         self.query_dataclass = QueryDataclass(self.netbox)
 
-    def read_csv(self, file_path) -> List[Device]:
+    @staticmethod
+    def check_file_path(file_path: str):
+        """
+        This method checks if the filepath is valid. Raises an exception if it's invalid.
+        :param file_path: The path to the csv file.
+        """
+        print("Checking filepath...")
+        valid = Path(file_path).exists()
+        if not valid:
+            raise FileNotFoundError(f"Filepath: {file_path} is not valid.")
+        print("Filepath valid.")
+
+    @staticmethod
+    def read_csv(file_path: str) -> List[Device]:
         """
         This method calls the csv_to_python and seperate_data method.
         This will take the csv file and return a list of device dictionaries.
@@ -39,10 +52,6 @@ class CsvToNetbox:
         :return: Returns a list of devices
         """
         print("Reading CSV...")
-        try:
-            pathlib.Path(file_path).exists()
-        except FileNotFoundError:
-            raise Exception("The given path is not valid.", FileNotFoundError)
         dict_reader_class = open_file(file_path)
         device_list = separate_data(dict_reader_class)
         print("Read CSV.")
@@ -113,6 +122,7 @@ def do_csv_to_netbox(args) -> bool:
     :return: Returns bool if devices where created or not.
     """
     class_object = CsvToNetbox(url=args.url, token=args.token)
+    class_object.check_file_path(args.file_path)
     device_list = class_object.read_csv(args.file_path)
     class_object.check_netbox(device_list)
     format_list = class_object.convert_data(device_list)
