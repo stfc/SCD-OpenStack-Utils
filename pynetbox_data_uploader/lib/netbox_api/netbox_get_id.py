@@ -1,4 +1,4 @@
-from lib.utils.dataclass_data import Device
+from lib.utils.device_dataclass import Device
 
 
 # pylint: disable = R0903,C0115

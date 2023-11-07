@@ -1,7 +1,7 @@
 from csv import DictReader
 from unittest.mock import patch, mock_open
 from lib.utils.csv_to_dataclass import separate_data, open_file
-from lib.utils.dataclass_data import Device
+from lib.utils.device_dataclass import Device
 
 
 def test_separate_data():

@@ -1,5 +1,5 @@
 from typing import List
-from lib.utils.dataclass_data import Device
+from lib.utils.device_dataclass import Device
 from lib.netbox_api.netbox_get_id import NetboxGetId
 
 

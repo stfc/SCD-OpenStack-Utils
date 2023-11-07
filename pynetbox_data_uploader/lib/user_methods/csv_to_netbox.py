@@ -7,7 +7,7 @@ from lib.netbox_api.netbox_connect import NetboxConnect
 from lib.netbox_api.netbox_check import NetboxCheck
 from lib.utils.csv_to_dataclass import open_file, separate_data
 from lib.utils.query_dataclass import QueryDataclass
-from lib.utils.dataclass_data import Device
+from lib.utils.device_dataclass import Device
 
 # pylint:disable = broad-exception-raised
 # Disabled this pylint warning as the exception doesn't catch an error.
@@ -57,7 +57,7 @@ class CsvToNetbox:
         print("Read CSV.")
         return device_list
 
-    def check_netbox(self, device_list: List[Device]) -> bool:
+    def check_netbox_device(self, device_list: List[Device]) -> bool:
         """
         This method calls the check_device_exists and check_device_type_exists method on each device in the list.
         :param device_list: A list of devices.
@@ -68,10 +68,21 @@ class CsvToNetbox:
             device_exist = self.exist.check_device_exists(device.name)
             if device_exist:
                 raise Exception(f"Device {device.name} already exists in Netbox.")
+        print("Checked devices.")
+        return True
+
+    def check_netbox_device_type(self, device_list: List[Device]) -> bool:
+        """
+        This method calls the check_device_exists and check_device_type_exists method on each device in the list.
+        :param device_list: A list of devices.
+        :return: Returns True if the devices don't exist and device types do exist. Raises an Exception otherwise.
+        """
+        print("Checking devices in Netbox...")
+        for device in device_list:
             type_exist = self.exist.check_device_type_exists(device.device_type)
             if not type_exist:
                 raise Exception(f"Type {device.device_type} does not exist.")
-        print("Checked devices.")
+        print("Checked device types.")
         return True
 
     def convert_data(self, device_list: List[Device]) -> List[Device]:
@@ -124,7 +135,8 @@ def do_csv_to_netbox(args) -> bool:
     class_object = CsvToNetbox(url=args.url, token=args.token)
     class_object.check_file_path(args.file_path)
     device_list = class_object.read_csv(args.file_path)
-    class_object.check_netbox(device_list)
+    class_object.check_netbox_device(device_list)
+    class_object.check_netbox_device_type(device_list)
     format_list = class_object.convert_data(device_list)
     result = class_object.send_data(format_list)
     return result
