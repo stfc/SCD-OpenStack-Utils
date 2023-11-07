@@ -21,8 +21,7 @@ def test_get_id_from_key_with_id_enums(instance):
     """
     with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id") as mock_get_id:
         for member in [prop.name for prop in DeviceInfoID]:
-            mock_dictionary = {member: "abc",
-                               "site": "def"}
+            mock_dictionary = {member: "abc", "site": "def"}
             res = instance.get_id_from_key(key=member, dictionary=mock_dictionary)
             mock_get_id.assert_called()
             assert res == mock_get_id.return_value
@@ -34,8 +33,7 @@ def test_get_id_from_key_with_no_id_enums(instance):
     """
     with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id") as mock_get_id:
         for member in [prop.name for prop in DeviceInfoNoID]:
-            mock_dictionary = {member: "abc",
-                               "site": "def"}
+            mock_dictionary = {member: "abc", "site": "def"}
             res = instance.get_id_from_key(key=member, dictionary=mock_dictionary)
             mock_get_id.assert_not_called()
             assert res == mock_dictionary[member]

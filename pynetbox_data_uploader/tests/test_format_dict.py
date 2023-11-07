@@ -87,7 +87,9 @@ def test_format_dict_no_keys(instance):
     This test ensures the get_id_from_key method is not called.
     """
     mock_dict = {}
-    with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key") as mock_get_id:
+    with patch(
+        "lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key"
+    ) as mock_get_id:
         res = instance.format_dict(mock_dict)
     mock_get_id.assert_not_called()
     assert res == mock_dict
@@ -98,7 +100,9 @@ def test_format_dict_one_key(instance):
     This test ensures the get_id_from_key method is called once.
     """
     mock_dict = {"test": "data"}
-    with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key") as mock_get_id:
+    with patch(
+        "lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key"
+    ) as mock_get_id:
         res = instance.format_dict(mock_dict)
     mock_get_id.assert_called_once()
     assert res == mock_dict
@@ -108,9 +112,10 @@ def test_format_dict_many_keys(instance):
     """
     This test ensures the get_id_from_key method is called the correct number of times.
     """
-    mock_dict = {"test": "data",
-                 "test1": "data1"}
-    with patch("lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key") as mock_get_id:
+    mock_dict = {"test": "data", "test1": "data1"}
+    with patch(
+        "lib.netbox_api.netbox_get_id.NetboxGetID.get_id_from_key"
+    ) as mock_get_id:
         res = instance.format_dict(mock_dict)
     mock_get_id.assert_called()
     assert mock_get_id.call_count == len(mock_dict.keys())

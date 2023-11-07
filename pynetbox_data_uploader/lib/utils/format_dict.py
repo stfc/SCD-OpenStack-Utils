@@ -34,10 +34,11 @@ class FormatDict:
         :return: Returns the formatted dictionary
         """
         for key in dictionary:
-            netbox_id = NetboxGetID(self.netbox).get_id_from_key(key=key, dictionary=dictionary)
+            netbox_id = NetboxGetID(self.netbox).get_id_from_key(
+                key=key, dictionary=dictionary
+            )
             dictionary[key] = netbox_id
         return dictionary
-
 
     @staticmethod
     def csv_to_python(file_path: str) -> Dict:

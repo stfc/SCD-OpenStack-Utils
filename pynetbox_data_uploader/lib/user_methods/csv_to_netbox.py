@@ -1,4 +1,5 @@
 from typing import List
+import pathlib
 import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
@@ -14,6 +15,7 @@ class CsvToNetbox:
     """
     This class contains organised methods in the 4 step proccess of reading csv's to then uploading to Netbox.
     """
+
     def __init__(self, url: str, token: str):
         """
         This initialises the class with the following parameters.
@@ -34,6 +36,10 @@ class CsvToNetbox:
         :return: Returns a list of devices
         """
         print("Reading CSV...")
+        try:
+            pathlib.Path(file_path).exists()
+        except FileNotFoundError:
+            raise Exception("The given path is not valid.", FileNotFoundError)
         device_data = self.format_dict.csv_to_python(file_path)
         device_list = self.format_dict.separate_data(device_data)
         print("Read CSV.")
