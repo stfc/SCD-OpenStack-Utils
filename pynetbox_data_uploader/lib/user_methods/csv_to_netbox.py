@@ -1,5 +1,5 @@
 from typing import List
-from pathlib import Path
+import pathlib
 import argparse
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
@@ -37,9 +37,9 @@ class CsvToNetbox:
         """
         print("Reading CSV...")
         try:
-            Path(file_path).resolve()
-        except (OSError, RuntimeError):
-            raise Exception("The given path is not valid.")
+            pathlib.Path(file_path).exists()
+        except FileNotFoundError:
+            raise Exception("The given path is not valid.", FileNotFoundError)
         device_data = self.format_dict.csv_to_python(file_path)
         device_list = self.format_dict.separate_data(device_data)
         print("Read CSV.")
