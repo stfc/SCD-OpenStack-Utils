@@ -76,7 +76,7 @@ def test_get_id_site(instance):
         assert res == mock_netbox.dcim.sites.get().id
 
 
-def test_get_id_location(instance):
+def test_get_id_location_site_str(instance):
     """
     This test ensures the correct case is matched for the field.
     """
@@ -84,6 +84,17 @@ def test_get_id_location(instance):
         res = instance.get_id(mock_device, "location")
         assert res == mock_netbox.dcim.locations.get().id
 
+
+def test_get_id_location_site_int(instance):
+    """
+    This test ensures the correct case is matched for the field.
+    """
+    copy = mock_device.site
+    mock_device.site = 1
+    with patch.object(instance, "netbox") as mock_netbox:
+        res = instance.get_id(mock_device, "location")
+        assert res == mock_netbox.dcim.locations.get().id
+    mock_device.site = copy
 
 def test_get_id_rack(instance):
     """
