@@ -1,6 +1,7 @@
 from unittest.mock import NonCallableMock, patch
 import pytest
 from lib.utils.query_dataclass import QueryDataclass
+from lib.utils.device_dataclass import Device
 
 
 @pytest.fixture(name="instance")
@@ -28,7 +29,7 @@ def test_query_list_one_device(instance):
     """
     mock_device_list = [""]
     with patch(
-        "lib.utils.query_dataclass.QueryDataclass.query_device"
+            "lib.utils.query_dataclass.QueryDataclass.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value]
@@ -40,7 +41,44 @@ def test_query_list_multiple_devices(instance):
     """
     mock_device_list = ["", ""]
     with patch(
-        "lib.utils.query_dataclass.QueryDataclass.query_device"
+            "lib.utils.query_dataclass.QueryDataclass.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
+
+
+def test_query_device(instance):
+    device_dict = {
+        "tenant": "t2",
+        "device_role": "dr2",
+        "manufacturer": "m2",
+        "device_type": "dt2",
+        "status": "st2",
+        "site": "si2",
+        "location": "l2",
+        "rack": "r2",
+        "face": "f2",
+        "airflow": "a2",
+        "position": "p2",
+        "name": "n2",
+        "serial": "se2"
+    }
+    with patch("lib.utils.query_dataclass.NetboxGetId.get_id") as mock_get_id:
+        res = instance.query_device(Device(**device_dict))
+    val = mock_get_id.return_value
+    expected_device_dict = {
+        "tenant": val,
+        "device_role": val,
+        "manufacturer": val,
+        "device_type": val,
+        "status": val,
+        "site": val,
+        "location": val,
+        "rack": val,
+        "face": val,
+        "airflow": val,
+        "position": val,
+        "name": val,
+        "serial": val
+    }
+    assert res == Device(**expected_device_dict)
