@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from pathlib import Path
 from dataclasses import asdict
 import argparse
@@ -16,7 +16,7 @@ from lib.utils.device_dataclass import Device
 
 class CsvToNetbox:
     """
-    This class contains organised methods in the 4 step proccess of reading csv's to then uploading to Netbox.
+    This class contains organised methods in the 4 step process of reading csv's to then uploading to Netbox.
     """
 
     def __init__(self, url: str, token: str):
@@ -96,6 +96,13 @@ class CsvToNetbox:
         print("Formatted data.")
         return queried_list
 
+    @staticmethod
+    def dataclass_to_dict(device_list: List[Device]) -> List[Dict]:
+        dict_list = []
+        for device in device_list:
+            dict_list.append(asdict(device))
+        return dict_list
+
     def send_data(self, device_list: List[Device]) -> bool:
         """
         This method calls the device create method to create devices in Netbox.
@@ -103,9 +110,7 @@ class CsvToNetbox:
         :return: Returns bool whether the devices where created.
         """
         print("Sending data to Netbox...")
-        dict_list = []
-        for device in device_list:
-            dict_list.append(asdict(device))
+        dict_list = self.dataclass_to_dict(device_list)
         devices = self.create.create_device(dict_list)
         print("Sent data.")
         return bool(devices)
@@ -137,14 +142,15 @@ def do_csv_to_netbox(args) -> bool:
     device_list = class_object.read_csv(args.file_path)
     class_object.check_netbox_device(device_list)
     class_object.check_netbox_device_type(device_list)
-    format_list = class_object.convert_data(device_list)
-    result = class_object.send_data(format_list)
+    converted_device_list = class_object.convert_data(device_list)
+    result = class_object.send_data(converted_device_list)
     return result
 
 
-if __name__ == "__main__":
+def main():
     arguments = arg_parser()
-    if do_csv_to_netbox(arguments):
-        print("Done.")
-    else:
-        print("Uh Oh.")
+    do_csv_to_netbox(arguments)
+
+
+if __name__ == "__main__":
+    main()
