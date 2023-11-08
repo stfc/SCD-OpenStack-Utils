@@ -1,4 +1,4 @@
-name: Pynetbox Data Uploader Pylint
+name: Pynetbox Pylint
 
 on:
   push:

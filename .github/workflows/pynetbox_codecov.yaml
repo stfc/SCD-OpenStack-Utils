@@ -1,4 +1,4 @@
-name: Pynetbox Data Uploader Codecov
+name: Pynetbox Codecov
 
 on:
   push:

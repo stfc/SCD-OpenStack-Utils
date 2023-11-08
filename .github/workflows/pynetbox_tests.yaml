@@ -1,4 +1,4 @@
-name: Pynetbox Data Uploader Tests
+name: Pynetbox Tests
 
 on:
   push:
