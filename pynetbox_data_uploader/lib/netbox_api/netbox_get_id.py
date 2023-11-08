@@ -33,7 +33,9 @@ class NetboxGetId:
                     site_slug = self.netbox.dcim.sites.get(id=device.site).slug
                 else:
                     site_slug = device.site.replace(" ", "-").lower()
-                netbox_id = self.netbox.dcim.locations.get(name=value, site=site_slug).id
+                netbox_id = self.netbox.dcim.locations.get(
+                    name=value, site=site_slug
+                ).id
             case "rack":
                 netbox_id = self.netbox.dcim.racks.get(name=value).id
         return netbox_id

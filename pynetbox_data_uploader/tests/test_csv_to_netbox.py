@@ -251,6 +251,7 @@ def test_do_csv_to_netbox(mock_csv_to_netbox_class):
         """
         This class mocks the argument class in argparse.
         """
+
         def __init__(self, file_path, url, token):
             self.file_path = file_path
             self.url = url

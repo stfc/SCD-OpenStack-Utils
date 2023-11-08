@@ -29,7 +29,7 @@ def test_query_list_one_device(instance):
     """
     mock_device_list = [""]
     with patch(
-            "lib.utils.query_dataclass.QueryDataclass.query_device"
+        "lib.utils.query_dataclass.QueryDataclass.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value]
@@ -41,13 +41,16 @@ def test_query_list_multiple_devices(instance):
     """
     mock_device_list = ["", ""]
     with patch(
-            "lib.utils.query_dataclass.QueryDataclass.query_device"
+        "lib.utils.query_dataclass.QueryDataclass.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
 
 
 def test_query_device(instance):
+    """
+    This test ensures the get_id is called on all fields in a dataclass.
+    """
     device_dict = {
         "tenant": "t2",
         "device_role": "dr2",
@@ -61,7 +64,7 @@ def test_query_device(instance):
         "airflow": "a2",
         "position": "p2",
         "name": "n2",
-        "serial": "se2"
+        "serial": "se2",
     }
     with patch("lib.utils.query_dataclass.NetboxGetId.get_id") as mock_get_id:
         res = instance.query_device(Device(**device_dict))
@@ -79,6 +82,6 @@ def test_query_device(instance):
         "airflow": val,
         "position": val,
         "name": val,
-        "serial": val
+        "serial": val,
     }
     assert res == Device(**expected_device_dict)
