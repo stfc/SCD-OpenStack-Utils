@@ -23,20 +23,6 @@ def separate_data(csv_dicts: List[Dict]) -> List[Device]:
     """
     devices = []
     for dictionary in csv_dicts:
-        device = Device(
-            tenant=dictionary["tenant"],
-            device_role=dictionary["device_role"],
-            manufacturer=dictionary["manufacturer"],
-            device_type=dictionary["device_type"],
-            status=dictionary["status"],
-            site=dictionary["site"],
-            location=dictionary["location"],
-            rack=dictionary["rack"],
-            face=dictionary["face"],
-            airflow=dictionary["airflow"],
-            position=dictionary["position"],
-            name=dictionary["name"],
-            serial=dictionary["serial"],
-        )
+        device = Device(**dictionary)
         devices.append(device)
     return devices
