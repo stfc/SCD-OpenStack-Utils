@@ -31,7 +31,7 @@ jobs:
           
 
       - name: Analyse with pylint
-        run: cd pynetbox_data_uploader && pylint . --rcfile=.pylintrc
+        run: pylint ./pynetbox_Data_uploader/ --rcfile=./pynetbox_data_uploader/.pylintrc
 
       - name: Run tests and collect coverage
         run: cd pynetbox_data_uploader && python3 -m pytest --cov-report xml:coverage.xml --cov
