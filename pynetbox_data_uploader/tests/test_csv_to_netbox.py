@@ -54,7 +54,7 @@ def test_read_csv(mock_separate_data, mock_open_file, instance):
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
-def test_check_netbox_device_does_exist(instance):
+def test_check_netbox_device_does_exist(mock_check_device_exists, instance):
     """
     This test ensures that an error is raised if a device does exist in Netbox.
     """
@@ -75,6 +75,7 @@ def test_check_netbox_device_does_exist(instance):
     )
     with raises(Exception):
         instance.check_netbox_device([device])
+    mock_check_device_exists.assert_called_once_with(device.name)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
@@ -99,10 +100,11 @@ def test_check_netbox_device_not_exist(mock_check_device_exists, instance):
     )
     mock_check_device_exists.return_value = None
     instance.check_netbox_device([device])
+    mock_check_device_exists.assert_called_once_with(device.name)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
-def test_check_netbox_device_type_does_exist(instance):
+def test_check_netbox_device_type_does_exist(mock_check_device_type_exists, instance):
     """
     This test ensures an error is not raised if a device type does exist in Netbox.
     """
@@ -122,6 +124,7 @@ def test_check_netbox_device_type_does_exist(instance):
         serial="se1",
     )
     instance.check_netbox_device_type([device])
+    mock_check_device_type_exists.assert_called_once_with(device.device_type)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
@@ -147,6 +150,7 @@ def test_check_netbox_device_type_not_exist(mock_check_device_type_exists, insta
     mock_check_device_type_exists.return_value = None
     with raises(Exception):
         instance.check_netbox_device_type([device])
+    mock_check_device_type_exists.assert_called_once_with(device.device_type)
 
 
 @patch("lib.user_methods.csv_to_netbox.QueryDataclass.query_list")
@@ -156,6 +160,7 @@ def test_convert_data(mock_query_dataclass, instance):
     """
     device_list = ["", ""]
     res = instance.convert_data(device_list)
+    mock_query_dataclass.assert_any_call(device_list)
     assert res == mock_query_dataclass.return_value
 
 
