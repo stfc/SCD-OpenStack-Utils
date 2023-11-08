@@ -98,6 +98,11 @@ class CsvToNetbox:
 
     @staticmethod
     def dataclass_to_dict(device_list: List[Device]) -> List[Dict]:
+        """
+        This method converts the list of Devices into a list of dictionaries for Netbox Create.
+        :param device_list: A list of Device dataclasses.
+        :return: Returns the list of Devices as dictionaries.
+        """
         dict_list = []
         for device in device_list:
             dict_list.append(asdict(device))
@@ -148,6 +153,9 @@ def do_csv_to_netbox(args) -> bool:
 
 
 def main():
+    """
+    This function calls the necessary functions to call all other methods.
+    """
     arguments = arg_parser()
     do_csv_to_netbox(arguments)
 

@@ -4,6 +4,8 @@ from lib.utils.csv_to_dataclass import separate_data, open_file
 from lib.utils.device_dataclass import Device
 
 
+# Two tests mock the same Device dataclass and therefore have duplicate code.
+# pylint: disable=R0801
 def test_separate_data():
     """
     This test checks that when csv data is inputted the dataclass devices are created properly.

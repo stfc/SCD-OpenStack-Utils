@@ -1,10 +1,17 @@
 from unittest.mock import patch
-from pytest import fixture, raises
 from dataclasses import asdict
-from lib.user_methods.csv_to_netbox import CsvToNetbox, arg_parser, do_csv_to_netbox, main
+from pytest import fixture, raises
+from lib.user_methods.csv_to_netbox import (
+    CsvToNetbox,
+    arg_parser,
+    do_csv_to_netbox,
+    main,
+)
 from lib.utils.device_dataclass import Device
 
 
+# Two tests mock the same Device dataclass and therefore have duplicate code.
+# pylint: disable=R0801
 @fixture(name="instance")
 def instance_fixture():
     """
@@ -36,6 +43,9 @@ def test_check_file_path_invalid(instance):
 @patch("lib.user_methods.csv_to_netbox.open_file")
 @patch("lib.user_methods.csv_to_netbox.separate_data")
 def test_read_csv(mock_separate_data, mock_open_file, instance):
+    """
+    This test ensures the file open method is called and the separate data method is called.
+    """
     mock_file_path = "mock_file_path"
     res = instance.read_csv(mock_file_path)
     mock_open_file.assert_called_once_with(mock_file_path)
@@ -44,7 +54,10 @@ def test_read_csv(mock_separate_data, mock_open_file, instance):
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
-def test_check_netbox_device_does_exist(mock_check_device_exists, instance):
+def test_check_netbox_device_does_exist(instance):
+    """
+    This test ensures that an error is raised if a device does exist in Netbox.
+    """
     device = Device(
         tenant="t1",
         device_role="dr1",
@@ -66,6 +79,9 @@ def test_check_netbox_device_does_exist(mock_check_device_exists, instance):
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
 def test_check_netbox_device_not_exist(mock_check_device_exists, instance):
+    """
+    This test ensures an error is not raised if a device does not exist in Netbox.
+    """
     device = Device(
         tenant="t1",
         device_role="dr1",
@@ -86,7 +102,10 @@ def test_check_netbox_device_not_exist(mock_check_device_exists, instance):
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
-def test_check_netbox_device_type_does_exist(mock_check_device_type_exists, instance):
+def test_check_netbox_device_type_does_exist(instance):
+    """
+    This test ensures an error is not raised if a device type does exist in Netbox.
+    """
     device = Device(
         tenant="t1",
         device_role="dr1",
@@ -107,6 +126,9 @@ def test_check_netbox_device_type_does_exist(mock_check_device_type_exists, inst
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
 def test_check_netbox_device_type_not_exist(mock_check_device_type_exists, instance):
+    """
+    This test ensures an error is raised if a device type doesn't exist in Netbox.
+    """
     device = Device(
         tenant="t1",
         device_role="dr1",
@@ -129,12 +151,18 @@ def test_check_netbox_device_type_not_exist(mock_check_device_type_exists, insta
 
 @patch("lib.user_methods.csv_to_netbox.QueryDataclass.query_list")
 def test_convert_data(mock_query_dataclass, instance):
+    """
+    This test ensures the convert data method is called with the correct arguments.
+    """
     device_list = ["", ""]
     res = instance.convert_data(device_list)
     assert res == mock_query_dataclass.return_value
 
 
 def test_dataclass_to_dict(instance):
+    """
+    This test ensures that the Device dataclasses are returned as dictionaries when the method is called.
+    """
     device1 = Device(
         tenant="t1",
         device_role="dr1",
@@ -174,6 +202,9 @@ def test_dataclass_to_dict(instance):
 @patch("lib.user_methods.csv_to_netbox.NetboxCreate.create_device")
 @patch("lib.user_methods.csv_to_netbox.CsvToNetbox.dataclass_to_dict")
 def test_send_data(mock_dataclass_to_dict, mock_create_device, instance):
+    """
+    This test ensures the correct methods are called with the correct arguments.
+    """
     mock_device_list = ["", ""]
     res = instance.send_data(mock_device_list)
     mock_dataclass_to_dict.assert_called_once_with(mock_device_list)
@@ -183,21 +214,38 @@ def test_send_data(mock_dataclass_to_dict, mock_create_device, instance):
 
 @patch("lib.user_methods.csv_to_netbox.argparse.ArgumentParser")
 def test_arg_parser(mock_argparse):
+    """
+    This test ensures the argparse method adds the correct arguments and returns them.
+    """
     res = arg_parser()
     mock_argparse.assert_called_once_with(
         description="Create devices in Netbox from CSV files.",
         usage="python csv_to_netbox.py url token file_path",
     )
-    mock_argparse.return_value.add_argument.assert_any_call("file_path", help="Your file path to csv files.")
-    mock_argparse.return_value.add_argument.assert_any_call("token", help="Your Netbox Token.")
-    mock_argparse.return_value.add_argument.assert_any_call("url", help="The Netbox URL.")
+    mock_argparse.return_value.add_argument.assert_any_call(
+        "file_path", help="Your file path to csv files."
+    )
+    mock_argparse.return_value.add_argument.assert_any_call(
+        "token", help="Your Netbox Token."
+    )
+    mock_argparse.return_value.add_argument.assert_any_call(
+        "url", help="The Netbox URL."
+    )
     mock_argparse.return_value.parse_args.assert_called()
     assert res == mock_argparse.return_value.parse_args()
 
 
 @patch("lib.user_methods.csv_to_netbox.CsvToNetbox")
 def test_do_csv_to_netbox(mock_csv_to_netbox_class):
+    """
+    This test ensures all the correct methods are called with the correct arguments.
+    """
+
     class Args:
+        # pylint: disable=R0903
+        """
+        This class mocks the argument class in argparse.
+        """
         def __init__(self, file_path, url, token):
             self.file_path = file_path
             self.url = url
@@ -221,6 +269,9 @@ def test_do_csv_to_netbox(mock_csv_to_netbox_class):
 @patch("lib.user_methods.csv_to_netbox.arg_parser")
 @patch("lib.user_methods.csv_to_netbox.do_csv_to_netbox")
 def test_main(mock_do_csv_to_netbox, mock_arg_parser):
+    """
+    This test ensures that when main is called the argparse method and do method are called with arguments.
+    """
     main()
     mock_arg_parser.assert_called_once()
     mock_do_csv_to_netbox.assert_called_once_with(mock_arg_parser.return_value)

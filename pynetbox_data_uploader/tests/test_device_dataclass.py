@@ -2,6 +2,9 @@ from lib.utils.device_dataclass import Device
 
 
 def test_return_attrs():
+    """
+    This test ensures the field names are returned for a device.
+    """
     dev = Device(
         tenant="",
         device_role="",
@@ -19,18 +22,18 @@ def test_return_attrs():
     )
     res = dev.return_attrs()
     expected = [
-        'tenant',
-        'device_role',
-        'manufacturer',
-        'device_type',
-        'status',
-        'site',
-        'location',
-        'rack',
-        'face',
-        'airflow',
-        'position',
-        'name',
-        'serial',
+        "tenant",
+        "device_role",
+        "manufacturer",
+        "device_type",
+        "status",
+        "site",
+        "location",
+        "rack",
+        "face",
+        "airflow",
+        "position",
+        "name",
+        "serial",
     ]
     assert set(res) == set(expected)
