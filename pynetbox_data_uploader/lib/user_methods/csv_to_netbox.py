@@ -77,7 +77,7 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns True if the devices don't exist and device types do exist. Raises an Exception otherwise.
         """
-        print("Checking devices in Netbox...")
+        print("Checking device types in Netbox...")
         for device in device_list:
             type_exist = self.exist.check_device_type_exists(device.device_type)
             if not type_exist:

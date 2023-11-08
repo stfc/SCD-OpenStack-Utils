@@ -1,4 +1,5 @@
 from typing import List
+from dataclasses import replace
 from lib.utils.device_dataclass import Device
 from lib.netbox_api.netbox_get_id import NetboxGetId
 
@@ -30,7 +31,9 @@ class QueryDataclass:
         :param device: The device to get the values from.
         :return: Returns the updated device.
         """
-        new_device = device
+        # new_device = device
+        changes = {}
         for attr in device.return_attrs():
-            new_device = NetboxGetId(self.netbox).get_id(device, attr)
+            changes[attr] = NetboxGetId(self.netbox).get_id(device, attr)
+        new_device = replace(device, **changes)
         return new_device
