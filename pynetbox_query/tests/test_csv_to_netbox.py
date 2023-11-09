@@ -1,13 +1,13 @@
 from unittest.mock import patch
 from dataclasses import asdict
 from pytest import fixture, raises
-from user_methods.csv_to_netbox import (
+from pynetbox_query.user_methods.csv_to_netbox import (
     CsvToNetbox,
     arg_parser,
     do_csv_to_netbox,
     main,
 )
-from utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
+from pynetbox_query.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
 
 
 @fixture(name="instance")
@@ -37,8 +37,8 @@ def test_check_file_path_invalid(instance):
         instance.check_file_path(mock_file_path)
 
 
-@patch("user_methods.csv_to_netbox.open_file")
-@patch("user_methods.csv_to_netbox.separate_data")
+@patch("pynetbox_query.user_methods.csv_to_netbox.open_file")
+@patch("pynetbox_query.user_methods.csv_to_netbox.separate_data")
 def test_read_csv(mock_separate_data, mock_open_file, instance):
     """
     This test ensures the file open method is called and the separate data method is called.
@@ -50,7 +50,7 @@ def test_read_csv(mock_separate_data, mock_open_file, instance):
     assert res == mock_separate_data.return_value
 
 
-@patch("user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
+@patch("pynetbox_query.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
 def test_check_netbox_device_does_exist(
     mock_check_device_exists, instance, mock_device
 ):
@@ -62,7 +62,7 @@ def test_check_netbox_device_does_exist(
     mock_check_device_exists.assert_called_once_with(mock_device.name)
 
 
-@patch("user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
+@patch("pynetbox_query.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
 def test_check_netbox_device_not_exist(mock_check_device_exists, instance, mock_device):
     """
     This test ensures an error is not raised if a device does not exist in Netbox.
@@ -72,7 +72,7 @@ def test_check_netbox_device_not_exist(mock_check_device_exists, instance, mock_
     mock_check_device_exists.assert_called_once_with(mock_device.name)
 
 
-@patch("user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
+@patch("pynetbox_query.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
 def test_check_netbox_device_type_does_exist(
     mock_check_device_type_exists, instance, mock_device
 ):
@@ -83,7 +83,7 @@ def test_check_netbox_device_type_does_exist(
     mock_check_device_type_exists.assert_called_once_with(mock_device.device_type)
 
 
-@patch("user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
+@patch("pynetbox_query.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
 def test_check_netbox_device_type_not_exist(
     mock_check_device_type_exists, instance, mock_device
 ):
@@ -96,7 +96,7 @@ def test_check_netbox_device_type_not_exist(
     mock_check_device_type_exists.assert_called_once_with(mock_device.device_type)
 
 
-@patch("user_methods.csv_to_netbox.QueryDevice.query_list")
+@patch("pynetbox_query.user_methods.csv_to_netbox.QueryDevice.query_list")
 def test_convert_data(mock_query_dataclass, instance):
     """
     This test ensures the convert data method is called with the correct arguments.
@@ -117,8 +117,8 @@ def test_dataclass_to_dict(instance, mock_device, mock_device_2):
     assert res == expected
 
 
-@patch("user_methods.csv_to_netbox.NetboxCreate.create_device")
-@patch("user_methods.csv_to_netbox.CsvToNetbox.dataclass_to_dict")
+@patch("pynetbox_query.user_methods.csv_to_netbox.NetboxCreate.create_device")
+@patch("pynetbox_query.user_methods.csv_to_netbox.CsvToNetbox.dataclass_to_dict")
 def test_send_data(mock_dataclass_to_dict, mock_create_device, instance):
     """
     This test ensures the correct methods are called with the correct arguments.
@@ -130,7 +130,7 @@ def test_send_data(mock_dataclass_to_dict, mock_create_device, instance):
     assert res
 
 
-@patch("user_methods.csv_to_netbox.argparse.ArgumentParser")
+@patch("pynetbox_query.user_methods.csv_to_netbox.argparse.ArgumentParser")
 def test_arg_parser(mock_argparse):
     """
     This test ensures the argparse method adds the correct arguments and returns them.
@@ -153,7 +153,7 @@ def test_arg_parser(mock_argparse):
     assert res == mock_argparse.return_value.parse_args()
 
 
-@patch("user_methods.csv_to_netbox.CsvToNetbox")
+@patch("pynetbox_query.user_methods.csv_to_netbox.CsvToNetbox")
 def test_do_csv_to_netbox(mock_csv_to_netbox_class):
     """
     This test ensures all the correct methods are called with the correct arguments.
@@ -185,8 +185,8 @@ def test_do_csv_to_netbox(mock_csv_to_netbox_class):
     assert res
 
 
-@patch("user_methods.csv_to_netbox.arg_parser")
-@patch("user_methods.csv_to_netbox.do_csv_to_netbox")
+@patch("pynetbox_query.user_methods.csv_to_netbox.arg_parser")
+@patch("pynetbox_query.user_methods.csv_to_netbox.do_csv_to_netbox")
 def test_main(mock_do_csv_to_netbox, mock_arg_parser):
     """
     This test ensures that when main is called the argparse method and do method are called with arguments.

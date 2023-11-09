@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from pytest import fixture
-from netbox_api.netbox_get_id import NetboxGetId
+from pynetbox_query.netbox_api.netbox_get_id import NetboxGetId
 
 
 @fixture(name="instance")

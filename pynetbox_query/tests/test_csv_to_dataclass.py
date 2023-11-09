@@ -1,6 +1,6 @@
 from csv import DictReader
 from unittest.mock import patch, mock_open
-from utils.csv_to_dataclass import separate_data, open_file
+from pynetbox_query.utils.csv_to_dataclass import separate_data, open_file
 
 
 def test_separate_data(mock_device, mock_device_2):

@@ -1,4 +1,4 @@
-from utils.device_dataclass import Device
+from pynetbox_query.utils.device_dataclass import Device
 
 
 # pylint: disable = R0903,C0115
