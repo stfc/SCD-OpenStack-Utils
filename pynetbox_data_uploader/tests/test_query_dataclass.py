@@ -1,6 +1,6 @@
 from unittest.mock import NonCallableMock, patch
 import pytest
-from lib.utils.query_dataclass import QueryDataclass
+from lib.utils.query_device import QueryDevice
 from lib.utils.device_dataclass import Device
 
 
@@ -10,7 +10,7 @@ def instance_fixture():
     This fixture method returns the Class to be tested.
     """
     api = NonCallableMock()
-    return QueryDataclass(api)
+    return QueryDevice(api)
 
 
 def test_query_list_no_device(instance):
@@ -18,7 +18,7 @@ def test_query_list_no_device(instance):
     This test ensures that an empty list is returned if an empty list is given to the query list method.
     """
     mock_device_list = []
-    with patch("lib.utils.query_dataclass.QueryDataclass.query_device"):
+    with patch("lib.utils.query_device.QueryDevice.query_device"):
         res = instance.query_list(mock_device_list)
     assert res == []
 
@@ -28,9 +28,7 @@ def test_query_list_one_device(instance):
     This test ensures that one device is returned if one device is given to the method.
     """
     mock_device_list = [""]
-    with patch(
-        "lib.utils.query_dataclass.QueryDataclass.query_device"
-    ) as mock_query_device:
+    with patch("lib.utils.query_device.QueryDevice.query_device") as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value]
 
@@ -40,9 +38,7 @@ def test_query_list_multiple_devices(instance):
     This test ensures 2 devices are returned if 2 devices are given.
     """
     mock_device_list = ["", ""]
-    with patch(
-        "lib.utils.query_dataclass.QueryDataclass.query_device"
-    ) as mock_query_device:
+    with patch("lib.utils.query_device.QueryDevice.query_device") as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
 
@@ -66,7 +62,7 @@ def test_query_device(instance):
         "name": "n2",
         "serial": "se2",
     }
-    with patch("lib.utils.query_dataclass.NetboxGetId.get_id") as mock_get_id:
+    with patch("lib.utils.query_device.NetboxGetId.get_id") as mock_get_id:
         res = instance.query_device(Device(**device_dict))
     val = mock_get_id.return_value
     expected_device_dict = {

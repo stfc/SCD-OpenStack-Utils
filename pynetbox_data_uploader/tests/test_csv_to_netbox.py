@@ -7,16 +7,13 @@ from lib.user_methods.csv_to_netbox import (
     do_csv_to_netbox,
     main,
 )
-from lib.utils.device_dataclass import Device
+from lib.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
 
 
-# Two tests mock the same Device dataclass and therefore have duplicate code.
-# pylint: disable=R0801
 @fixture(name="instance")
 def instance_fixture():
     """
     This method calls the class being tested.
-    :return: The class with mock arguments.
     """
     mock_url = "mock_url"
     mock_token = "mock_token"
@@ -54,106 +51,52 @@ def test_read_csv(mock_separate_data, mock_open_file, instance):
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
-def test_check_netbox_device_does_exist(mock_check_device_exists, instance):
+def test_check_netbox_device_does_exist(
+    mock_check_device_exists, instance, mock_device
+):
     """
     This test ensures that an error is raised if a device does exist in Netbox.
     """
-    device = Device(
-        tenant="t1",
-        device_role="dr1",
-        manufacturer="m1",
-        device_type="dt1",
-        status="st1",
-        site="si1",
-        location="l1",
-        rack="r1",
-        face="f1",
-        airflow="a1",
-        position="p1",
-        name="n1",
-        serial="se1",
-    )
-    with raises(Exception):
-        instance.check_netbox_device([device])
-    mock_check_device_exists.assert_called_once_with(device.name)
+    with raises(DeviceFoundError):
+        instance.check_netbox_device([mock_device])
+    mock_check_device_exists.assert_called_once_with(mock_device.name)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_exists")
-def test_check_netbox_device_not_exist(mock_check_device_exists, instance):
+def test_check_netbox_device_not_exist(mock_check_device_exists, instance, mock_device):
     """
     This test ensures an error is not raised if a device does not exist in Netbox.
     """
-    device = Device(
-        tenant="t1",
-        device_role="dr1",
-        manufacturer="m1",
-        device_type="dt1",
-        status="st1",
-        site="si1",
-        location="l1",
-        rack="r1",
-        face="f1",
-        airflow="a1",
-        position="p1",
-        name="n1",
-        serial="se1",
-    )
     mock_check_device_exists.return_value = None
-    instance.check_netbox_device([device])
-    mock_check_device_exists.assert_called_once_with(device.name)
+    instance.check_netbox_device([mock_device])
+    mock_check_device_exists.assert_called_once_with(mock_device.name)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
-def test_check_netbox_device_type_does_exist(mock_check_device_type_exists, instance):
+def test_check_netbox_device_type_does_exist(
+    mock_check_device_type_exists, instance, mock_device
+):
     """
     This test ensures an error is not raised if a device type does exist in Netbox.
     """
-    device = Device(
-        tenant="t1",
-        device_role="dr1",
-        manufacturer="m1",
-        device_type="dt1",
-        status="st1",
-        site="si1",
-        location="l1",
-        rack="r1",
-        face="f1",
-        airflow="a1",
-        position="p1",
-        name="n1",
-        serial="se1",
-    )
-    instance.check_netbox_device_type([device])
-    mock_check_device_type_exists.assert_called_once_with(device.device_type)
+    instance.check_netbox_device_type([mock_device])
+    mock_check_device_type_exists.assert_called_once_with(mock_device.device_type)
 
 
 @patch("lib.user_methods.csv_to_netbox.NetboxCheck.check_device_type_exists")
-def test_check_netbox_device_type_not_exist(mock_check_device_type_exists, instance):
+def test_check_netbox_device_type_not_exist(
+    mock_check_device_type_exists, instance, mock_device
+):
     """
     This test ensures an error is raised if a device type doesn't exist in Netbox.
     """
-    device = Device(
-        tenant="t1",
-        device_role="dr1",
-        manufacturer="m1",
-        device_type="dt1",
-        status="st1",
-        site="si1",
-        location="l1",
-        rack="r1",
-        face="f1",
-        airflow="a1",
-        position="p1",
-        name="n1",
-        serial="se1",
-    )
     mock_check_device_type_exists.return_value = None
-    with raises(Exception):
-        instance.check_netbox_device_type([device])
-    mock_check_device_type_exists.assert_called_once_with(device.device_type)
+    with raises(DeviceTypeNotFoundError):
+        instance.check_netbox_device_type([mock_device])
+    mock_check_device_type_exists.assert_called_once_with(mock_device.device_type)
 
 
-@patch("lib.user_methods.csv_to_netbox.QueryDataclass.query_list")
+@patch("lib.user_methods.csv_to_netbox.QueryDevice.query_list")
 def test_convert_data(mock_query_dataclass, instance):
     """
     This test ensures the convert data method is called with the correct arguments.
@@ -164,41 +107,11 @@ def test_convert_data(mock_query_dataclass, instance):
     assert res == mock_query_dataclass.return_value
 
 
-def test_dataclass_to_dict(instance):
+def test_dataclass_to_dict(instance, mock_device, mock_device_2):
     """
     This test ensures that the Device dataclasses are returned as dictionaries when the method is called.
     """
-    device1 = Device(
-        tenant="t1",
-        device_role="dr1",
-        manufacturer="m1",
-        device_type="dt1",
-        status="st1",
-        site="si1",
-        location="l1",
-        rack="r1",
-        face="f1",
-        airflow="a1",
-        position="p1",
-        name="n1",
-        serial="se1",
-    )
-    device2 = Device(
-        tenant="t2",
-        device_role="dr2",
-        manufacturer="m2",
-        device_type="dt2",
-        status="st2",
-        site="si2",
-        location="l2",
-        rack="r2",
-        face="f2",
-        airflow="a2",
-        position="p2",
-        name="n2",
-        serial="se2",
-    )
-    mock_device_list = [device1, device2]
+    mock_device_list = [mock_device, mock_device_2]
     res = instance.dataclass_to_dict(mock_device_list)
     expected = [asdict(device) for device in mock_device_list]
     assert res == expected

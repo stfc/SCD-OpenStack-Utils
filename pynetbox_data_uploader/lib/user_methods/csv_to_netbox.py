@@ -2,21 +2,19 @@ from typing import List, Dict
 from pathlib import Path
 from dataclasses import asdict
 import argparse
+import sys
 from lib.netbox_api.netbox_create import NetboxCreate
 from lib.netbox_api.netbox_connect import NetboxConnect
 from lib.netbox_api.netbox_check import NetboxCheck
 from lib.utils.csv_to_dataclass import open_file, separate_data
-from lib.utils.query_dataclass import QueryDataclass
+from lib.utils.query_device import QueryDevice
 from lib.utils.device_dataclass import Device
-
-# pylint:disable = broad-exception-raised
-# Disabled this pylint warning as the exception doesn't catch an error.
-# We want it to stop the program if a device already exists in netbox.
+from lib.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
 
 
 class CsvToNetbox:
     """
-    This class contains organised methods in the 4 step process of reading csv's to then uploading to Netbox.
+    This class contains organised methods in the 4-step process of reading csv's to then uploading to Netbox.
     """
 
     def __init__(self, url: str, token: str):
@@ -29,19 +27,17 @@ class CsvToNetbox:
         self.netbox = NetboxConnect(url, token).api_object()
         self.exist = NetboxCheck(self.netbox)
         self.create = NetboxCreate(self.netbox)
-        self.query_dataclass = QueryDataclass(self.netbox)
+        self.query_dataclass = QueryDevice(self.netbox)
 
     @staticmethod
     def check_file_path(file_path: str):
         """
-        This method checks if the filepath is valid. Raises an exception if it's invalid.
+        This method checks if the filepath is valid. Raises a FileNotFoundError if it's invalid.
         :param file_path: The path to the csv file.
         """
-        print("Checking filepath...")
         valid = Path(file_path).exists()
         if not valid:
             raise FileNotFoundError(f"Filepath: {file_path} is not valid.")
-        print("Filepath valid.")
 
     @staticmethod
     def read_csv(file_path: str) -> List[Device]:
@@ -51,38 +47,30 @@ class CsvToNetbox:
         :param file_path: The file path to the csv file to be read.
         :return: Returns a list of devices
         """
-        print("Reading CSV...")
-        dict_reader_class = open_file(file_path)
-        device_list = separate_data(dict_reader_class)
-        print("Read CSV.")
-        return device_list
+        return separate_data(open_file(file_path))
 
     def check_netbox_device(self, device_list: List[Device]) -> bool:
         """
         This method calls the check_device_exists and check_device_type_exists method on each device in the list.
         :param device_list: A list of devices.
-        :return: Returns True if the devices don't exist and device types do exist. Raises an Exception otherwise.
+        :return: Returns True if the devices don't exist. Raises a DeviceFoundError otherwise.
         """
-        print("Checking devices in Netbox...")
         for device in device_list:
             device_exist = self.exist.check_device_exists(device.name)
             if device_exist:
-                raise Exception(f"Device {device.name} already exists in Netbox.")
-        print("Checked devices.")
+                raise DeviceFoundError(device)
         return True
 
     def check_netbox_device_type(self, device_list: List[Device]) -> bool:
         """
         This method calls the check_device_exists and check_device_type_exists method on each device in the list.
         :param device_list: A list of devices.
-        :return: Returns True if the devices don't exist and device types do exist. Raises an Exception otherwise.
+        :return: Returns True if the device types do exist. Raises a DeviceTypeNotFound otherwise.
         """
-        print("Checking device types in Netbox...")
         for device in device_list:
             type_exist = self.exist.check_device_type_exists(device.device_type)
             if not type_exist:
-                raise Exception(f"Type {device.device_type} does not exist.")
-        print("Checked device types.")
+                raise DeviceTypeNotFoundError(device)
         return True
 
     def convert_data(self, device_list: List[Device]) -> List[Device]:
@@ -91,9 +79,7 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns the updated list of devices.
         """
-        print("Formatting data...")
         queried_list = self.query_dataclass.query_list(device_list)
-        print("Formatted data.")
         return queried_list
 
     @staticmethod
@@ -103,10 +89,7 @@ class CsvToNetbox:
         :param device_list: A list of Device dataclasses.
         :return: Returns the list of Devices as dictionaries.
         """
-        dict_list = []
-        for device in device_list:
-            dict_list.append(asdict(device))
-        return dict_list
+        return [asdict(device) for device in device_list]
 
     def send_data(self, device_list: List[Device]) -> bool:
         """
@@ -114,10 +97,8 @@ class CsvToNetbox:
         :param device_list: A list of devices.
         :return: Returns bool whether the devices where created.
         """
-        print("Sending data to Netbox...")
         dict_list = self.dataclass_to_dict(device_list)
         devices = self.create.create_device(dict_list)
-        print("Sent data.")
         return bool(devices)
 
 
@@ -156,8 +137,10 @@ def main():
     """
     This function calls the necessary functions to call all other methods.
     """
+    sys.stdout.write("Starting...")
     arguments = arg_parser()
     do_csv_to_netbox(arguments)
+    sys.stdout.write("Finished.")
 
 
 if __name__ == "__main__":
