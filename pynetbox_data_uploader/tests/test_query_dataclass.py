@@ -1,7 +1,7 @@
 from unittest.mock import NonCallableMock, patch
+from dataclasses import asdict
 import pytest
 from lib.utils.query_device import QueryDevice
-from lib.utils.device_dataclass import Device
 
 
 @pytest.fixture(name="instance")
@@ -43,41 +43,14 @@ def test_query_list_multiple_devices(instance):
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
 
 
-def test_query_device(instance):
+def test_query_device(instance, mock_device, dict_to_device):
     """
     This test ensures the get_id is called on all fields in a dataclass.
     """
-    device_dict = {
-        "tenant": "t2",
-        "device_role": "dr2",
-        "manufacturer": "m2",
-        "device_type": "dt2",
-        "status": "st2",
-        "site": "si2",
-        "location": "l2",
-        "rack": "r2",
-        "face": "f2",
-        "airflow": "a2",
-        "position": "p2",
-        "name": "n2",
-        "serial": "se2",
-    }
     with patch("lib.utils.query_device.NetboxGetId.get_id") as mock_get_id:
-        res = instance.query_device(Device(**device_dict))
+        res = instance.query_device(mock_device)
     val = mock_get_id.return_value
-    expected_device_dict = {
-        "tenant": val,
-        "device_role": val,
-        "manufacturer": val,
-        "device_type": val,
-        "status": val,
-        "site": val,
-        "location": val,
-        "rack": val,
-        "face": val,
-        "airflow": val,
-        "position": val,
-        "name": val,
-        "serial": val,
-    }
-    assert res == Device(**expected_device_dict)
+    expected_device_dict = asdict(mock_device)
+    for key in expected_device_dict.keys():
+        expected_device_dict[key] = val
+    assert res == dict_to_device(expected_device_dict)
