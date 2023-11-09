@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, NonCallableMock
 import pytest
-from lib.netbox_api.netbox_create import NetboxCreate
+from netbox_api.netbox_create import NetboxCreate
 
 
 @pytest.fixture(name="instance")

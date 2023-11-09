@@ -7,3 +7,9 @@ max-line-length=120
 # C0114: Missing module string - we don't need module strings for the small repo
 
 disable=C0114
+
+# Ignore the venv folder.
+# Despite venv not being pushed to the Repo.
+# It's useful to have here for development purposes.
+
+ignore=venv

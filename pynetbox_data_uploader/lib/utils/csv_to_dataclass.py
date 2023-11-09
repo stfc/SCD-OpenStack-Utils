@@ -1,6 +1,6 @@
 import csv
 from typing import List, Dict
-from lib.utils.device_dataclass import Device
+from utils.device_dataclass import Device
 
 
 def open_file(file_path: str) -> List[Dict]:

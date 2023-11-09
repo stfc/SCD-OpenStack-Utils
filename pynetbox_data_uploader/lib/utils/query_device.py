@@ -1,7 +1,7 @@
 from typing import List
 from dataclasses import replace
-from lib.utils.device_dataclass import Device
-from lib.netbox_api.netbox_get_id import NetboxGetId
+from utils.device_dataclass import Device
+from netbox_api.netbox_get_id import NetboxGetId
 
 
 class QueryDevice:
