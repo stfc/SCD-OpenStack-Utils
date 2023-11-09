@@ -1,4 +1,4 @@
-from lib.utils.device_dataclass import Device
+from pynetbox_query.utils.device_dataclass import Device
 
 
 class DeviceFoundError(Exception):

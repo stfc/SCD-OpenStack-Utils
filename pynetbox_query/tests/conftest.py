@@ -1,6 +1,6 @@
 from typing import Dict
 from pytest import fixture
-from lib.utils.device_dataclass import Device
+from pynetbox_query.utils.device_dataclass import Device
 
 
 @fixture(scope="function", name="dict_to_device")

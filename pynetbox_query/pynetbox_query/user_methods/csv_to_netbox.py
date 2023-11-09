@@ -3,13 +3,13 @@ from pathlib import Path
 from dataclasses import asdict
 import argparse
 import sys
-from lib.netbox_api.netbox_create import NetboxCreate
-from lib.netbox_api.netbox_connect import NetboxConnect
-from lib.netbox_api.netbox_check import NetboxCheck
-from lib.utils.csv_to_dataclass import open_file, separate_data
-from lib.utils.query_device import QueryDevice
-from lib.utils.device_dataclass import Device
-from lib.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
+from pynetbox_query.netbox_api.netbox_create import NetboxCreate
+from pynetbox_query.netbox_api.netbox_connect import NetboxConnect
+from pynetbox_query.netbox_api.netbox_check import NetboxCheck
+from pynetbox_query.utils.csv_to_dataclass import open_file, separate_data
+from pynetbox_query.utils.query_device import QueryDevice
+from pynetbox_query.utils.device_dataclass import Device
+from pynetbox_query.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
 
 
 class CsvToNetbox:

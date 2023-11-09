@@ -1,7 +1,7 @@
 from typing import List
 from dataclasses import replace
-from lib.utils.device_dataclass import Device
-from lib.netbox_api.netbox_get_id import NetboxGetId
+from pynetbox_query.utils.device_dataclass import Device
+from pynetbox_query.netbox_api.netbox_get_id import NetboxGetId
 
 
 class QueryDevice:
