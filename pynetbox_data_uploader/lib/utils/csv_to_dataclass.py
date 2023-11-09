@@ -11,7 +11,7 @@ def open_file(file_path: str) -> List[Dict]:
     """
     with open(file_path, encoding="UTF-8") as file:
         csv_reader_obj = csv.DictReader(file)
-    return list(csv_reader_obj)
+        return list(csv_reader_obj)
 
 
 def separate_data(csv_dicts: List[Dict]) -> List[Device]:
