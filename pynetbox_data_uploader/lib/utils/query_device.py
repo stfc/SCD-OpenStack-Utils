@@ -4,7 +4,6 @@ from lib.utils.device_dataclass import Device
 from lib.netbox_api.netbox_get_id import NetboxGetId
 
 
-# pylint: disable = R0903
 class QueryDevice:
     """
     This class contains methods that update the device dataclasses with ID's from Netbox.
@@ -31,7 +30,6 @@ class QueryDevice:
         :param device: The device to get the values from.
         :return: Returns the updated device.
         """
-        # new_device = device
         changes = {}
         for attr in device.return_attrs():
             changes[attr] = NetboxGetId(self.netbox).get_id(device, attr)
