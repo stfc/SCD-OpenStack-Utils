@@ -25,3 +25,13 @@ def separate_data(csv_dicts: List[Dict]) -> List[Device]:
         device = Device(**dictionary)
         devices.append(device)
     return devices
+
+
+def read_csv(file_path: str) -> List[Device]:
+    """
+    This method calls the csv_to_python and separate_data method.
+    This will take the csv file and return a list of device dataclasses
+    :param file_path: The file path to the csv file to be read.
+    :return: Returns a list of device dataclasses
+    """
+    return separate_data(open_file(file_path))

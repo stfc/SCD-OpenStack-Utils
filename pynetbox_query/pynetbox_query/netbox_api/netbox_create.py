@@ -1,5 +1,6 @@
 from typing import Union, Dict, List
-
+from dataclasses import asdict
+from pynetbox_query.utils.device_dataclass import Device
 
 class NetboxCreate:
     """
