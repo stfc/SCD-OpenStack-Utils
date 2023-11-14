@@ -80,11 +80,21 @@ class TopLevelMethods:
                 raise DeviceTypeNotFoundError(device)
         return True
 
-    def check_device_exist(self, device: Device):
+    def check_device_exists(self, device: Device) -> bool:
+        """
+        This method checks if a device exists in Netbox using the Netbox_Api methods.
+        :param device: The device dataclass
+        :return: Returns bool for if the device exists or not.
+        """
         device_exists = self.exist.check_device_exists(device.name)
         return device_exists
 
-    def check_device_type_exists(self, device: Device):
+    def check_device_type_exists(self, device: Device) -> bool:
+        """
+        This method checks if a device type exists in Netbox using the Netbox_Api methods.
+        :param device: The device dataclass
+        :return: Returns bool for if the device type exists or not.
+        """
         device_type_exists = self.exist.check_device_type_exists(device.device_type)
         return device_type_exists
 

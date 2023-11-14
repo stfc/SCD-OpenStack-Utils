@@ -46,9 +46,7 @@ def test_read_csv(mock_separate_data, mock_open_file, instance):
 
 
 @patch("pynetbox_query.top_level_methods.NetboxCheck.check_device_exists")
-def test_validate_devices_do_exist(
-    mock_check_device_exists, instance, mock_device
-):
+def test_validate_devices_do_exist(mock_check_device_exists, instance, mock_device):
     """
     This test ensures that an error is raised if a device does exist in Netbox.
     """
@@ -123,3 +121,23 @@ def test_send_data(mock_dataclass_to_dict, mock_create_device, instance):
     mock_dataclass_to_dict.assert_called_once_with(mock_device_list)
     mock_create_device.assert_called_once_with(mock_dataclass_to_dict.return_value)
     assert res
+
+
+@patch("pynetbox_query.top_level_methods.NetboxCheck.check_device_exists")
+def test_check_device_exists(mock_check_device_exists, instance, mock_device):
+    """
+    This test ensures that the check_device_exists method is called with the correct arguments.
+    """
+    res = instance.check_device_exists(mock_device)
+    mock_check_device_exists.assert_called_once_with(mock_device.name)
+    assert res == mock_check_device_exists.return_value
+
+
+@patch("pynetbox_query.top_level_methods.NetboxCheck.check_device_type_exists")
+def test_check_device_type_exists(mock_check_device_type_exists, instance, mock_device):
+    """
+    This test ensures that the check_device_type_exists method is called with the correct arguments.
+    """
+    res = instance.check_device_type_exists(mock_device)
+    mock_check_device_type_exists.assert_called_once_with(mock_device.device_type)
+    assert res == mock_check_device_type_exists.return_value

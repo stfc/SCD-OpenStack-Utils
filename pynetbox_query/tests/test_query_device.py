@@ -28,7 +28,9 @@ def test_query_list_one_device(instance):
     This test ensures that one device is returned if one device is given to the method.
     """
     mock_device_list = [""]
-    with patch("pynetbox_query.utils.query_device.QueryDevice.query_device") as mock_query_device:
+    with patch(
+        "pynetbox_query.utils.query_device.QueryDevice.query_device"
+    ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value]
 
@@ -38,7 +40,9 @@ def test_query_list_multiple_devices(instance):
     This test ensures 2 devices are returned if 2 devices are given.
     """
     mock_device_list = ["", ""]
-    with patch("pynetbox_query.utils.query_device.QueryDevice.query_device") as mock_query_device:
+    with patch(
+        "pynetbox_query.utils.query_device.QueryDevice.query_device"
+    ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
 
