@@ -6,7 +6,7 @@ DESCRIPTION = "python package for pynetbox tools"
 LONG_DESCRIPTION = """Python package to query Netbox."""
 
 setup(
-    name="pynetbox_query",
+    name="pynetboxQuery",
     version=VERSION,
     author="Kalibh Halford",
     author_email="<kalibh.halford@stfc.ac.uk>",
