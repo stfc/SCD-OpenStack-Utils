@@ -1,4 +1,4 @@
-name: Pynetbox Tests
+name: Pylint-Tests-Codecov
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - ".github/workflows/pynetbox.yaml"
 
 jobs:
-  Test:
+  Pylint-Tests-Codecov:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -28,7 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           cd pynetbox_query
           pip install -r requirements.txt
-          
+
+      - name: Analyse with pylint
+        run: cd pynetbox_query && pylint $(git ls-files '*.py')
 
       - name: Run tests and collect coverage
         run: cd pynetbox_query && python3 -m pytest
+
+      - name: Run tests and collect coverage
+        run: cd pynetbox_query && python3 -m pytest --cov-report xml:coverage.xml --cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          files: ./pynetbox_query/coverage.xml
