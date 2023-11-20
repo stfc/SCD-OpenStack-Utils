@@ -3,11 +3,14 @@ from csv import DictReader
 from pandas import read_excel
 
 
+# Disabling this pylint warning as it is unnecessary.
+# pylint: disable = R0903
 class _ReadMethods:
     """
     This class provides the read methods for different file types.
     All of which accept a file path and return a list of dictionaries.
     """
+
     @staticmethod
     def _read_csv(file_path: str) -> List[Dict]:
         """

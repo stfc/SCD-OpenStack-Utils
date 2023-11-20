@@ -7,6 +7,11 @@ from pynetboxquery.user_methods.validate_data_fields_in_netbox import (
 
 
 def main():
+    """
+    This function will:
+    Run the argparse method to collect arguments from the CLI.
+    Then run the correct user script for the action specified in the CLI.
+    """
     argparse_args = Parsers().arg_parser()
     kwargs = vars(argparse_args)
     match kwargs["subparsers"]:

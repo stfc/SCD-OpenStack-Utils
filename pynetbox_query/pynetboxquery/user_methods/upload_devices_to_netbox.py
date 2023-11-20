@@ -22,7 +22,9 @@ def upload_devices_to_netbox(url: str, token: str, file_path: str, **kwargs):
     """
     api = api_object(url, token)
     device_list = ReadData().read(file_path, **kwargs)
-    ValidateData().validate_data(device_list, api, **{"fields": ["name", "device_type"]})
+    ValidateData().validate_data(
+        device_list, api, **{"fields": ["name", "device_type"]}
+    )
     queried_devices = QueryDevice(api).query_list(device_list)
     dictionary_devices = [asdict(device) for device in queried_devices]
     NetboxCreate(api).create_device(dictionary_devices)

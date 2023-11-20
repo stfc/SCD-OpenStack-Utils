@@ -1,6 +1,8 @@
 import argparse
 
 
+# Disabling this Pylint warning as it's irrelevant.
+# pylint: disable = R0903
 class Parsers:
     """
     This class contains the argparse methods for different commands.
@@ -20,7 +22,7 @@ class Parsers:
         subparsers = main_parser.add_subparsers(
             title="Actions",
             description="Valid Subcommands:\ncreate_devices\nvalidate_data_fields_in_netbox",
-            dest="subparsers"
+            dest="subparsers",
         )
         self._create_parser(subparsers, parent_parser)
         self._validate_parser(subparsers, parent_parser)
@@ -42,12 +44,12 @@ class Parsers:
 
     @staticmethod
     def _create_parser(subparsers, parent_parser):
-        parser_upload_devices_to_netbox = subparsers.add_parser(
+        subparsers.add_parser(
             "create_devices",
             description="Create devices in Netbox from a file.",
             usage="pynetboxquery create_devices <filepath> <url> <token> <options>",
             parents=[parent_parser],
-            aliases=["create"]
+            aliases=["create"],
         )
 
     @staticmethod
@@ -68,4 +70,3 @@ class Parsers:
             help="To include all results or only bad results from Netbox.",
             dest="TRUE/FALSE",
         )
-

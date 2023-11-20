@@ -1,5 +1,4 @@
 from typing import List
-from dataclasses import replace
 from pynetboxquery.utils.device_dataclass import Device
 from pynetboxquery.netbox_api.netbox_get_id import NetboxGetId
 

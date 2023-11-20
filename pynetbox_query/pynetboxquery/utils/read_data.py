@@ -1,10 +1,16 @@
 from pathlib import Path
 from typing import List, Dict
-from pynetboxquery.utils.error_classes import *
 from pynetboxquery.utils.device_dataclass import Device
+from pynetboxquery.utils.error_classes import (
+    FileTypeNotSupported,
+    DelimiterNotSpecifiedError,
+    SheetNameNotSpecifiedError,
+)
 from pynetboxquery.utils.read_methods import _ReadMethods
 
 
+# Disabling this pylint warning as it is unnecessary.
+# pylint: disable = R0903
 class ReadData(_ReadMethods):
     """
     This class contains methods to read data from different file types into a list of dictionaries.
@@ -31,7 +37,9 @@ class ReadData(_ReadMethods):
             case "csv":
                 dictionary_list = self._read_csv(file_path)
             case "txt":
-                dictionary_list = self._read_delimited_txt(file_path, kwargs["delimiter"])
+                dictionary_list = self._read_delimited_txt(
+                    file_path, kwargs["delimiter"]
+                )
             case "xlsx":
                 dictionary_list = self._read_xlsx(file_path, kwargs["sheet_name"])
             case _:

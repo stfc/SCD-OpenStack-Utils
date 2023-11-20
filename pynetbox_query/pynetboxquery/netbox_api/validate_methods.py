@@ -1,10 +1,10 @@
 from typing import List
-from pynetboxquery.utils.error_classes import *
 from pynetbox import api
 
 
+# Disabling this Pylint warning, there are too few public methods.
+# pylint: disable = R0903
 class _ValidateMethods:
-
     @staticmethod
     def _check_device_name_in_netbox(device_name: str, netbox_api: api) -> bool:
         """
@@ -15,7 +15,9 @@ class _ValidateMethods:
         device = netbox_api.dcim.devices.get(name=device_name)
         return bool(device)
 
-    def _check_list_device_name_in_netbox(self, device_names: List[str], netbox_api: api) -> List[str]:
+    def _check_list_device_name_in_netbox(
+        self, device_names: List[str], netbox_api: api
+    ) -> List[str]:
         """
         This method will call the validate method on each device name in the list and return the results.
         :param device_names: List of device names to check.
@@ -37,7 +39,9 @@ class _ValidateMethods:
         device_type = netbox_api.dcim.device_types.get(slug=device_type)
         return bool(device_type)
 
-    def _check_list_device_type_in_netbox(self, device_type_list: List[str], netbox_api: api) -> List[str]:
+    def _check_list_device_type_in_netbox(
+        self, device_type_list: List[str], netbox_api: api
+    ) -> List[str]:
         """
         This method will call the validate method on each device type in the list and return the results.
         :param device_names: List of device types to check.
