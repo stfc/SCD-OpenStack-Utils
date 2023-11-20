@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from pynetbox_query.argparser import arg_parser
+from argparser import arg_parser
 
 
 @patch("pynetbox_query.argparser.argparse.ArgumentParser")

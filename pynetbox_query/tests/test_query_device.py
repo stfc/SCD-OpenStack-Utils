@@ -1,7 +1,7 @@
 from unittest.mock import NonCallableMock, patch
 from dataclasses import asdict
 from pytest import fixture
-from pynetbox_query.utils.query_device import QueryDevice
+from pynetboxquery.utils.query_device import QueryDevice
 
 
 @fixture(name="instance")

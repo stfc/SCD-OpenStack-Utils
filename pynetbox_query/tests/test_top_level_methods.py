@@ -1,8 +1,8 @@
 from unittest.mock import patch
 from dataclasses import asdict
 from pytest import fixture, raises
-from pynetbox_query.top_level_methods import TopLevelMethods
-from pynetbox_query.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
+from pynetboxquery.top_level_methods import TopLevelMethods
+from pynetboxquery.utils.error_classes import DeviceFoundError, DeviceTypeNotFoundError
 
 
 @fixture(name="instance")

@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from user_methods.csv_to_netbox import do_csv_to_netbox, main
+from pynetboxquery.user_methods import do_csv_to_netbox, main
 
 
 @patch("user_methods.csv_to_netbox.TopLevelMethods")

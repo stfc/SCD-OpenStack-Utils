@@ -1,7 +1,7 @@
 from typing import List
 from dataclasses import replace
-from pynetbox_query.utils.device_dataclass import Device
-from pynetbox_query.netbox_api.netbox_get_id import NetboxGetId
+from pynetboxquery.utils.device_dataclass import Device
+from pynetboxquery.netbox_api.netbox_get_id import NetboxGetId
 
 
 class QueryDevice:
@@ -33,5 +33,4 @@ class QueryDevice:
         changes = {}
         for attr in device.return_attrs():
             changes[attr] = NetboxGetId(self.netbox).get_id(device, attr)
-        new_device = replace(device, **changes)
-        return new_device
+        return Device(**changes)
