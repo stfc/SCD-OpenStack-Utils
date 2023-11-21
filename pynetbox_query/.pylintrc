@@ -1,0 +1,15 @@
+[FORMAT]
+# Black will enforce 88 chars on Python code
+# this will enforce 120 chars on docs / comments
+max-line-length=120
+
+# Disable various warnings:
+# C0114: Missing module string - we don't need module strings for the small repo
+
+disable=C0114
+
+# Ignore the venv folder.
+# Despite venv not being pushed to the Repo.
+# It's useful to have here for development purposes.
+
+ignore=venv

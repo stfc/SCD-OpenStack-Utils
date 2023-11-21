@@ -332,6 +332,17 @@ def test_is_aq_managed_image(openstack_api, vm_data):
     openstack_api.get_image.assert_called_once_with(vm_data)
 
 
+@patch("rabbit_consumer.message_consumer.openstack_api")
+def test_is_aq_managed_image_missing_image(openstack_api, vm_data):
+    """
+    Test that the function returns False when the image is not AQ managed
+    """
+    openstack_api.get_image.return_value = None
+
+    assert not is_aq_managed_image(vm_data)
+    openstack_api.get_image.assert_called_once_with(vm_data)
+
+
 @patch("rabbit_consumer.message_consumer.VmData")
 @patch("rabbit_consumer.message_consumer.openstack_api")
 def test_is_aq_managed_image_missing_key(openstack_api, vm_data):

@@ -9,4 +9,7 @@ startdateepoch=`date -d "$startdate" +%s`
 
 echo $startdate
 echo $enddate
-/usr/local/bin/extract_accounting.py "$startdate" "$enddate"
+for extractor in $(ls /usr/local/bin/*extract_accounting.py);
+do
+    $extractor "$startdate" "$enddate";
+done

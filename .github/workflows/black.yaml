@@ -36,6 +36,11 @@ jobs:
         uses: psf/black@stable
         with:
             src: "word_cloud_generator"
+         
+      - name: JSM Metric Collection
+        uses: psf/black@stable
+        with:
+            src: "jsm_metric_collection"
 
       - name: Openstack-Rally-Tester
         uses: psf/black@stable
