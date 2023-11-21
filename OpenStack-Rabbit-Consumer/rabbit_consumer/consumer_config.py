@@ -1,3 +1,8 @@
+"""
+This file allows us to set environment variables so that
+credentials are not exposed
+"""
+
 import os
 from dataclasses import dataclass, field
 from functools import partial

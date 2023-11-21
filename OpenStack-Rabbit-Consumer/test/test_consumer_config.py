@@ -1,3 +1,7 @@
+"""
+Test the consumer config class, this handles the environment variables
+that are used to configure the consumer.
+"""
 import pytest
 
 from rabbit_consumer.consumer_config import ConsumerConfig

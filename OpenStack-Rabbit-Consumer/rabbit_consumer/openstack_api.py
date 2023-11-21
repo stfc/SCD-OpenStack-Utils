@@ -1,3 +1,7 @@
+"""
+This file defines methods for connecting and interacting with the 
+OpenStack API
+"""
 import logging
 from typing import List, Optional
 

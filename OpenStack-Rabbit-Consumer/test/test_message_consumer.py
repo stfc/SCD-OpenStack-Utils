@@ -1,3 +1,7 @@
+"""
+Tests the message consumption flow
+for the consumer
+"""
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
 
 import pytest
@@ -413,6 +417,9 @@ def test_delete_machine_by_serial(aq_api, vm_data, openstack_address):
 @patch("rabbit_consumer.message_consumer.aq_api")
 @patch("rabbit_consumer.message_consumer.socket")
 def test_delete_machine_no_hostname(socket_api, aq_api, vm_data):
+    """
+    Tests
+    """
     aq_api.check_host_exists.return_value = False
 
     ip_address = "127.0.0.1"

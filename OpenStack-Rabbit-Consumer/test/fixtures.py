@@ -1,3 +1,6 @@
+"""
+Fixtures for unit tests, used to create mock objects
+"""
 import uuid
 
 import pytest

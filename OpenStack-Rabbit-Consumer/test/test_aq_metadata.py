@@ -1,3 +1,8 @@
+"""
+Tests the AQ metadata dataclass, including
+init from environment variables, and overriding values
+"""
+
 from typing import Dict
 
 import pytest
