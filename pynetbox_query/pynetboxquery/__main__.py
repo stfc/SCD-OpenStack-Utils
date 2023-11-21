@@ -1,4 +1,3 @@
-import sys
 from pynetboxquery.utils.parsers import Parsers
 from pynetboxquery.user_methods.upload_devices_to_netbox import upload_devices_to_netbox
 from pynetboxquery.user_methods.validate_data_fields_in_netbox import (
@@ -20,10 +19,10 @@ def main():
         case action if action in ["validate_objects_in_netbox", "validate"]:
             validate_data_fields_in_netbox(**kwargs)
         case _:
-            sys.stdout.write(
+            print(
                 f"""Invalid action "{kwargs["subparsers"]}". See pynetboxquery --help for actions.\n"""
             )
-    sys.stdout.write("Done.")
+    print("Done.")
 
 
 if __name__ == "__main__":

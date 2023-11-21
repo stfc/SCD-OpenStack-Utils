@@ -1,11 +1,10 @@
-import sys
 from dataclasses import asdict
 from pynetboxquery.utils.read_data import ReadData
 from pynetboxquery.netbox_api.validate_data import ValidateData
 from pynetboxquery.utils.query_device import QueryDevice
 from pynetboxquery.netbox_api.netbox_create import NetboxCreate
 from pynetboxquery.netbox_api.netbox_connect import api_object
-
+from pynetboxquery.utils.parsers import arg_parser
 
 def upload_devices_to_netbox(url: str, token: str, file_path: str, **kwargs):
     """
@@ -28,4 +27,18 @@ def upload_devices_to_netbox(url: str, token: str, file_path: str, **kwargs):
     queried_devices = QueryDevice(api).query_list(device_list)
     dictionary_devices = [asdict(device) for device in queried_devices]
     NetboxCreate(api).create_device(dictionary_devices)
-    sys.stdout.write("Devices added to Netbox.\n")
+    print("Devices added to Netbox.\n")
+
+
+def collect_args():
+    parser = arg_parser()
+    return vars(parser.parse_args())
+
+
+def main():
+    kwargs = collect_args()
+    upload_devices_to_netbox(**kwargs)
+
+
+if __name__ == "__main__":
+    main()
