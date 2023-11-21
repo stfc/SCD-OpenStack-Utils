@@ -61,7 +61,7 @@ class ValidateData:
         return bool(device)
 
     def _check_list_device_name_in_netbox(
-            self, device_names: List[str], netbox_api: api
+        self, device_names: List[str], netbox_api: api
     ) -> List[str]:
         """
         This method will call the validate method on each device name in the list and return the results.
@@ -85,7 +85,7 @@ class ValidateData:
         return bool(device_type)
 
     def _check_list_device_type_in_netbox(
-            self, device_type_list: List[str], netbox_api: api
+        self, device_type_list: List[str], netbox_api: api
     ) -> List[str]:
         """
         This method will call the validate method on each device type in the list and return the results.

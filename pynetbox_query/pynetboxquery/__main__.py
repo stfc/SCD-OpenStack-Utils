@@ -1,23 +1,24 @@
+import importlib
 import sys
-from pynetboxquery.user_methods.upload_devices_to_netbox import main_upload_devices_to_netbox
-from pynetboxquery.user_methods.validate_data_fields_in_netbox import main_validate_data_fields_in_netbox
+from pynetboxquery.utils.error_classes import UserMethodNotFoundError
 
 
 def main():
     """
     This function will run the correct user method for the action specified in the CLI.
     """
-    action = sys.argv[1]
-    match action:
-        case alias if alias in ["create_device", "create"]:
-            main_upload_devices_to_netbox()
-        case alias if alias in ["validate_objects_in_netbox", "validate"]:
-            main_validate_data_fields_in_netbox()
-        case _:
-            print(
-                f"""Invalid action "{action}". See pynetboxquery --help for actions.\n"""
-            )
-    print("Done.")
+    user_methods_names = ["upload_devices_to_netbox", "validate_data_fields_in_netbox"]
+    found = False
+    for user_method in user_methods_names:
+        user_method_module = importlib.import_module(
+            f"pynetboxquery.user_methods.{user_method}"
+        )
+        aliases = getattr(user_method_module, "aliases")()
+        if sys.argv[1] in aliases:
+            user_method_module.main()
+            found = True
+    if not found:
+        raise UserMethodNotFoundError(f"The user method {sys.argv[1]} was not found.")
 
 
 if __name__ == "__main__":

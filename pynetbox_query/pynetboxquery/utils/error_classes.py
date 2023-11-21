@@ -26,3 +26,7 @@ class SheetNameNotSpecifiedError(Exception):
 
 class ApiObjectNotParsedError(Exception):
     pass
+
+
+class UserMethodNotFoundError(Exception):
+    pass
