@@ -4,7 +4,8 @@ from pynetboxquery.netbox_api.validate_data import ValidateData
 from pynetboxquery.utils.query_device import QueryDevice
 from pynetboxquery.netbox_api.netbox_create import NetboxCreate
 from pynetboxquery.netbox_api.netbox_connect import api_object
-from pynetboxquery.utils.parsers import arg_parser
+from pynetboxquery.utils.parsers import Parsers
+
 
 def upload_devices_to_netbox(url: str, token: str, file_path: str, **kwargs):
     """
@@ -30,15 +31,23 @@ def upload_devices_to_netbox(url: str, token: str, file_path: str, **kwargs):
     print("Devices added to Netbox.\n")
 
 
-def collect_args():
-    parser = arg_parser()
-    return vars(parser.parse_args())
+def _create_parser():
+    parent_parser, main_parser, subparsers = Parsers().arg_parser()
+    subparsers.add_parser(
+        "create_devices",
+        description="Create devices in Netbox from a file.",
+        usage="pynetboxquery create_devices <filepath> <url> <token> <options>",
+        parents=[parent_parser],
+        aliases=["create"],
+    )
+    return main_parser
 
 
-def main():
-    kwargs = collect_args()
+def _collect_args():
+    main_parser = _create_parser()
+    return vars(main_parser.parse_args())
+
+
+def main_upload_devices_to_netbox():
+    kwargs = _collect_args()
     upload_devices_to_netbox(**kwargs)
-
-
-if __name__ == "__main__":
-    main()

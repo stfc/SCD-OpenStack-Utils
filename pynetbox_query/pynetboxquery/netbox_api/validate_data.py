@@ -97,4 +97,3 @@ class ValidateData:
             in_netbox = self._check_device_type_in_netbox(device_type, netbox_api)
             results += [f"Device type {device_type} exists in Netbox: {in_netbox}."]
         return results
-    
