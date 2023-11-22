@@ -4,10 +4,13 @@ from pynetboxquery.utils.device_dataclass import Device
 from pynetboxquery.utils.read_utils.read_abc import ReadAbstractBase
 
 
+# Disabling this pylint warning as it is not necessary.
+# pylint: disable = R0903
 class ReadCSV(ReadAbstractBase):
     """
     This class contains methods to read data from CSV files into a list of Device dataclasses.
     """
+
     def read(self) -> List[Device]:
         """
         This method reads the contents of the csv file then returns a list of dictionaries

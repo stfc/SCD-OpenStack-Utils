@@ -12,6 +12,7 @@ class ReadFile:
     """
     This class
     """
+
     @staticmethod
     def read_file(file_path, **kwargs) -> List[Device]:
         """

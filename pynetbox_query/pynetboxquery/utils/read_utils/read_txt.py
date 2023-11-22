@@ -5,10 +5,13 @@ from pynetboxquery.utils.error_classes import DelimiterNotSpecifiedError
 from pynetboxquery.utils.read_utils.read_abc import ReadAbstractBase
 
 
+# Disabling this pylint warning as it is not necessary.
+# pylint: disable = R0903
 class ReadTXT(ReadAbstractBase):
     """
     This class contains methods to read data from TXT files into a list of Device dataclasses.
     """
+
     def __init__(self, file_path, **kwargs):
         super().__init__(file_path, **kwargs)
         self.delimiter = kwargs["delimiter"].replace("\\t", "\t")
