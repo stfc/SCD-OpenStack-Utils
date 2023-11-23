@@ -1,24 +1,14 @@
-from unittest.mock import NonCallableMock, patch
-import pytest
-from pynetboxquery.netbox_api.netbox_connect import NetboxConnect
+from unittest.mock import patch
+from pynetboxquery.netbox_api.netbox_connect import api_object
 
 
-@pytest.fixture(name="instance")
-def instance_fixture():
+@patch("pynetboxquery.netbox_api.netbox_connect.api")
+def test_api_object(mock_api):
     """
-    This fixture method calls the class being tested.
-    :return: The class object.
+    This test checks that the Api object is returned.
     """
-    url = NonCallableMock()
-    token = NonCallableMock()
-    return NetboxConnect(url, token)
-
-
-def test_api_object(instance):
-    """
-    This test checks that the Api method is called once.
-    """
-    with patch("pynetbox_query.netbox_api.netbox_connect.nb") as mock_netbox:
-        res = instance.api_object()
-    mock_netbox.api.assert_called_once_with(instance.url, instance.token)
-    assert res == mock_netbox.api.return_value
+    mock_url = "url"
+    mock_token = "token"
+    res = api_object(mock_url, mock_token)
+    mock_api.assert_called_once_with(mock_url, mock_token)
+    assert res == mock_api.return_value

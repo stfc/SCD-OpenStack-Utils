@@ -18,7 +18,7 @@ def test_query_list_no_device(instance):
     This test ensures that an empty list is returned if an empty list is given to the query list method.
     """
     mock_device_list = []
-    with patch("pynetbox_query.utils.query_device.QueryDevice.query_device"):
+    with patch("pynetboxquery.utils.query_device.QueryDevice.query_device"):
         res = instance.query_list(mock_device_list)
     assert res == []
 
@@ -29,7 +29,7 @@ def test_query_list_one_device(instance):
     """
     mock_device_list = [""]
     with patch(
-        "pynetbox_query.utils.query_device.QueryDevice.query_device"
+        "pynetboxquery.utils.query_device.QueryDevice.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value]
@@ -41,7 +41,7 @@ def test_query_list_multiple_devices(instance):
     """
     mock_device_list = ["", ""]
     with patch(
-        "pynetbox_query.utils.query_device.QueryDevice.query_device"
+        "pynetboxquery.utils.query_device.QueryDevice.query_device"
     ) as mock_query_device:
         res = instance.query_list(mock_device_list)
     assert res == [mock_query_device.return_value, mock_query_device.return_value]
@@ -51,7 +51,7 @@ def test_query_device(instance, mock_device, dict_to_device):
     """
     This test ensures the get_id is called on all fields in a dataclass.
     """
-    with patch("pynetbox_query.utils.query_device.NetboxGetId.get_id") as mock_get_id:
+    with patch("pynetboxquery.utils.query_device.NetboxGetId.get_id") as mock_get_id:
         res = instance.query_device(mock_device)
     val = mock_get_id.return_value
     expected_device_dict = asdict(mock_device)

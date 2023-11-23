@@ -50,7 +50,9 @@ def _collect_args():
     This function calls the parser function and returns the namespace arguments in a dictionary.
     """
     main_parser = _parser()
-    return vars(main_parser.parse_args())
+    args = main_parser.parse_args()
+    kwargs = vars(args)
+    return kwargs
 
 
 def main():

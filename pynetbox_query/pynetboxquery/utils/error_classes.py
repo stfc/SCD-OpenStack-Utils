@@ -12,7 +12,7 @@ class DeviceTypeNotFoundError(Exception):
     pass
 
 
-class FileTypeNotSupported(Exception):
+class FileTypeNotSupportedError(Exception):
     pass
 
 

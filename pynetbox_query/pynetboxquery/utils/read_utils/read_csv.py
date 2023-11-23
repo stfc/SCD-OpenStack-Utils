@@ -22,3 +22,7 @@ class ReadCSV(ReadAbstractBase):
             dictionary_list = list(csv_reader)
         device_list = self._dict_to_dataclass(dictionary_list)
         return device_list
+
+    @staticmethod
+    def _validate(self):
+        pass

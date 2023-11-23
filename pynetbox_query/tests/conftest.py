@@ -1,6 +1,8 @@
 from typing import Dict
 from pytest import fixture
+from dataclasses import asdict
 from pynetboxquery.utils.device_dataclass import Device
+from pynetboxquery.utils.read_utils.read_abc import ReadAbstractBase
 
 
 @fixture(scope="function", name="dict_to_device")
@@ -11,7 +13,6 @@ def dict_to_device_instance():
 
     def func(dictionary: Dict) -> Device:
         return Device(**dictionary)
-
     return func
 
 
@@ -59,3 +60,8 @@ def mock_device_2_fixture(dict_to_device):
         "serial": "se2",
     }
     return dict_to_device(device)
+
+
+@fixture(scope="function", name="mock_device_list")
+def mock_device_list_fixture(mock_device, mock_device_2):
+    return [mock_device, mock_device_2]

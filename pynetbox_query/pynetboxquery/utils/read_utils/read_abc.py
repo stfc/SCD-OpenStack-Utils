@@ -26,6 +26,7 @@ class ReadAbstractBase(ABC):
         """
 
     @staticmethod
+    @abstractmethod
     def _validate(kwargs):
         """
         This method checks if a certain argument is given in kwargs and if not raise an error.

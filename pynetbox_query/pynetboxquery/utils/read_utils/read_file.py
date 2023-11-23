@@ -1,6 +1,6 @@
 from typing import List
 from pynetboxquery.utils.device_dataclass import Device
-from pynetboxquery.utils.error_classes import FileTypeNotSupported
+from pynetboxquery.utils.error_classes import FileTypeNotSupportedError
 from pynetboxquery.utils.read_utils.read_csv import ReadCSV
 from pynetboxquery.utils.read_utils.read_txt import ReadTXT
 from pynetboxquery.utils.read_utils.read_xlsx import ReadXLSX
@@ -30,7 +30,7 @@ class ReadFile:
             case "xlsx":
                 device_list = ReadXLSX(file_path, **kwargs).read()
             case _:
-                raise FileTypeNotSupported(
+                raise FileTypeNotSupportedError(
                     f"The file type '.{file_type}' is not supported by the method."
                 )
         return device_list
