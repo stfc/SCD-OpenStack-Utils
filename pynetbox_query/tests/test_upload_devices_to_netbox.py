@@ -5,13 +5,17 @@ from pynetboxquery.user_methods.upload_devices_to_netbox import (
     aliases,
     _collect_args,
     _parser,
-    upload_devices_to_netbox,
+    run,
 )
 
 
+# pylint: disable = R0801
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.upload_devices_to_netbox")
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox._collect_args")
 def test_main(mock_collect_args, mock_upload_devices_to_netbox):
+    """
+    This test ensures all the correct methods are called.
+    """
     main()
     mock_collect_args.assert_called_once()
     mock_upload_devices_to_netbox.assert_called_once_with(
@@ -22,6 +26,9 @@ def test_main(mock_collect_args, mock_upload_devices_to_netbox):
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox._parser")
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.vars")
 def test_collect_args(mock_vars, mock_parser):
+    """
+    This test ensures all the correct methods are called.
+    """
     res = _collect_args()
     mock_parser.assert_called_once()
     mock_parser.return_value.parse_args.assert_called_once()
@@ -30,12 +37,18 @@ def test_collect_args(mock_vars, mock_parser):
 
 
 def test_aliases():
+    """
+    This test ensures that the aliases function returns a list of aliases.
+    """
     res = aliases()
     assert res == ["create", "create_devices"]
 
 
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.Parsers")
 def test_parser(mock_parsers):
+    """
+    This test ensures all the correct methods are called with the correct arguments to create a subparser.
+    """
     mock_subparsers = NonCallableMock()
     mock_parsers.return_value.arg_parser.return_value = (
         "mock_parent_parser",
@@ -62,7 +75,10 @@ def test_parser(mock_parsers):
 def test_upload_devices_to_netbox(
     mock_netbox_create, mock_query_device, mock_validate_data, mock_api, mock_read_file
 ):
-    upload_devices_to_netbox("mock_url", "mock_token", "mock_file_path")
+    """
+    This test ensures all the correct methods are called with the correct arguments
+    """
+    run("mock_url", "mock_token", "mock_file_path")
     mock_api_object = mock_api.return_value
     mock_api.assert_called_once_with("mock_url", "mock_token")
     mock_device_list = mock_read_file.return_value.read_file.return_value

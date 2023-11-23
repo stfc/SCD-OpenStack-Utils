@@ -5,10 +5,16 @@ from pynetboxquery.utils.error_classes import SheetNameNotSpecifiedError
 
 
 def test_validate():
+    """
+    This test ensures the validate method is called and doesn't error for a correct case.
+    """
     ReadXLSX("", **{"sheet_name": "test"})
 
 
 def test_validate_fail():
+    """
+    This test ensures the validate method is called and does error for an incorrect case.
+    """
     with raises(SheetNameNotSpecifiedError):
         ReadXLSX("")
 
@@ -17,6 +23,9 @@ def test_validate_fail():
 @patch("pynetboxquery.utils.read_utils.read_xlsx.read_excel")
 @patch("pynetboxquery.utils.read_utils.read_xlsx.ReadXLSX._dict_to_dataclass")
 def test_read(mock_dict_to_dataclass, mock_read_excel, mock_check_file_path):
+    """
+    This test ensures all calls are made correctly in the read method.
+    """
     res = ReadXLSX("mock_file_path", **{"sheet_name": "test"}).read()
     mock_check_file_path.assert_called_once_with("mock_file_path")
     mock_read_excel.assert_called_once_with("mock_file_path", sheet_name="test")

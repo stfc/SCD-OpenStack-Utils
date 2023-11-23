@@ -24,5 +24,5 @@ class ReadCSV(ReadAbstractBase):
         return device_list
 
     @staticmethod
-    def _validate(self):
+    def _validate(kwargs):
         pass

@@ -8,11 +8,15 @@ from pynetboxquery.user_methods.validate_data_fields_in_netbox import (
 )
 
 
+# pylint: disable = R0801
 @patch(
     "pynetboxquery.user_methods.validate_data_fields_in_netbox.validate_data_fields_in_netbox"
 )
 @patch("pynetboxquery.user_methods.validate_data_fields_in_netbox._collect_args")
 def test_main(mock_collect_args, mock_validate_data_fields_in_netbox):
+    """
+    This test ensures the correct methods are called.
+    """
     main()
     mock_collect_args.assert_called_once()
     mock_validate_data_fields_in_netbox.assert_called_once_with(
@@ -23,6 +27,9 @@ def test_main(mock_collect_args, mock_validate_data_fields_in_netbox):
 @patch("pynetboxquery.user_methods.validate_data_fields_in_netbox._parser")
 @patch("pynetboxquery.user_methods.validate_data_fields_in_netbox.vars")
 def test_collect_args(mock_vars, mock_parser):
+    """
+    This test ensures the correct methods are called.
+    """
     res = _collect_args()
     mock_parser.assert_called_once()
     mock_parser.return_value.parse_args.assert_called_once()
@@ -31,12 +38,18 @@ def test_collect_args(mock_vars, mock_parser):
 
 
 def test_aliases():
+    """
+    This test ensures that the aliases function returns a list of aliases.
+    """
     res = aliases()
     assert res == ["validate", "validate_data_fields_in_netbox"]
 
 
 @patch("pynetboxquery.user_methods.validate_data_fields_in_netbox.Parsers")
 def test_parser(mock_parsers):
+    """
+    This test ensures all the correct methods are called with the correct arguments to create a subparser.
+    """
     mock_subparsers = NonCallableMock()
     mock_parsers.return_value.arg_parser.return_value = (
         "mock_parent_parser",
@@ -64,6 +77,9 @@ def test_parser(mock_parsers):
 def test_validate_data_fields_in_netbox(
     mock_validate_data, mock_api_object, mock_read_file
 ):
+    """
+    This test ensures all the correct methods are called with the correct arguments
+    """
     mock_kwargs = {"fields": ["mock_val"]}
     validate_data_fields_in_netbox(
         "mock_url", "mock_token", "mock_file_path", **mock_kwargs

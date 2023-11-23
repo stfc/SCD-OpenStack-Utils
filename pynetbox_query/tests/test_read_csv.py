@@ -14,6 +14,9 @@ def test_read(
     mock_open_func,
     mock_check_file_path,
 ):
+    """
+    This test ensures all calls are made correctly in the read method.
+    """
     res = ReadCSV("mock_file_path").read()
     mock_check_file_path.assert_called_once_with("mock_file_path")
     mock_open_func.assert_called_once_with("mock_file_path", mode="r", encoding="UTF-8")

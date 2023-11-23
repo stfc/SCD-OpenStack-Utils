@@ -1,10 +1,13 @@
-from pytest import fixture
 from unittest.mock import patch
+from pytest import fixture
 from pynetboxquery.utils.parsers import Parsers
 
 
 @fixture(name="instance")
 def instance_fixture():
+    """
+    This fixture returns the Parsers class to be used in tests.
+    """
     return Parsers()
 
 
@@ -33,6 +36,9 @@ def test_arg_parser(mock_argparse, mock_parent_parser, instance):
 
 @patch("pynetboxquery.utils.parsers.argparse")
 def test_parent_parser(mock_argparse, instance):
+    """
+    This test ensures the parent parser is created with the correct arguments.
+    """
     res = instance._parent_parser()
     mock_argparse.ArgumentParser.assert_called_once_with(add_help=False)
     mock_parent_parser = mock_argparse.ArgumentParser.return_value
