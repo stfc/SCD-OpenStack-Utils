@@ -1,51 +1,19 @@
 from dataclasses import asdict
 from unittest.mock import patch, NonCallableMock
-from pynetboxquery.user_methods.upload_devices_to_netbox import (
-    main,
-    aliases,
-    _collect_args,
-    _parser,
-    run,
-)
-
-
-# pylint: disable = R0801
-@patch("pynetboxquery.user_methods.upload_devices_to_netbox.upload_devices_to_netbox")
-@patch("pynetboxquery.user_methods.upload_devices_to_netbox._collect_args")
-def test_main(mock_collect_args, mock_upload_devices_to_netbox):
-    """
-    This test ensures all the correct methods are called.
-    """
-    main()
-    mock_collect_args.assert_called_once()
-    mock_upload_devices_to_netbox.assert_called_once_with(
-        **mock_collect_args.return_value
-    )
-
-
-@patch("pynetboxquery.user_methods.upload_devices_to_netbox._parser")
-@patch("pynetboxquery.user_methods.upload_devices_to_netbox.vars")
-def test_collect_args(mock_vars, mock_parser):
-    """
-    This test ensures all the correct methods are called.
-    """
-    res = _collect_args()
-    mock_parser.assert_called_once()
-    mock_parser.return_value.parse_args.assert_called_once()
-    mock_vars.assery_called_once_with(mock_parser.return_value.parse_args.return_value)
-    assert res == mock_vars.return_value
+from pynetboxquery.user_methods.upload_devices_to_netbox import Main
 
 
 def test_aliases():
     """
     This test ensures that the aliases function returns a list of aliases.
     """
-    res = aliases()
+    res = Main().aliases()
     assert res == ["create", "create_devices"]
 
 
+# pylint: disable = R0801
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.Parsers")
-def test_parser(mock_parsers):
+def test_subparser(mock_parsers):
     """
     This test ensures all the correct methods are called with the correct arguments to create a subparser.
     """
@@ -55,14 +23,14 @@ def test_parser(mock_parsers):
         "mock_main_parser",
         mock_subparsers,
     )
-    res = _parser()
+    res = Main()._subparser()
     mock_parsers.return_value.arg_parser.assert_called_once()
     mock_subparsers.add_parser.assert_called_once_with(
         "create_devices",
         description="Create devices in Netbox from a file.",
         usage="pynetboxquery create_devices <filepath> <url> <token> <options>",
         parents=["mock_parent_parser"],
-        aliases=["create"],
+        aliases=["create", "create_devices"],
     )
     assert res == "mock_main_parser"
 
@@ -78,7 +46,7 @@ def test_upload_devices_to_netbox(
     """
     This test ensures all the correct methods are called with the correct arguments
     """
-    run("mock_url", "mock_token", "mock_file_path")
+    Main()._run("mock_url", "mock_token", "mock_file_path")
     mock_api_object = mock_api.return_value
     mock_api.assert_called_once_with("mock_url", "mock_token")
     mock_device_list = mock_read_file.return_value.read_file.return_value

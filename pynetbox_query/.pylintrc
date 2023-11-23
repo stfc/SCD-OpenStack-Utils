@@ -6,4 +6,4 @@ max-line-length=120
 # Disable various warnings:
 # C0114: Missing module string - we don't need module strings for the small repo
 
-disable=C0114
+disable=C0114, W0212

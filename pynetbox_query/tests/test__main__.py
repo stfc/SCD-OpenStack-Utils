@@ -30,6 +30,8 @@ def test_main_fail():
     with patch("pynetboxquery.__main__.sys"):
         with patch("pynetboxquery.__main__.import_module"):
             with patch("pynetboxquery.__main__.getattr") as mock_getattr:
-                mock_getattr.return_value.return_value = ["upload_devices_to_netbox"]
+                mock_getattr.return_value.return_value.aliases.return_value = [
+                    "not_real_method"
+                ]
                 with raises(UserMethodNotFoundError):
                     main()

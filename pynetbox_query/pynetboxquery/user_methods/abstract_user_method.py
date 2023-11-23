@@ -8,7 +8,7 @@ class AbstractUserMethod(ABC):
     This Abstract class provides a template for user methods.
     """
 
-    def _collect_args(self) -> Dict:
+    def _collect_kwargs(self) -> Dict:
         """
         This method collects the arguments from the subparser into a dictionary of kwargs.
         :return: Dictionary of kwargs.
@@ -34,7 +34,7 @@ class AbstractUserMethod(ABC):
         """
         This method gets the arguments and calls the run method with them.
         """
-        kwargs = self._collect_args()
+        kwargs = self._collect_kwargs()
         self._run(**kwargs)
 
     @staticmethod

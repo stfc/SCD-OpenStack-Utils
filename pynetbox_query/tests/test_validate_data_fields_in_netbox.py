@@ -1,52 +1,18 @@
 from unittest.mock import patch, NonCallableMock
-from pynetboxquery.user_methods.validate_data_fields_in_netbox import (
-    main,
-    _collect_args,
-    aliases,
-    _parser,
-    validate_data_fields_in_netbox,
-)
-
-
-# pylint: disable = R0801
-@patch(
-    "pynetboxquery.user_methods.validate_data_fields_in_netbox.validate_data_fields_in_netbox"
-)
-@patch("pynetboxquery.user_methods.validate_data_fields_in_netbox._collect_args")
-def test_main(mock_collect_args, mock_validate_data_fields_in_netbox):
-    """
-    This test ensures the correct methods are called.
-    """
-    main()
-    mock_collect_args.assert_called_once()
-    mock_validate_data_fields_in_netbox.assert_called_once_with(
-        **mock_collect_args.return_value
-    )
-
-
-@patch("pynetboxquery.user_methods.validate_data_fields_in_netbox._parser")
-@patch("pynetboxquery.user_methods.validate_data_fields_in_netbox.vars")
-def test_collect_args(mock_vars, mock_parser):
-    """
-    This test ensures the correct methods are called.
-    """
-    res = _collect_args()
-    mock_parser.assert_called_once()
-    mock_parser.return_value.parse_args.assert_called_once()
-    mock_vars.assery_called_once_with(mock_parser.return_value.parse_args.return_value)
-    assert res == mock_vars.return_value
+from pynetboxquery.user_methods.validate_data_fields_in_netbox import Main
 
 
 def test_aliases():
     """
     This test ensures that the aliases function returns a list of aliases.
     """
-    res = aliases()
+    res = Main().aliases()
     assert res == ["validate", "validate_data_fields_in_netbox"]
 
 
+# pylint: disable = R0801
 @patch("pynetboxquery.user_methods.validate_data_fields_in_netbox.Parsers")
-def test_parser(mock_parsers):
+def test_subparser(mock_parsers):
     """
     This test ensures all the correct methods are called with the correct arguments to create a subparser.
     """
@@ -56,14 +22,14 @@ def test_parser(mock_parsers):
         "mock_main_parser",
         mock_subparsers,
     )
-    res = _parser()
+    res = Main()._subparser()
     mock_parsers.return_value.arg_parser.assert_called_once()
     mock_subparsers.add_parser.assert_called_once_with(
         "validate_data_fields_in_netbox",
         description="Check data fields values in Netbox from a file.",
         usage="pynetboxquery validate_data_fields_in_netbox <filepath> <url> <token> <fields=[]>",
         parents=["mock_parent_parser"],
-        aliases=aliases(),
+        aliases=Main().aliases(),
     )
     mock_subparsers.add_parser.return_value.add_argument.assert_called_once_with(
         "fields", help="The fields to check in Netbox.", nargs="*"
@@ -81,9 +47,7 @@ def test_validate_data_fields_in_netbox(
     This test ensures all the correct methods are called with the correct arguments
     """
     mock_kwargs = {"fields": ["mock_val"]}
-    validate_data_fields_in_netbox(
-        "mock_url", "mock_token", "mock_file_path", **mock_kwargs
-    )
+    Main()._run("mock_url", "mock_token", "mock_file_path", **mock_kwargs)
     mock_device_list = mock_read_file.return_value.read_file.return_value
     mock_read_file.return_value.read_file.assert_called_once_with(
         "mock_file_path", **mock_kwargs
