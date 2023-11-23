@@ -12,13 +12,15 @@ def test_main(mock_sys, mock_getattr, mock_import_module):
     This test ensures the main method for the correct user script is called for the mocked argument.
     """
     mock_sys.argv.__getitem__.return_value = "upload_devices_to_netbox"
-    mock_getattr.return_value.return_value = ["upload_devices_to_netbox"]
+    mock_getattr.return_value.return_value.aliases.return_value = [
+        "upload_devices_to_netbox"
+    ]
     main()
     mock_import_module.assert_called_with(
         "pynetboxquery.user_methods.upload_devices_to_netbox"
     )
-    mock_getattr.assert_called_with(mock_import_module.return_value, "aliases")
-    mock_import_module.return_value.main.assert_called_once_with()
+    mock_getattr.assert_called_with(mock_import_module.return_value, "Main")
+    mock_import_module.return_value.Main.return_value.main.assert_called_once_with()
 
 
 def test_main_fail():

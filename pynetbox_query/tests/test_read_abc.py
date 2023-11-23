@@ -3,12 +3,14 @@ from unittest.mock import patch
 from pytest import raises
 from pynetboxquery.utils.read_utils.read_abc import ReadAbstractBase
 
+
 # pylint: disable = R0903
 class StubAbstractBase(ReadAbstractBase):
     """
     This class provides a Stub version of the ReadAbstractBase class.
     So we do not have to patch all the abstract methods.
     """
+
     def read(self):
         """Placeholder method."""
 
