@@ -159,6 +159,7 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
         logger.info("Skipping novalocal only host: %s", vm_name)
         return
 
+    logger.info("Clearing any existing records from Aquilon")
     delete_machine(vm_data, network_details[0])
 
     # Configure networking
