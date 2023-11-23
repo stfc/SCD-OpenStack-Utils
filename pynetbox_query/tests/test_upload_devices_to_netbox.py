@@ -1,7 +1,12 @@
 from dataclasses import asdict
 from unittest.mock import patch, NonCallableMock
-from pynetboxquery.user_methods.upload_devices_to_netbox import main, aliases, _collect_args, _parser, \
-    upload_devices_to_netbox
+from pynetboxquery.user_methods.upload_devices_to_netbox import (
+    main,
+    aliases,
+    _collect_args,
+    _parser,
+    upload_devices_to_netbox,
+)
 
 
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.upload_devices_to_netbox")
@@ -9,7 +14,9 @@ from pynetboxquery.user_methods.upload_devices_to_netbox import main, aliases, _
 def test_main(mock_collect_args, mock_upload_devices_to_netbox):
     main()
     mock_collect_args.assert_called_once()
-    mock_upload_devices_to_netbox.assert_called_once_with(**mock_collect_args.return_value)
+    mock_upload_devices_to_netbox.assert_called_once_with(
+        **mock_collect_args.return_value
+    )
 
 
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox._parser")
@@ -30,7 +37,11 @@ def test_aliases():
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.Parsers")
 def test_parser(mock_parsers):
     mock_subparsers = NonCallableMock()
-    mock_parsers.return_value.arg_parser.return_value = ("mock_parent_parser", "mock_main_parser", mock_subparsers)
+    mock_parsers.return_value.arg_parser.return_value = (
+        "mock_parent_parser",
+        "mock_main_parser",
+        mock_subparsers,
+    )
     res = _parser()
     mock_parsers.return_value.arg_parser.assert_called_once()
     mock_subparsers.add_parser.assert_called_once_with(
@@ -49,9 +60,7 @@ def test_parser(mock_parsers):
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.QueryDevice")
 @patch("pynetboxquery.user_methods.upload_devices_to_netbox.NetboxCreate")
 def test_upload_devices_to_netbox(
-        mock_netbox_create, mock_query_device,
-        mock_validate_data,  mock_api,
-        mock_read_file
+    mock_netbox_create, mock_query_device, mock_validate_data, mock_api, mock_read_file
 ):
     upload_devices_to_netbox("mock_url", "mock_token", "mock_file_path")
     mock_api_object = mock_api.return_value
@@ -64,9 +73,10 @@ def test_upload_devices_to_netbox(
     mock_queried_devices = mock_query_device.return_value.query_list.return_value
     mock_query_device.assert_called_once_with(mock_api_object)
     mock_query_device.return_value.query_list.assert_called_once_with(mock_device_list)
-    mock_dictionary_devices = [asdict(mock_device) for mock_device in mock_queried_devices]
+    mock_dictionary_devices = [
+        asdict(mock_device) for mock_device in mock_queried_devices
+    ]
     mock_netbox_create.assert_called_once_with(mock_api_object)
-    mock_netbox_create.return_value.create_device.assert_called_once_with(mock_dictionary_devices)
-
-
-
+    mock_netbox_create.return_value.create_device.assert_called_once_with(
+        mock_dictionary_devices
+    )

@@ -31,7 +31,9 @@ def test_create_device_many(instance, mock_device, mock_device_2):
     mock_device_dict = asdict(mock_device)
     mock_device_2_dict = asdict(mock_device_2)
     res = instance.create_device([mock_device_dict, mock_device_2_dict])
-    instance.netbox.dcim.devices.create.assert_called_once_with([mock_device_dict, mock_device_2_dict])
+    instance.netbox.dcim.devices.create.assert_called_once_with(
+        [mock_device_dict, mock_device_2_dict]
+    )
     assert res == instance.netbox.dcim.devices.create.return_value
 
 
@@ -52,5 +54,7 @@ def test_create_device_type_many(instance):
     mock_device_type = ""
     mock_device_type_2 = ""
     res = instance.create_device_type([mock_device_type, mock_device_type_2])
-    instance.netbox.dcim.device_types.create.assert_called_once_with([mock_device_type, mock_device_type_2])
+    instance.netbox.dcim.device_types.create.assert_called_once_with(
+        [mock_device_type, mock_device_type_2]
+    )
     assert res == instance.netbox.dcim.device_types.create.return_value

@@ -5,7 +5,6 @@ from pynetboxquery.utils.read_utils.read_abc import ReadAbstractBase
 
 
 class StubAbstractBase(ReadAbstractBase):
-
     def read(self):
         pass
 

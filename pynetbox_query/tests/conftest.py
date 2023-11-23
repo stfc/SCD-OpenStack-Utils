@@ -13,6 +13,7 @@ def dict_to_device_instance():
 
     def func(dictionary: Dict) -> Device:
         return Device(**dictionary)
+
     return func
 
 

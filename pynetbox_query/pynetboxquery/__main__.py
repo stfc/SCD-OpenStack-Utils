@@ -9,9 +9,7 @@ def main():
     """
     user_methods_names = ["upload_devices_to_netbox", "validate_data_fields_in_netbox"]
     for user_method in user_methods_names:
-        user_method_module = import_module(
-            f"pynetboxquery.user_methods.{user_method}"
-        )
+        user_method_module = import_module(f"pynetboxquery.user_methods.{user_method}")
         aliases = getattr(user_method_module, "aliases")()
         if sys.argv[1] in aliases:
             user_method_module.main()
