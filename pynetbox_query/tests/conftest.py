@@ -1,6 +1,6 @@
 from typing import Dict
 from pytest import fixture
-from pynetbox_query.utils.device_dataclass import Device
+from pynetboxquery.utils.device_dataclass import Device
 
 
 @fixture(scope="function", name="dict_to_device")
@@ -59,3 +59,11 @@ def mock_device_2_fixture(dict_to_device):
         "serial": "se2",
     }
     return dict_to_device(device)
+
+
+@fixture(scope="function", name="mock_device_list")
+def mock_device_list_fixture(mock_device, mock_device_2):
+    """
+    This fixture returns a list of mock device types.
+    """
+    return [mock_device, mock_device_2]

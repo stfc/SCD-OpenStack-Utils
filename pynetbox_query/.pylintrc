@@ -5,11 +5,6 @@ max-line-length=120
 
 # Disable various warnings:
 # C0114: Missing module string - we don't need module strings for the small repo
+# W0212: Access to protected members - Don't know how to fix this :)
 
-disable=C0114
-
-# Ignore the venv folder.
-# Despite venv not being pushed to the Repo.
-# It's useful to have here for development purposes.
-
-ignore=venv
+disable=C0114, W0212

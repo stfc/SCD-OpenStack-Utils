@@ -5,3 +5,5 @@ venv/
 
 .coverage
 coverage.xml
+pynetbox_query/pynetboxQuery.egg-info/
+pynetbox_query/build
