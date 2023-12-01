@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 Test the consumer config class, this handles the environment variables
 that are used to configure the consumer.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from pynetboxquery.utils.parsers import Parsers
 from pynetboxquery.netbox_api.validate_data import ValidateData
 from pynetboxquery.utils.read_utils.read_file import ReadFile

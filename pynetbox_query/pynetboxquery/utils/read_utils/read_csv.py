@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from csv import DictReader
 from typing import List
 from pynetboxquery.utils.device_dataclass import Device

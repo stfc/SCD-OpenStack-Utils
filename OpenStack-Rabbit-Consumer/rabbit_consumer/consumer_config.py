@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 This file allows us to set environment variables so that
 credentials are not exposed

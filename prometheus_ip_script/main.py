@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from ipaddress import IPv4Network
 from pathlib import Path
 from typing import List

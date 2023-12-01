@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from unittest.mock import patch
 from pytest import raises
 from pynetboxquery.__main__ import main

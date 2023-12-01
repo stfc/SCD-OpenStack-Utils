@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 Tests that the Openstack API functions are invoked
 as expected with the correct params

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from dataclasses import asdict
 from unittest.mock import patch, NonCallableMock
 from pynetboxquery.user_methods.upload_devices_to_netbox import Main

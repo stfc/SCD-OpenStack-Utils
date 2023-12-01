@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from unittest import mock
 from unittest.mock import MagicMock, patch, NonCallableMock, call
 from parameterized import parameterized

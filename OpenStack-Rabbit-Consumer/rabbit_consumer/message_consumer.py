@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 This file manages how rabbit messages stating AQ VM creation and deletion 
 should be handled and processed between the consumer and Aquilon

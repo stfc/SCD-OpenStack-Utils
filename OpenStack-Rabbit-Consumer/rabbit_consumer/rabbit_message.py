@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 This file handles how messages from Rabbit are processed and the 
 message extracted

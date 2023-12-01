@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from typing import List
 from pynetboxquery.utils.device_dataclass import Device
 from pynetboxquery.netbox_api.netbox_get_id import NetboxGetId
