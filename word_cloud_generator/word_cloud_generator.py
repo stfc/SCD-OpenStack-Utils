@@ -1,4 +1,3 @@
-import re
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -7,10 +6,10 @@ from sys import argv
 from time import sleep
 from os import path
 from wordcloud import WordCloud
-from typing import Optional
+from typing import Optional, Dict, List
 from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
-
+import re
 import json
 import requests
 
@@ -28,17 +27,17 @@ class IssuesFilter(DataClassDictMixin):
 
 def from_user_inputs(**kwargs):
     """
-    Take the inputs from a argparse and populate a IssuesFilter dataclass and return it
+    Take the inputs from an argparse and populate a IssuesFilter dataclass and return it
     :param kwargs: a dictionary of argparse values
     """
 
-    return IssuesFilter.from_dict(kwargs)
+    return IssuesFilter(**kwargs)
 
 
-def parse_args(inp_args):
+def parse_args(inp_args: Dict) -> Dict:
     """
     Function to parse commandline args
-    :param inp_args: a set of commandline args to parse (dict)
+    :param inp_args: a set of commandline args to parse
     :returns: A dictionary of parsed args
     """
     # Get arguments passed to the script
@@ -65,19 +64,23 @@ def parse_args(inp_args):
         help="Directory to create the output files in",
         default="output",
     )
+    default_value_start_date = datetime.now().strftime("%Y-%m-%d")
     parser.add_argument(
         "-s",
         "--start_date",
         metavar="START_DATE",
         help="Date to get issues from",
-        default=datetime.now().strftime("%Y-%m-%d"),
+        default=default_value_start_date,
+    )
+    default_value_end_date = (datetime.now() - relativedelta(months=1)).strftime(
+        "%Y-%m-%d"
     )
     parser.add_argument(
         "-e",
         "--end_date",
         metavar="END_DATE",
         help="Date to get issues to",
-        default=(datetime.now() - relativedelta(months=1)).strftime("%Y-%m-%d"),
+        default=default_value_end_date,
     )
     parser.add_argument(
         "-a",
@@ -108,12 +111,12 @@ def parse_args(inp_args):
     return args
 
 
-def get_response_json(auth, headers, url):
+def get_response_json(auth, headers: Dict, url: str) -> Dict:
     """
     Function to send a get request to a url and return the response as json
     :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
-    :param headers: A request Header (dict)
-    :param url: The URL to send the request (string)
+    :param headers: A request Header
+    :param url: The URL to send the request
     :returns: A dictionary of JSON values
     """
     session = requests.session()
@@ -142,13 +145,15 @@ def get_response_json(auth, headers, url):
     return json.loads(response.text)
 
 
-def get_issues_contents_after_time(auth, headers, host, issue_filter):
+def get_issues_contents_after_time(
+    auth, headers: Dict, host: str, issue_filter: Dict
+) -> List:
     """
     Function to get the contents of through issues using a loop, as only 50 can be checked at a time
-    :param issue_filter: Dict of filters to check the issues against (dict)
+    :param issue_filter: Dict of filters to check the issues against
     :param auth: A HTTPBasicAuth object for authentication (HTTPBasicAuth)
-    :param headers: A request Header (dict)
-    :param host: The host used to create the URL to send the request (string)
+    :param headers: A request Header
+    :param host: The host used to create the URL to send the request
     :returns: A list with the contents of all valid issues
     """
     curr_marker = 0
@@ -177,12 +182,12 @@ def get_issues_contents_after_time(auth, headers, host, issue_filter):
     return issues_contents
 
 
-def filter_issue(issue, issue_filter, issue_date):
+def filter_issue(issue: Dict, issue_filter: Dict, issue_date: str) -> bool:
     """
     Function to check if an issue passes the set filters
-    :param issue: A dict of an issues contents (dict)
-    :param issue_filter: Dict of filters to check the issues against (dict)
-    :param issue_date: The date that the issue was created (string)
+    :param issue: A dict of an issues contents
+    :param issue_filter: Dict of filters to check the issues against
+    :param issue_date: The date that the issue was created
     :returns: If the issue passes the filters
     """
     fields = issue.get("fields", None)
@@ -204,12 +209,12 @@ def filter_issue(issue, issue_filter, issue_date):
 
 
 def generate_word_cloud(
-    issues_contents, issue_filter, word_cloud_output_location, **kwargs
+    issues_contents: List, issue_filter: Dict, word_cloud_output_location, **kwargs
 ):
     """
     Function to generate and save a word cloud
-    :param issues_contents: The summary of every valid issue (list)
-    :param issue_filter: Dict of filters to check the issues against (dict)
+    :param issues_contents: The summary of every valid issue
+    :param issue_filter: Dict of filters to check the issues against
     :param word_cloud_output_location: The output location for the word cloud to be saved to
     :param kwargs: A set of kwargs to pass to WordCloud
     - width
@@ -238,11 +243,11 @@ def generate_word_cloud(
     word_cloud.to_file(word_cloud_output_location)
 
 
-def filter_word_cloud(issue_filter, issues_contents):
+def filter_word_cloud(issue_filter: Dict, issues_contents: List):
     """
     Function to filter the contents of the word cloud to or against certain strings
-    :param issues_contents: The summary of every valid issue (list)
-    :param issue_filter: Dict of filters to check the issues against (dict)
+    :param issues_contents: The summary of every valid issue
+    :param issue_filter: Dict of filters to check the issues against
     :returns: The filtered issues contents
     """
     if issue_filter.filter_not:
@@ -271,7 +276,7 @@ def word_cloud_generator():
     username = args.username
     password = args.password
 
-    issue_filter = from_user_inputs(**args.__dict__)
+    issue_filter = from_user_inputs(vars(args))
 
     parameters_list = issue_filter.word_cloud.split(", ")
     word_cloud_parameters = {

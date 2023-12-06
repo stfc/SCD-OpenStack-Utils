@@ -30,4 +30,4 @@ jobs:
       - name: Test with unittest
         run: |
             cd word_cloud_generator
-            python3 -m unittest discover -s ./test -p "test_*.py"
+            python3 -m unittest test_word_cloud_generator.py
