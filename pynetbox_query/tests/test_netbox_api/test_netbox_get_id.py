@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from unittest.mock import patch
 from pytest import fixture
 from pynetboxquery.netbox_api.netbox_get_id import NetboxGetId

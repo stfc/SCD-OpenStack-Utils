@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from importlib import import_module
 import sys
 from pynetboxquery.utils.error_classes import UserMethodNotFoundError

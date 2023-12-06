@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from collections import defaultdict
 from re import compile as re_compile
 from pathlib import Path

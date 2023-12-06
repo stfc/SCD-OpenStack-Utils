@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 # Disabling this Pylint error as these classes do not need Docstring.
 # They are just errors
 # pylint: disable = C0115

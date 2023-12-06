@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from typing import Dict
 from pytest import fixture
 from pynetboxquery.utils.device_dataclass import Device

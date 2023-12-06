@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Dict

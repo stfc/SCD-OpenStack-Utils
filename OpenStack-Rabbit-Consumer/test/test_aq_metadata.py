@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 Tests the AQ metadata dataclass, including
 init from environment variables, and overriding values

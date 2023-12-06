@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 """
 Collects energy usage metrics using IPMI, as well as other metrics such as CPU and RAM usage.
 """

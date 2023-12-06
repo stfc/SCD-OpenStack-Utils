@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from typing import List
 from pandas import read_excel
 from pynetboxquery.utils.device_dataclass import Device

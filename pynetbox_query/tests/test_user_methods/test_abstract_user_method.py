@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 United Kingdom Research and Innovation
 from argparse import ArgumentParser
 from typing import List
 from unittest.mock import patch
