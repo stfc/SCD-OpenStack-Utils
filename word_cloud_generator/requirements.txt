@@ -1,0 +1,5 @@
+requests
+parameterized
+python-dateutil
+wordcloud
+mashumaro

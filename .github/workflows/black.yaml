@@ -32,6 +32,11 @@ jobs:
         with:
             src: "dns_entry_checker"
 
+      - name: Word Cloud Generator 
+        uses: psf/black@stable
+        with:
+            src: "word_cloud_generator"
+         
       - name: JSM Metric Collection
         uses: psf/black@stable
         with:

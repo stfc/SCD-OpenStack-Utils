@@ -1,0 +1,33 @@
+name: Word Cloud Generator Unittest
+
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "word_cloud_generator/**"
+      - ".github/workflows/word_cloud_generator.yaml"
+
+jobs:
+  test_with_unit_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r word_cloud_generator/requirements.txt
+      - name: Test with unittest
+        run: |
+            cd word_cloud_generator
+            python3 -m unittest test_word_cloud_generator.py
