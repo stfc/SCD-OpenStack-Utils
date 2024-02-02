@@ -2,24 +2,10 @@
 import sys
 from typing import Dict
 import time
+import json
 import openstack
 from send_metric_utils import parse_args, post_to_influxdb, underscore_to_camelcase
-
-
-def parse_compute_limits(compute_limit_dict: Dict) -> Dict:
-    """
-    parse compute limits dict to extract properties we want in correct format
-    :param compute_limit_dict: a dictionary holding compute limits
-    :return: Dict of useful properties
-    """
-    compute_limits = {
-        # need to convert to limit name camelCase as that's what influx is expecting
-        underscore_to_camelcase(k): v for k, v in compute_limit_dict.items()
-        # add limit 'properties' later - as this is nested and already in camelCase
-        if k not in ["location", "properties"]
-    }
-    compute_limits.update(compute_limit_dict["properties"])
-    return compute_limits
+from subprocess import Popen, PIPE
 
 
 def convert_to_data_string(limit_details: Dict, instance: str) -> str:
@@ -30,12 +16,12 @@ def convert_to_data_string(limit_details: Dict, instance: str) -> str:
     :return: a comma-separated string of key=value taken from input dictionary
     """
     data_string = ""
-    for project_name, limit_details in limit_details.items():
+    for project_name, limit_entry in limit_details.items():
         parsed_project_name = project_name.replace(" ", "\ ")
         data_string += (
             f'Limits,Project="{parsed_project_name}",'
             f'instance={instance.capitalize()} '
-            f'{get_limit_prop_string(limit_details)}'
+            f'{get_limit_prop_string(limit_entry)}'
         )
     return data_string
 
@@ -49,6 +35,20 @@ def get_limit_prop_string(limit_details):
     """
     # all limit properties are integers so add 'i' for each value
     return ",".join([f"{limit}={val}i" for limit, val in limit_details.items()])
+
+
+def get_limits_for_project(instance, project_id) -> Dict:
+    """
+    Get limits for a project. This is currently using openstack-cli
+    This will be rewritten to instead use openstacksdk
+    :param instance: cloud we want to scrape from
+    :param project_id: project id we want to collect limits for
+    :return: a set of limit properties for project we want
+    """
+    command = f"openstack --os-cloud={instance} limits show -f json --noindent --absolute --project {project_id}"
+    project_limits = json.loads(Popen(command, shell=True, stdout=PIPE).communicate()[0])
+    # all limit properties are integers so add 'i' for each value
+    return {limit_entry["Name"]: limit_entry["Value"] for limit_entry in project_limits}
 
 
 def get_all_limits(instance: str) -> str:
@@ -67,13 +67,7 @@ def get_all_limits(instance: str) -> str:
     limit_details = {}
     print(len(projects_list))
     for i, project in enumerate(projects_list, 1):
-
-        project_details = {
-            **parse_compute_limits(conn.get_compute_limits(project["id"])),
-            **conn.get_volume_limits(project["id"])["absolute"]
-        }
-        print(i)
-        limit_details[project["name"]] = project_details
+        limit_details[project["name"]] = get_limits_for_project(instance, project["id"])
     return convert_to_data_string(limit_details, instance)
 
 

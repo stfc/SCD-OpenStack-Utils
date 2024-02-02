@@ -49,19 +49,6 @@ def post_to_influxdb(
         print(r.text)
 
 
-def underscore_to_camelcase(input_string: str) -> str:
-    """
-    This function converts an underscore_delimited_string to camelCase
-    :param input_string: underscore_delimited_string
-    :return: camelCase string
-    """
-    words = input_string.split("_")
-    camelcase_string = "".join(
-        [word.capitalize() if i > 0 else word for i, word in enumerate(words)]
-    )
-    return camelcase_string
-
-
 def parse_args(inp_args, description: str = "scrape metrics script") -> Dict:
     """
     This function parses influxdb args from a filepath passed into script when its run.
