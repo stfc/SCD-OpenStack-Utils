@@ -1,15 +1,10 @@
 #!/usr/bin/python
-from typing import List, Dict
+from typing import List
 import sys
-import re
 from typing import Dict
-import time
 import openstack
 from slottifier_entry import SlottifierEntry
-from send_metric_utils import (
-    parse_args,
-    post_to_influxdb,
-)
+from send_metric_utils import parse_args, run_scrape
 
 UNKNOWN_GPU_NUM_FLAVORS = []
 
@@ -105,6 +100,7 @@ def calculate_slots_for_flavor_for_hv(flavor_name, flavor_reqs, hv_info) -> Slot
         # workaround for bugs where gpu number not specified
         if flavor_reqs["gpus_required"] == 0:
             flavor_reqs["gpus_required"] = 1
+            # For debugging purposes
             if flavor_name not in UNKNOWN_GPU_NUM_FLAVORS:
                 UNKNOWN_GPU_NUM_FLAVORS.append(flavor_name)
 
@@ -168,17 +164,15 @@ def get_slottifier_details(instance: str) -> str:
     return convert_to_data_string(slots_dict, instance)
 
 
-def main(influxdb_args: Dict):
+def main(user_args: List):
     """
     send slottifier info to influx
-    :param influxdb_args: args to connect to influxdb and openstack to scrape info from
+    :param user_args: args passed into script by user
     """
-    post_to_influxdb(
-        get_slottifier_details(influxdb_args["cloud.instance"]),
-        host=influxdb_args["db.host"],
-        db_name=influxdb_args["db.database"],
-        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"])
-    )
+    influxdb_args = parse_args(user_args, description="Get All Service Statuses")
+    run_scrape(influxdb_args, get_slottifier_details)
+
+    # for debugging purposes
     for missing_flavor in UNKNOWN_GPU_NUM_FLAVORS:
         print(
             f"{missing_flavor} missing metadata property 'extra_specs:accounting:gpu_num'"
@@ -187,4 +181,4 @@ def main(influxdb_args: Dict):
 
 
 if __name__ == '__main__':
-    main(parse_args(sys.argv[1:], description="Get Slots Available For All Flavors"))
+    main(sys.argv[1:])

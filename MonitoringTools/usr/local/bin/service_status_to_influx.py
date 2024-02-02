@@ -1,16 +1,11 @@
 #!/usr/bin/python
 import sys
-from typing import Dict
+from typing import Dict, List
 import openstack
 from openstack.compute.v2.hypervisor import Hypervisor
 from openstack.compute.v2.service import Service
 from openstack.network.v2.agent import Agent
-
-
-from send_metric_utils import (
-    parse_args,
-    post_to_influxdb,
-)
+from send_metric_utils import run_scrape, parse_args
 
 
 def get_hypervisor_properties(hypervisor: Hypervisor) -> Dict:
@@ -76,11 +71,11 @@ def get_agent_properties(agent: Agent) -> Dict:
     return agent_prop_dict
 
 
-def convert_to_data_string(service_details: Dict, instance: str) -> str:
+def convert_to_data_string(instance: str, service_details: Dict) -> str:
     """
     This function creates a data string from service properties to feed into influxdb
-    :param service_details: a set of service properties to parse
     :param instance: the cloud instance (prod or dev) that details were scraped from
+    :param service_details: a set of service properties to parse
     :return: A data string of scraped info
     """
     data_string = ""
@@ -110,6 +105,61 @@ def get_service_prop_string(service_dict: Dict) -> str:
     return ",".join(stats_strings)
 
 
+def get_all_hv_details(conn) -> Dict:
+    """
+    Get all hypervisor status information from openstack
+    :param conn: openstack connection object
+    :return: a dictionary of hypervisor status information
+    """
+    hv_details = {}
+    for hypervisor in conn.list_hypervisors():
+        hv_details[hypervisor["name"]] = get_hypervisor_properties(hypervisor)
+
+    # populate found hypervisors with what aggregate they belong to - so we can filter by aggregate in grafana
+    for aggregate in conn.compute.aggregates():
+        for host_name in aggregate["hosts"]:
+            if host_name in hv_details.keys():
+                hv_details[host_name]["hv"]["aggregate"] = aggregate["name"]
+    return hv_details
+
+
+def update_with_service_statuses(conn, status_details: Dict) -> Dict:
+    """
+    update status details with service status information from openstack
+    :param conn: openstack connection object
+    :param status_details: status details dictionary to update
+    :return: a dictionary of updated status information with service statuses
+    """
+    for service in conn.compute.services():
+        if service["host"] not in status_details.keys():
+            status_details[service["host"]] = {}
+
+        service_host = status_details[service["host"]]
+        service_host.update(get_service_properties(service))
+        if "hv" in service_host and service["binary"] == "nova-compute":
+            service_host["hv"]["status"] = service_host["nova-compute"]["status"]
+
+    return status_details
+
+
+def update_with_agent_statuses(conn, status_details: Dict) -> Dict:
+    """
+    update status details with network agent status information from openstack
+    :param conn: openstack connection object
+    :param status_details: status details dictionary to update
+    :return: a dictionary of updated status information with network agent statuses
+    """
+    for agent in conn.network.agents():
+        if agent["host"] not in status_details.keys():
+            status_details[agent["host"]] = {}
+
+        status_details[agent["host"]].update(
+            get_agent_properties(agent)
+        )
+
+    return status_details
+
+
 def get_all_service_statuses(instance: str) -> str:
     """
     This function gets status information for each service node, hypervisor and network
@@ -117,48 +167,21 @@ def get_all_service_statuses(instance: str) -> str:
     :param instance: which cloud to scrape from (prod or dev)
     :return: A data string of scraped info
     """
-    all_details = {}
-    conn = openstack.connect(cloud=instance)
-    for hypervisor in conn.list_hypervisors():
-        all_details[hypervisor["name"]] = get_hypervisor_properties(hypervisor)
-
-    # populate found hypervisors with what aggregate they belong to - so we can filter by aggregate in grafana
-    for aggregate in conn.compute.aggregates():
-        for host_name in aggregate["hosts"]:
-            if host_name in all_details.keys():
-                all_details[host_name]["hv"]["aggregate"] = aggregate["name"]
-
-    for service in conn.compute.services():
-        if service["host"] not in all_details.keys():
-            all_details[service["host"]] = {}
-        all_details[service["host"]] = get_service_properties(service)
-        if (
-            service["binary"] == "nova-compute"
-            and "hv" in all_details[service["host"]].keys()
-        ):
-            all_details[service["host"]]["hv"]["status"] = all_details[service["host"]][
-                service["binary"]
-            ]["status"]
-
-    for agent in conn.network.agents():
-        if agent["host"] not in all_details.keys():
-            all_details[agent["host"]] = {}
-        all_details[agent["host"]] = get_agent_properties(agent)
-    return convert_to_data_string(all_details, instance)
+    conn = openstack.connect(instance)
+    all_details = get_all_hv_details(conn)
+    all_details = update_with_service_statuses(conn, all_details)
+    all_details = update_with_agent_statuses(conn, all_details)
+    return convert_to_data_string(instance, all_details)
 
 
-def main(influxdb_args: Dict):
+def main(user_args: List):
     """
-    send service status to influx
-    :param influxdb_args: args to connect to influxdb and openstack to scrape info from
+    send service status info to influx
+    :param user_args: args passed into script by user
     """
-    post_to_influxdb(
-        get_all_service_statuses(influxdb_args["cloud.instance"]),
-        host=influxdb_args["db.host"],
-        db_name=influxdb_args["db.database"],
-        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"])
-    )
+    influxdb_args = parse_args(user_args, description="Get All Service Statuses")
+    run_scrape(influxdb_args, get_all_service_statuses)
 
 
-if __name__ == "__main__":
-    main(parse_args(sys.argv[1:], description="Get All Service Statuses"))
+if __name__ == '__main__':
+    main(sys.argv[1:])

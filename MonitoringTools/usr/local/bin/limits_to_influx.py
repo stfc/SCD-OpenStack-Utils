@@ -1,18 +1,18 @@
 #!/usr/bin/python
 import sys
-from typing import Dict
-import time
+from typing import Dict, List
 import json
 import openstack
-from send_metric_utils import parse_args, post_to_influxdb, underscore_to_camelcase
+from openstack.identity.v3.project import Project
+from send_metric_utils import run_scrape, parse_args
 from subprocess import Popen, PIPE
 
 
-def convert_to_data_string(limit_details: Dict, instance: str) -> str:
+def convert_to_data_string(instance: str, limit_details: Dict) -> str:
     """
     converts a dictionary of values into a data-string influxdb can read
-    :param limit_details: a dictionary of values to convert to string
     :param instance: which cloud the info was scraped from (prod or dev)
+    :param limit_details: a dictionary of values to convert to string
     :return: a comma-separated string of key=value taken from input dictionary
     """
     data_string = ""
@@ -51,6 +51,16 @@ def get_limits_for_project(instance, project_id) -> Dict:
     return {limit_entry["Name"]: limit_entry["Value"] for limit_entry in project_limits}
 
 
+def is_valid_project(project: Project) -> bool:
+    """
+    helper function which returns if project is valid to get limits for
+    :param project: project to check
+    :return: boolean, True if project should be accounted for in limits
+    """
+    invalid_strings = ["_rally", "844"]
+    return all(s not in project["name"] for s in invalid_strings)
+
+
 def get_all_limits(instance: str) -> str:
     """
     This function gets limits for each project on openstack
@@ -58,31 +68,22 @@ def get_all_limits(instance: str) -> str:
     :return: A data string of scraped info
     """
     conn = openstack.connect(cloud=instance)
-
-    projects_list = [
-        proj for proj in conn.list_projects()
-        if all(s not in proj["name"] for s in ("_rally", "844"))
-    ]
-
-    limit_details = {}
-    print(len(projects_list))
-    for i, project in enumerate(projects_list, 1):
-        limit_details[project["name"]] = get_limits_for_project(instance, project["id"])
-    return convert_to_data_string(limit_details, instance)
+    limit_details = {
+        project["name"]: get_limits_for_project(instance, project["id"])
+        for project in conn.list_projects()
+        if is_valid_project(project)
+    }
+    return convert_to_data_string(instance, limit_details)
 
 
-def main(influxdb_args: Dict):
+def main(user_args: List):
     """
     send limits to influx
-    :param influxdb_args: args to connect to influxdb and openstack to scrape info from
+    :param user_args: args passed into script by user
     """
-    post_to_influxdb(
-        get_all_limits(influxdb_args["cloud.instance"]),
-        host=influxdb_args["db.host"],
-        db_name=influxdb_args["db.database"],
-        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"])
-    )
+    influxdb_args = parse_args(user_args, description="Get All Project Limits")
+    run_scrape(influxdb_args, get_all_limits)
 
 
 if __name__ == '__main__':
-    main(parse_args(sys.argv[1:], description="Get All Project Limits"))
+    main(sys.argv[1:])

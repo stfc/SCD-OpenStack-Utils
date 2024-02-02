@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Callable, List
 from pathlib import Path
 import configparser
 import requests
@@ -19,15 +19,14 @@ def read_config_file(config_filepath: Path) -> Dict:
         for key, value in config.items(section):
             config_dict[f"{section}.{key}"] = value
 
-    for i in [
+    required_values = [
         "auth.password",
         "auth.username",
         "cloud.instance",
         "db.database",
         "db.host",
-    ]:
-        assert i in config_dict, f"config file is missing required value {i}"
-
+    ]
+    assert all(val in config_dict for val in required_values), "Config file is missing required values."
     return config_dict
 
 
@@ -39,14 +38,14 @@ def post_to_influxdb(
     :param data_string: data to write
     :param host: hostname and port where influxdb can be accessed
     :param db_name: database name to write to
-    :param auth: tuple of username and password to authenticate with influxdb
+    :param auth: tuple of (username, password) to authenticate with influxdb
     """
-    print("POSTING TO INFLUX")
-    if data_string:
-        url = "http://{0}/write?db={1}&precision=s".format(host, db_name)
-        r = requests.post(url, data=data_string, auth=auth)
-        print(r)
-        print(r.text)
+    if not data_string:
+        return
+
+    url = f"http://{host}/write?db={db_name}&precision=s"
+    response = requests.post(url, data=data_string, auth=auth)
+    response.raise_for_status()
 
 
 def parse_args(inp_args, description: str = "scrape metrics script") -> Dict:
@@ -62,16 +61,32 @@ def parse_args(inp_args, description: str = "scrape metrics script") -> Dict:
     parser.add_argument(
         "config_filepath", type=Path, help="Path to influxdb config file"
     )
-    args = parser.parse_args(inp_args)
+    try:
+        args = parser.parse_args(inp_args)
+    except argparse.ArgumentTypeError as exp:
+        raise RuntimeError("Error reading input arguments") from exp
 
-    # Check if the specified config file exists
-    if not args.config_filepath.exists():
-        parser.error(
-            f"The influxdb config file '{args.config_filepath}' does not exist."
-        )
+    if not args.config_filepath.is_file():
+        raise RuntimeError(f"Invalid filepath given '{args.config_filepath}'")
+
     try:
         return read_config_file(args.config_filepath)
     except configparser.Error as exp:
         raise RuntimeError(
             f"could not read influxdb config file '{args.config_filepath}'"
         ) from exp
+
+
+def run_scrape(influxdb_args, scrape_func: Callable[[str], str]):
+    """
+    run script to scrape info and post to influxdb
+    :param influxdb_args: set of args passed in by user upon running script
+    :param scrape_func: function to use to scrape info
+    """
+    scrape_res = scrape_func(influxdb_args["cloud.instance"])
+    post_to_influxdb(
+        scrape_res,
+        host=influxdb_args["db.host"],
+        db_name=influxdb_args["db.database"],
+        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"])
+    )
