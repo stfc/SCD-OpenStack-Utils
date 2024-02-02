@@ -26,7 +26,9 @@ def read_config_file(config_filepath: Path) -> Dict:
         "db.database",
         "db.host",
     ]
-    assert all(val in config_dict for val in required_values), "Config file is missing required values."
+    assert all(
+        val in config_dict for val in required_values
+    ), "Config file is missing required values."
     return config_dict
 
 
@@ -88,5 +90,5 @@ def run_scrape(influxdb_args, scrape_func: Callable[[str], str]):
         scrape_res,
         host=influxdb_args["db.host"],
         db_name=influxdb_args["db.database"],
-        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"])
+        auth=(influxdb_args["auth.username"], influxdb_args["auth.password"]),
     )

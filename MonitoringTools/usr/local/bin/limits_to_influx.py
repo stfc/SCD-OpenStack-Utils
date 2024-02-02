@@ -20,8 +20,8 @@ def convert_to_data_string(instance: str, limit_details: Dict) -> str:
         parsed_project_name = project_name.replace(" ", "\ ")
         data_string += (
             f'Limits,Project="{parsed_project_name}",'
-            f'instance={instance.capitalize()} '
-            f'{get_limit_prop_string(limit_entry)}'
+            f"instance={instance.capitalize()} "
+            f"{get_limit_prop_string(limit_entry)}"
         )
     return data_string
 
@@ -46,7 +46,9 @@ def get_limits_for_project(instance, project_id) -> Dict:
     :return: a set of limit properties for project we want
     """
     command = f"openstack --os-cloud={instance} limits show -f json --noindent --absolute --project {project_id}"
-    project_limits = json.loads(Popen(command, shell=True, stdout=PIPE).communicate()[0])
+    project_limits = json.loads(
+        Popen(command, shell=True, stdout=PIPE).communicate()[0]
+    )
     # all limit properties are integers so add 'i' for each value
     return {limit_entry["Name"]: limit_entry["Value"] for limit_entry in project_limits}
 
@@ -85,5 +87,5 @@ def main(user_args: List):
     run_scrape(influxdb_args, get_all_limits)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

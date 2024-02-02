@@ -19,8 +19,12 @@ def get_hv_info(hv_name: str, hypervisors: Dict) -> Dict:
     hv_info = {"cores_available": 0, "mem_available": 0}
     hypervisor = hypervisors.get(hv_name, {})
     if hypervisor and hypervisor["status"] != "disabled":
-        hv_info["cores_available"] = max(0, hypervisor.get("vcpus", 0) - hypervisor.get("vcpus_used", 0))
-        hv_info["mem_available"] = max(0, hypervisor.get("memory_size", 0) - hypervisor.get("memory_used", 0))
+        hv_info["cores_available"] = max(
+            0, hypervisor.get("vcpus", 0) - hypervisor.get("vcpus_used", 0)
+        )
+        hv_info["mem_available"] = max(
+            0, hypervisor.get("memory_size", 0) - hypervisor.get("memory_used", 0)
+        )
 
     return hv_info
 
@@ -34,7 +38,7 @@ def get_flavor_requirements(flavor) -> Dict:
     return {
         "gpus_required": int(flavor["extra_specs"].get("accounting:gpu_num", 0)),
         "cores_required": int(flavor.get("vcpus", 0)),
-        "mem_required": int(flavor.get("ram", 0))
+        "mem_required": int(flavor.get("ram", 0)),
     }
 
 
@@ -48,9 +52,15 @@ def get_valid_flavors_for_hosttype(flavor_list: List, hypervisor_hosttype: str) 
     valid_flavors = []
     for flavor in flavor_list:
         # validate that flavor can be used on host aggregate
-        if "aggregate_instance_extra_specs:hosttype" not in flavor["extra_specs"].keys():
+        if (
+            "aggregate_instance_extra_specs:hosttype"
+            not in flavor["extra_specs"].keys()
+        ):
             continue
-        if flavor["extra_specs"]["aggregate_instance_extra_specs:hosttype"] != hypervisor_hosttype:
+        if (
+            flavor["extra_specs"]["aggregate_instance_extra_specs:hosttype"]
+            != hypervisor_hosttype
+        ):
             continue
 
         valid_flavors.append(flavor)
@@ -77,7 +87,9 @@ def convert_to_data_string(slots_dict: Dict, instance: str) -> str:
     return data_string
 
 
-def calculate_slots_for_flavor_for_hv(flavor_name, flavor_reqs, hv_info) -> SlottifierEntry:
+def calculate_slots_for_flavor_for_hv(
+    flavor_name, flavor_reqs, hv_info
+) -> SlottifierEntry:
     """
     Helper function that calculates available slots for a flavor on a given hypervisor
     :param flavor_name: name of flavor
@@ -92,11 +104,10 @@ def calculate_slots_for_flavor_for_hv(flavor_name, flavor_reqs, hv_info) -> Slot
     if hv_info["compute_service_status"] == "enabled":
         slots_available = min(
             hv_info["cores_available"] // flavor_reqs["cores_required"],
-            hv_info["mem_available"] // flavor_reqs["mem_required"]
+            hv_info["mem_available"] // flavor_reqs["mem_required"],
         )
 
     if "g-" in flavor_name:
-
         # workaround for bugs where gpu number not specified
         if flavor_reqs["gpus_required"] == 0:
             flavor_reqs["gpus_required"] = 1
@@ -105,10 +116,14 @@ def calculate_slots_for_flavor_for_hv(flavor_name, flavor_reqs, hv_info) -> Slot
                 UNKNOWN_GPU_NUM_FLAVORS.append(flavor_name)
 
         # if the number of GPUs currently assigned on this host is 0, this is how many slots are available
-        theoretical_gpu_slots_available = hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
+        theoretical_gpu_slots_available = (
+            hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
+        )
 
         # estimated number of GPU slots used - based off of how much cpu/mem is currently being used
-        slots_dataclass.estimated_gpu_slots_used = hv_info["gpu_capacity"] - slots_available
+        slots_dataclass.estimated_gpu_slots_used = (
+            hv_info["gpu_capacity"] - slots_available
+        )
 
         slots_dataclass.max_gpu_slots_capacity += hv_info["gpu_capacity"]
 
@@ -132,18 +147,23 @@ def get_slottifier_details(instance: str) -> str:
 
     # we get all openstack info first because it is quicker than getting them one at a time
     # dictionaries prevent duplicates
-    all_compute_services = {service["id"]: service for service in conn.compute.services()}
+    all_compute_services = {
+        service["id"]: service for service in conn.compute.services()
+    }
     print("got all compute services")
-    all_aggregates = {aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()}
+    all_aggregates = {
+        aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()
+    }
     print("got all aggregates")
     all_hypervisors = {h["name"]: h for h in conn.list_hypervisors()}
     print("got all hypervisors")
-    all_flavors = {flavor["name"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)}
+    all_flavors = {
+        flavor["name"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
+    }
     print("got all flavors")
 
     slots_dict = {flavor_name: SlottifierEntry() for flavor_name in all_flavors}
     for aggregate in all_aggregates.values():
-
         hv_hosttype = aggregate["metadata"].get("hosttype", None)
         if not hv_hosttype:
             continue
@@ -153,7 +173,9 @@ def get_slottifier_details(instance: str) -> str:
             hv_info["gpu_capacity"] = int(aggregate["metadata"].get("gpunum", 0))
             hv_info["compute_service_status"] = compute_service["status"]
 
-            valid_flavors = get_valid_flavors_for_hosttype(list(all_flavors.values()), hv_hosttype)
+            valid_flavors = get_valid_flavors_for_hosttype(
+                list(all_flavors.values()), hv_hosttype
+            )
             for flavor in valid_flavors:
                 slots_dict[flavor["name"]] += calculate_slots_for_flavor_for_hv(
                     flavor["name"],
@@ -180,5 +202,5 @@ def main(user_args: List):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

@@ -17,22 +17,20 @@ def test_read_config_file_valid(mock_config_parser):
     mock_config_obj.items.side_effect = [
         [("password", "pass"), ("username", "user")],
         [("instance", "prod")],
-        [("database", "cloud"), ("host", "localhost:8086")]
+        [("database", "cloud"), ("host", "localhost:8086")],
     ]
     mock_filepath = NonCallableMock()
     res = read_config_file(mock_filepath)
     mock_config_parser.assert_called_once()
     mock_config_obj.sections.assert_called_once()
-    mock_config_obj.items.assert_has_calls([
-        call("auth"), call("cloud"), call("db")
-    ])
+    mock_config_obj.items.assert_has_calls([call("auth"), call("cloud"), call("db")])
 
     assert res == {
         "auth.password": "pass",
         "auth.username": "user",
         "cloud.instance": "prod",
         "db.database": "cloud",
-        "db.host": "localhost:8086"
+        "db.host": "localhost:8086",
     }
 
 
@@ -61,7 +59,7 @@ def test_post_to_influxdb_valid(mock_requests):
     mock_requests.post.assert_called_once_with(
         "http://localhost:8086/write?db=cloud&precision=s",
         data=mock_data_string,
-        auth=(mock_user, mock_pass)
+        auth=(mock_user, mock_pass),
     )
     mock_response = mock_requests.post.return_value
     mock_response.raise_for_status.assert_called_once()
@@ -72,7 +70,9 @@ def test_post_to_influxdb_empty_string(mock_requests):
     """
     tests post_to_influxdb function when datastring is empty, should do nothing
     """
-    post_to_influxdb("", NonCallableMock(), NonCallableMock(), (NonCallableMock(), NonCallableMock()))
+    post_to_influxdb(
+        "", NonCallableMock(), NonCallableMock(), (NonCallableMock(), NonCallableMock())
+    )
     mock_requests.post.assert_not_called()
 
 
@@ -131,12 +131,14 @@ def test_run_scrape(mock_post_to_influxdb):
         "auth.username": mock_user,
         "cloud.instance": mock_instance,
         "db.database": mock_db,
-        "db.host": mock_host
+        "db.host": mock_host,
     }
     mock_scrape_func = MagicMock()
 
     run_scrape(mock_influxdb_args, mock_scrape_func)
     mock_post_to_influxdb.assert_called_once_with(
         mock_scrape_func.return_value,
-        host=mock_host, db_name=mock_db, auth=(mock_user, mock_pass)
+        host=mock_host,
+        db_name=mock_db,
+        auth=(mock_user, mock_pass),
     )

@@ -84,7 +84,7 @@ def convert_to_data_string(instance: str, service_details: Dict) -> str:
             data_string += (
                 f'ServiceStatus,host="{hypervisor_name}",'
                 f'service="{service_binary}",instance={instance.capitalize()} '
-                f'{get_service_prop_string(service_stats)}'
+                f"{get_service_prop_string(service_stats)}"
             )
     return data_string
 
@@ -153,9 +153,7 @@ def update_with_agent_statuses(conn, status_details: Dict) -> Dict:
         if agent["host"] not in status_details.keys():
             status_details[agent["host"]] = {}
 
-        status_details[agent["host"]].update(
-            get_agent_properties(agent)
-        )
+        status_details[agent["host"]].update(get_agent_properties(agent))
 
     return status_details
 
@@ -183,5 +181,5 @@ def main(user_args: List):
     run_scrape(influxdb_args, get_all_service_statuses)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class SlottifierEntry:
     """
@@ -11,6 +12,7 @@ class SlottifierEntry:
     :param max_gpu_slots_capacity_enabled: like max_gpu_slots_capacity, but only counting hosts with nova-compute
     service enabled
     """
+
     slots_available: int = 0
     estimated_gpu_slots_used: int = 0
     max_gpu_slots_capacity: int = 0
@@ -24,11 +26,15 @@ class SlottifierEntry:
         added together
         """
         if not isinstance(other, SlottifierEntry):
-            raise TypeError(f"Unsupported operand type for +: '{type(self)}' and '{type(other)}'")
+            raise TypeError(
+                f"Unsupported operand type for +: '{type(self)}' and '{type(other)}'"
+            )
 
         return SlottifierEntry(
             *(
-                self_attr + other_attr for self_attr, other_attr
-                in zip(self.__dict__.values(), other.__dict__.values())
+                self_attr + other_attr
+                for self_attr, other_attr in zip(
+                    self.__dict__.values(), other.__dict__.values()
+                )
             )
         )
