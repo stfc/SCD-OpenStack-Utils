@@ -84,7 +84,7 @@ def convert_to_data_string(instance: str, service_details: Dict) -> str:
             data_string += (
                 f'ServiceStatus,host="{hypervisor_name}",'
                 f'service="{service_binary}",instance={instance.capitalize()} '
-                f"{get_service_prop_string(service_stats)}"
+                f"{get_service_prop_string(service_stats)}\n"
             )
     return data_string
 

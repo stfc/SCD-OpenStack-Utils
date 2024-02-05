@@ -21,7 +21,7 @@ def convert_to_data_string(instance: str, limit_details: Dict) -> str:
         data_string += (
             f'Limits,Project="{parsed_project_name}",'
             f"instance={instance.capitalize()} "
-            f"{get_limit_prop_string(limit_entry)}"
+            f"{get_limit_prop_string(limit_entry)}\n"
         )
     return data_string
 

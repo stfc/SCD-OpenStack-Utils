@@ -10,7 +10,7 @@ import pytest
 
 def test_convert_to_data_string_no_items():
     """
-    Tests convert_to_data_string returns empty string when given no empty dict as limit_details
+    Tests convert_to_data_string returns empty string when given empty dict as limit_details
     """
     assert convert_to_data_string(NonCallableMock(), {}) == ""
 
@@ -26,7 +26,7 @@ def test_convert_to_data_string_one_item(mock_get_limit_prop_string):
     mock_get_limit_prop_string.return_value = "prop1=val1"
 
     res = convert_to_data_string(mock_instance, mock_limit_details)
-    assert res == 'Limits,Project="project\ foo",instance=Prod prop1=val1'
+    assert res == 'Limits,Project="project\ foo",instance=Prod prop1=val1\n'
     mock_get_limit_prop_string.assert_called_once_with(mock_project_details)
 
 
@@ -45,8 +45,8 @@ def test_convert_to_data_string_multi_item(mock_get_limit_prop_string):
     mock_get_limit_prop_string.side_effect = ["prop1=val1", "prop1=val2"]
     assert (
         convert_to_data_string(mock_instance, mock_limit_details)
-        == 'Limits,Project="project\ foo",instance=Prod prop1=val1'
-        'Limits,Project="project\ bar",instance=Prod prop1=val2'
+        == 'Limits,Project="project\ foo",instance=Prod prop1=val1\n'
+        'Limits,Project="project\ bar",instance=Prod prop1=val2\n'
     )
 
 

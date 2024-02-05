@@ -150,7 +150,9 @@ def test_convert_to_data_string_one_hv_one_service(mock_get_service_prop_string)
     mock_get_service_prop_string.return_value = "prop1=val1"
 
     res = convert_to_data_string(mock_instance, mock_details)
-    assert res == 'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1'
+    assert (
+        res == 'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
+    )
     mock_get_service_prop_string.assert_called_once_with(mock_service_details)
 
 
@@ -170,8 +172,8 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
     )
     mock_get_service_prop_string.assert_has_calls(
         [call(mock_service_details_1), call(mock_service_details_2)]
@@ -203,9 +205,9 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2'
-        'ServiceStatus,host="hv2",service="service3",instance=Prod prop1=val3'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
+        'ServiceStatus,host="hv2",service="service3",instance=Prod prop1=val3\n'
     )
     mock_get_service_prop_string.assert_has_calls(
         [
