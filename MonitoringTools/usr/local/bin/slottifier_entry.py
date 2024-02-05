@@ -31,10 +31,14 @@ class SlottifierEntry:
             )
 
         return SlottifierEntry(
-            *(
-                self_attr + other_attr
-                for self_attr, other_attr in zip(
-                    self.__dict__.values(), other.__dict__.values()
-                )
-            )
+            slots_available=self.slots_available + other.slots_available,
+
+            estimated_gpu_slots_used=self.estimated_gpu_slots_used
+            + other.estimated_gpu_slots_used,
+
+            max_gpu_slots_capacity=self.max_gpu_slots_capacity
+            + other.max_gpu_slots_capacity,
+
+            max_gpu_slots_capacity_enabled=self.max_gpu_slots_capacity_enabled
+            + other.max_gpu_slots_capacity_enabled,
         )

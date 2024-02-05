@@ -1,30 +1,42 @@
 #!/usr/bin/python
 from typing import List
+import openstack
 import sys
 from typing import Dict
-import openstack
 from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
 
 UNKNOWN_GPU_NUM_FLAVORS = []
 
 
-def get_hv_info(hv_name: str, hypervisors: Dict) -> Dict:
+def get_hv_info(hypervisor: Dict, aggregate_info, service_info) -> Dict:
     """
     Helper function to get hv information on cores/memory available
-    :param hv_name: hypervisor name to get information from
-    :param hypervisors: a list of all hypervisors to search in (avoids long search times by getting each one from openstack)
+    :param hypervisor: a dictionary holding info on hypervisor
+    :param aggregate_info: a dictionary holding info on aggregate hypervisor belongs to
+    :param service_info: a dictionary holding info on nova compute service running on hypervisor
     :return: a dictionary of cores/memory available for given hv
     """
-    hv_info = {"cores_available": 0, "mem_available": 0}
-    hypervisor = hypervisors.get(hv_name, {})
+    hv_info = {
+        "cores_available": 0,
+        "mem_available": 0,
+        "gpu_capacity": 0,
+        "core_capacity": 0,
+        "mem_capacity": 0,
+        "compute_service_status": "disabled",
+    }
     if hypervisor and hypervisor["status"] != "disabled":
         hv_info["cores_available"] = max(
-            0, hypervisor.get("vcpus", 0) - hypervisor.get("vcpus_used", 0)
+            0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
         )
         hv_info["mem_available"] = max(
-            0, hypervisor.get("memory_size", 0) - hypervisor.get("memory_used", 0)
+            0, hypervisor["memory_size"] - hypervisor["memory_used"]
         )
+        hv_info["core_capacity"] = hypervisor["vcpus"]
+        hv_info["mem_capacity"] = hypervisor["memory_size"]
+
+        hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
+        hv_info["compute_service_status"] = service_info["status"]
 
     return hv_info
 
@@ -36,20 +48,27 @@ def get_flavor_requirements(flavor) -> Dict:
     :return: dictionary of requirements
     """
     return {
-        "gpus_required": int(flavor["extra_specs"].get("accounting:gpu_num", 0)),
+        "gpus_required": int(
+            flavor.get("extra_specs", {}).get("accounting:gpu_num", 0)
+        ),
         "cores_required": int(flavor.get("vcpus", 0)),
         "mem_required": int(flavor.get("ram", 0)),
     }
 
 
-def get_valid_flavors_for_hosttype(flavor_list: List, hypervisor_hosttype: str) -> List:
+def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
     """
-    Helper function that filters a list of flavors to find those that can be built on a hypervisor with a given hosttype
+    Helper function that filters a list of flavors to find those that can be built on a hv belonging to a given aggregate
     :param flavor_list: a list of flavors to check
-    :param hypervisor_hosttype: specifies the hypervisor hosttype to find compatible flavors for
+    :param aggregate: specifies the aggregate to find compatible flavors for
     :return: a list of valid flavors for hosttype
     """
     valid_flavors = []
+    hypervisor_hosttype = aggregate["metadata"].get("hosttype", None)
+
+    if not hypervisor_hosttype:
+        return valid_flavors
+
     for flavor in flavor_list:
         # validate that flavor can be used on host aggregate
         if (
@@ -62,13 +81,11 @@ def get_valid_flavors_for_hosttype(flavor_list: List, hypervisor_hosttype: str) 
             != hypervisor_hosttype
         ):
             continue
-
         valid_flavors.append(flavor)
-
     return valid_flavors
 
 
-def convert_to_data_string(slots_dict: Dict, instance: str) -> str:
+def convert_to_data_string(instance: str, slots_dict: Dict) -> str:
     """
     converts a dictionary of values into a data-string influxdb can read
     :param slots_dict: a dictionary of slots available for each flavor
@@ -78,18 +95,16 @@ def convert_to_data_string(slots_dict: Dict, instance: str) -> str:
     data_string = ""
     for flavor, slot_info in slots_dict.items():
         data_string += (
-            f"SlotsAvailable,instance={instance},flavor={flavor}"
-            f" SlotsAvailable={slot_info.slots_available}"
-            f",maxSlotsAvailable={slot_info.max_gpu_slots_capacity}"
-            f",usedSlots={slot_info.estimated_gpu_slots_used}"
-            f",enabledSlots={slot_info.max_gpu_slots_capacity_enabled}\n"
+            f"SlotsAvailable,instance={instance.capitalize()},flavor={flavor}"
+            f" SlotsAvailable={slot_info.slots_available}i"
+            f",maxSlotsAvailable={slot_info.max_gpu_slots_capacity}i"
+            f",usedSlots={slot_info.estimated_gpu_slots_used}i"
+            f",enabledSlots={slot_info.max_gpu_slots_capacity_enabled}i\n"
         )
     return data_string
 
 
-def calculate_slots_for_flavor_for_hv(
-    flavor_name, flavor_reqs, hv_info
-) -> SlottifierEntry:
+def calculate_slots_on_hv(flavor_name, flavor_reqs, hv_info) -> SlottifierEntry:
     """
     Helper function that calculates available slots for a flavor on a given hypervisor
     :param flavor_name: name of flavor
@@ -98,14 +113,12 @@ def calculate_slots_for_flavor_for_hv(
         and whether hv compute service is enabled
     :return: A dataclass holding slottifer information to update with
     """
-    slots_available = 0
     slots_dataclass = SlottifierEntry()
 
-    if hv_info["compute_service_status"] == "enabled":
-        slots_available = min(
-            hv_info["cores_available"] // flavor_reqs["cores_required"],
-            hv_info["mem_available"] // flavor_reqs["mem_required"],
-        )
+    slots_available = min(
+        hv_info["cores_available"] // flavor_reqs["cores_required"],
+        hv_info["mem_available"] // flavor_reqs["mem_required"],
+    )
 
     if "g-" in flavor_name:
         # workaround for bugs where gpu number not specified
@@ -115,25 +128,125 @@ def calculate_slots_for_flavor_for_hv(
             if flavor_name not in UNKNOWN_GPU_NUM_FLAVORS:
                 UNKNOWN_GPU_NUM_FLAVORS.append(flavor_name)
 
-        # if the number of GPUs currently assigned on this host is 0, this is how many slots are available
         theoretical_gpu_slots_available = (
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
         )
 
-        # estimated number of GPU slots used - based off of how much cpu/mem is currently being used
-        slots_dataclass.estimated_gpu_slots_used = (
-            hv_info["gpu_capacity"] - slots_available
+        estimated_slots_used = (
+            min(
+                hv_info["core_capacity"] // flavor_reqs["cores_required"],
+                hv_info["mem_capacity"] // flavor_reqs["mem_required"],
+            )
+            - slots_available
         )
 
-        slots_dataclass.max_gpu_slots_capacity += hv_info["gpu_capacity"]
+        # estimated number of GPU slots used - based off of how much cpu/mem is currently being used
+        # assumes that all VMs on the HV contains only this flavor -  which may not be true
+        # if slots used is greater than gpu slots available we assume all gpus are being used
+        slots_dataclass.estimated_gpu_slots_used = min(
+            theoretical_gpu_slots_available, estimated_slots_used
+        )
+
+        slots_dataclass.max_gpu_slots_capacity = hv_info["gpu_capacity"]
 
         if hv_info["compute_service_status"] == "enabled":
             slots_dataclass.max_gpu_slots_capacity_enabled = hv_info["gpu_capacity"]
 
-        slots_available = min(slots_available, theoretical_gpu_slots_available)
+        slots_available = min(
+            slots_available,
+            theoretical_gpu_slots_available - slots_dataclass.estimated_gpu_slots_used,
+        )
 
-    slots_dataclass.slots_available = slots_available
+    if hv_info["compute_service_status"] == "enabled":
+        slots_dataclass.slots_available = slots_available
     return slots_dataclass
+
+
+def get_openstack_resources(instance: str) -> Dict:
+    """
+    This is a helper function that gets information from openstack in one go to calculate flavor slots. This
+    is quicker than getting resources one at a time
+    :param instance: which cloud to calculate slots for
+    :return: a dictionary containing 4 entries, key is an openstack component, value is a list of all components of that
+    type: compute_services, aggregates, hypervisors and flavors
+    """
+    conn = openstack.connect(cloud=instance)
+
+    # we get all openstack info first because it is quicker than getting them one at a time
+    # dictionaries prevent duplicates
+
+    all_compute_services = {
+        service["id"]: service for service in conn.compute.services()
+    }
+    all_aggregates = {
+        aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()
+    }
+
+    # needs to be list_hypervisors and not conn.compute.hypervisors otherwise vcpu/mem info is empty for some reason
+    all_hypervisors = {h["id"]: h for h in conn.list_hypervisors()}
+    all_flavors = {
+        flavor["id"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
+    }
+
+    return {
+        "compute_services": list(all_compute_services.values()),
+        "aggregates": list(all_aggregates.values()),
+        "hypervisors": list(all_hypervisors.values()),
+        "flavors": list(all_flavors.values()),
+    }
+
+
+def get_all_hv_info_for_aggregate(
+    aggregate, all_compute_services, all_hypervisors
+) -> List:
+    """
+    helper function to get all useful info from hypervisors belonging to a given aggregate
+    :param aggregate: aggregate that we want to get hvs for
+    :param all_compute_services: all compute services to validate hvs against
+        - ensure they have a nova_compute service attached
+    :param all_hypervisors: all hypervisors to get hv info from
+    :return: list of dictionaries of hypervisor information for calculating slots
+    """
+
+    valid_hvs = []
+    for host in aggregate["hosts"]:
+        host_compute_service = next(
+            (cs for cs in all_compute_services if cs["host"] == host), None
+        )
+        if not host_compute_service:
+            continue
+
+        hv = next(
+            (
+                hv
+                for hv in all_hypervisors
+                if host_compute_service["host"] == hv["name"]
+            ),
+            None,
+        )
+        if not hv:
+            continue
+
+        valid_hvs.append(get_hv_info(hv, aggregate, host_compute_service))
+    return valid_hvs
+
+
+def update_slots(flavors, host_info_list, slots_dict) -> Dict:
+    """
+    update total slots by calculating slots available for a set of flavors on a set of hosts
+    :param flavors: a list of flavors
+    :param host_info_list: a list of dictionaries holding info about a hypervisor capacity/availability
+    :param slots_dict: dictionary of slot info to update
+    :return:
+    """
+
+    for flavor in flavors:
+        flavor_reqs = get_flavor_requirements(flavor)
+        for hv in host_info_list:
+            slots_dict[flavor["name"]] += calculate_slots_on_hv(
+                flavor["name"], flavor_reqs, hv
+            )
+    return slots_dict
 
 
 def get_slottifier_details(instance: str) -> str:
@@ -143,47 +256,25 @@ def get_slottifier_details(instance: str) -> str:
     :param instance: which cloud to calculate slots for
     :return: A data string of scraped info
     """
-    conn = openstack.connect(cloud=instance)
+    all_openstack_info = get_openstack_resources(instance)
 
-    # we get all openstack info first because it is quicker than getting them one at a time
-    # dictionaries prevent duplicates
-    all_compute_services = {
-        service["id"]: service for service in conn.compute.services()
+    slots_dict = {
+        flavor["name"]: SlottifierEntry() for flavor in all_openstack_info["flavors"]
     }
-    print("got all compute services")
-    all_aggregates = {
-        aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()
-    }
-    print("got all aggregates")
-    all_hypervisors = {h["name"]: h for h in conn.list_hypervisors()}
-    print("got all hypervisors")
-    all_flavors = {
-        flavor["name"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
-    }
-    print("got all flavors")
+    for aggregate in all_openstack_info["aggregates"]:
+        valid_flavors = get_valid_flavors_for_aggregate(
+            all_openstack_info["flavors"], aggregate
+        )
 
-    slots_dict = {flavor_name: SlottifierEntry() for flavor_name in all_flavors}
-    for aggregate in all_aggregates.values():
-        hv_hosttype = aggregate["metadata"].get("hosttype", None)
-        if not hv_hosttype:
-            continue
+        aggregate_host_info = get_all_hv_info_for_aggregate(
+            aggregate,
+            all_openstack_info["compute_services"],
+            all_openstack_info["hypervisors"],
+        )
 
-        for compute_service in all_compute_services.values():
-            hv_info = get_hv_info(compute_service["host"], all_hypervisors)
-            hv_info["gpu_capacity"] = int(aggregate["metadata"].get("gpunum", 0))
-            hv_info["compute_service_status"] = compute_service["status"]
+        slots_dict = update_slots(valid_flavors, aggregate_host_info, slots_dict)
 
-            valid_flavors = get_valid_flavors_for_hosttype(
-                list(all_flavors.values()), hv_hosttype
-            )
-            for flavor in valid_flavors:
-                slots_dict[flavor["name"]] += calculate_slots_for_flavor_for_hv(
-                    flavor["name"],
-                    get_flavor_requirements(flavor),
-                    hv_info,
-                )
-
-    return convert_to_data_string(slots_dict, instance)
+    return convert_to_data_string(instance, slots_dict)
 
 
 def main(user_args: List):
