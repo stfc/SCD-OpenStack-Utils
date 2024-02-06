@@ -81,25 +81,34 @@ def number_servers_shutoff(conn):
     return instance_shutoff
 
 
-def collect_stats(cloud):
+def collect_stats(cloud, prod):
     """
     Collects the stats for vms and returns a dict
     :param cloud: OpenStack Cloud connection
-    :return: Dictionary of VM Stats
+    :param prod: Boolean to determine whether Prod or Dev Cloud used
+    :return: A comma separated string containing VM states.
     """
-    # collect stats in order: total, active, build, error, shutoff
+    # raise error if cloud connection not given
+    if not cloud:
+        raise ValueError("An OpenStack Connection is required")
 
-    vm_stats = {
-        "total_vms": number_servers_total(cloud),
-        "active_vms": number_servers_active(cloud),
-        "build_vms": number_servers_build(cloud),
-        "error_vms": number_servers_error(cloud),
-        "shutoff_vms": number_servers_shutoff(cloud),
-    }
+    # collect stats in order: total, active, build, error, shutoff
+    total_vms = number_servers_total(cloud)
+    active_vms = number_servers_active(cloud)
+    build_vms = number_servers_build(cloud)
+    error_vms = number_servers_error(cloud)
+    shutoff_vms = number_servers_shutoff(cloud)
+
+    if prod:
+        cloud_env = "Prod"
+    else:
+        cloud_env = "PreProd"
+
+    vm_stats = f"VMStats, instance={cloud_env} totalVM={total_vms}i,activeVM={active_vms}i,buildVM={build_vms}i,errorVM={error_vms}i,shutoffVM={shutoff_vms}i"
 
     return vm_stats
 
 
 if __name__ == "__main__":
     cloud_conn = openstack.connect(cloud="openstack")
-    print(collect_stats(cloud_conn))
+    print(collect_stats(cloud_conn, prod=False))

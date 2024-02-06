@@ -1,8 +1,5 @@
 import unittest
-from unittest import mock
 from unittest.mock import NonCallableMock, Mock
-
-import vm_stats
 from vm_stats import (
     number_servers_active,
     number_servers_build,
@@ -75,20 +72,13 @@ class TestVmStats(unittest.TestCase):
         num_returned = number_servers_shutoff(mock_conn)
         assert num_returned == 3
 
-    # WIP Unit Test
-    def test_collect_stats(self):
+    def test_collect_stats_raise_error(self):
         """
-        Test that stats are collected and stats methods are called
+        Tests that if no cloud connection was given, a value error is raised
         """
-        mock_cloud_conn = Mock()
-
-        mock_vm_stats = {
-            "total_vms": NonCallableMock(),
-            "active_vms": NonCallableMock(),
-            "build_vms": NonCallableMock(),
-            "error_vms": NonCallableMock(),
-            "shutoff_vms": NonCallableMock(),
-        }
+        mock_cloud = None
+        with self.assertRaises(ValueError):
+            collect_stats(mock_cloud, prod=False)
 
 
 if __name__ == "__main__":
