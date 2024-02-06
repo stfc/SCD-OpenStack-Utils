@@ -1,11 +1,9 @@
 #!/usr/bin/python
 import sys
 from typing import Dict, List
-import json
 import openstack
 from openstack.identity.v3.project import Project
 from send_metric_utils import run_scrape, parse_args
-from subprocess import Popen, PIPE
 
 
 def convert_to_data_string(instance: str, limit_details: Dict) -> str:
@@ -37,6 +35,43 @@ def get_limit_prop_string(limit_details):
     return ",".join([f"{limit}={val}i" for limit, val in limit_details.items()])
 
 
+def extract_limits(limits_dict) -> Dict:
+    """
+    helper function to get info from
+    :param limits_dict: a dictionary of project limits to extract useful properties from
+    :return: a dictionary of useful properties with keys that match expected keys in influxdb
+    """
+    # the keys need changing to match legacy data when we used the openstack-cli
+    mappings = {
+        "server_meta": "maxServerMeta",
+        "personality": "maxPersonality",
+        "server_groups_used": "totalServerGroupsUsed",
+        "image_meta": "maxImageMeta",
+        "personality_size": "maxPersonalitySize",
+        "keypairs": "maxTotalKeypairs",
+        "security_group_rules": "maxSecurityGroupRules",
+        "server_groups": "maxServerGroups",
+        "total_cores_used": "totalCoresUsed",
+        "total_ram_used": "totalRAMUsed",
+        "instances_used": "totalInstancesUsed",
+        "security_groups": "maxSecurityGroups",
+        "floating_ips_used": "totalFloatingIpsUsed",
+        "total_cores": "maxTotalCores",
+        "server_group_members": "maxServerGroupMembers",
+        "floating_ips": "maxTotalFloatingIps",
+        "security_groups_used": "totalSecurityGroupsUsed",
+        "instances": "maxTotalInstances",
+        "total_ram": "maxTotalRAMSize",
+    }
+    parsed_limits = {}
+    for key, val in mappings.items():
+        try:
+            parsed_limits[val] = limits_dict[key]
+        except KeyError as exp:
+            raise RuntimeError(f"could not find {key} in project limits") from exp
+    return parsed_limits
+
+
 def get_limits_for_project(instance, project_id) -> Dict:
     """
     Get limits for a project. This is currently using openstack-cli
@@ -45,12 +80,12 @@ def get_limits_for_project(instance, project_id) -> Dict:
     :param project_id: project id we want to collect limits for
     :return: a set of limit properties for project we want
     """
-    command = f"openstack --os-cloud={instance} limits show -f json --noindent --absolute --project {project_id}"
-    project_limits = json.loads(
-        Popen(command, shell=True, stdout=PIPE).communicate()[0]
-    )
-    # all limit properties are integers so add 'i' for each value
-    return {limit_entry["Name"]: limit_entry["Value"] for limit_entry in project_limits}
+    conn = openstack.connect(instance)
+    project_details = {
+        **extract_limits(conn.get_compute_limits(project_id)),
+        **conn.get_volume_limits(project_id)["absolute"]
+    }
+    return project_details
 
 
 def is_valid_project(project: Project) -> bool:

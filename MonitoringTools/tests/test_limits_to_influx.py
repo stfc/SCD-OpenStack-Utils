@@ -2,6 +2,8 @@ from unittest.mock import patch, call, NonCallableMock
 from limits_to_influx import (
     convert_to_data_string,
     get_limit_prop_string,
+    extract_limits,
+    get_limits_for_project,
     get_all_limits,
     main,
 )
@@ -68,9 +70,81 @@ def test_limit_prop_string(details, expected):
     assert get_limit_prop_string(details) == expected
 
 
-def test_get_limits_for_project():
-    # TODO: once we rewrite to using openstacksdk
-    pass
+def test_extract_limits_invalid():
+    """
+    tests extract_limits when given limits dict that is invalid
+    """
+    with pytest.raises(RuntimeError):
+        extract_limits({})
+
+
+def test_extract_limits_valid():
+    """
+    test extract_limits function extracts proper limits and outputs in correct format
+    """
+    mock_project_limits_dict = {
+        "server_meta": NonCallableMock(),
+        "personality":  NonCallableMock(),
+        "server_groups_used":  NonCallableMock(),
+        "image_meta":  NonCallableMock(),
+        "personality_size":  NonCallableMock(),
+        "keypairs":  NonCallableMock(),
+        "security_group_rules":  NonCallableMock(),
+        "server_groups":  NonCallableMock(),
+        "total_cores_used":  NonCallableMock(),
+        "total_ram_used":  NonCallableMock(),
+        "instances_used":  NonCallableMock(),
+        "security_groups":  NonCallableMock(),
+        "floating_ips_used":  NonCallableMock(),
+        "total_cores":  NonCallableMock(),
+        "server_group_members":  NonCallableMock(),
+        "floating_ips":  NonCallableMock(),
+        "security_groups_used":  NonCallableMock(),
+        "instances":  NonCallableMock(),
+        "total_ram":  NonCallableMock(),
+    }
+    assert extract_limits(mock_project_limits_dict) == {
+        "maxServerMeta": mock_project_limits_dict["server_meta"],
+        "maxPersonality": mock_project_limits_dict["personality"],
+        "totalServerGroupsUsed": mock_project_limits_dict["server_groups_used"],
+        "maxImageMeta": mock_project_limits_dict["image_meta"],
+        "maxPersonalitySize": mock_project_limits_dict["personality_size"],
+        "maxTotalKeypairs": mock_project_limits_dict["keypairs"],
+        "maxSecurityGroupRules": mock_project_limits_dict["security_group_rules"],
+        "maxServerGroups": mock_project_limits_dict["server_groups"],
+        "totalCoresUsed": mock_project_limits_dict["total_cores_used"],
+        "totalRAMUsed": mock_project_limits_dict["total_ram_used"],
+        "totalInstancesUsed": mock_project_limits_dict["instances_used"],
+        "maxSecurityGroups": mock_project_limits_dict["security_groups"],
+        "totalFloatingIpsUsed": mock_project_limits_dict["floating_ips_used"],
+        "maxTotalCores": mock_project_limits_dict["total_cores"],
+        "maxServerGroupMembers": mock_project_limits_dict["server_group_members"],
+        "maxTotalFloatingIps": mock_project_limits_dict["floating_ips"],
+        "totalSecurityGroupsUsed": mock_project_limits_dict["security_groups_used"],
+        "maxTotalInstances": mock_project_limits_dict["instances"],
+        "maxTotalRAMSize": mock_project_limits_dict["total_ram"],
+    }
+
+
+@patch("limits_to_influx.extract_limits")
+@patch("limits_to_influx.openstack")
+def test_get_limits_for_project(mock_openstack, mock_extract_limits):
+    """
+    tests get_limits_for_project gets the limits for a project by calling appropriate functions
+    """
+    mock_instance = NonCallableMock()
+    mock_project_id = NonCallableMock()
+
+    mock_conn = mock_openstack.connect.return_value
+    mock_conn.get_volume_limits.return_value = {"absolute": {"lim1": "val1"}}
+    mock_extract_limits.return_value = {"lim2": "val2"}
+
+    res = get_limits_for_project(mock_instance, mock_project_id)
+    mock_openstack.connect.assert_called_once_with(mock_instance)
+    mock_conn.get_compute_limits.assert_called_once_with(mock_project_id)
+    mock_conn.get_volume_limits.assert_called_once_with(mock_project_id)
+    mock_extract_limits.assert_called_once_with(mock_conn.get_compute_limits.return_value)
+    assert res == {"lim1": "val1", "lim2": "val2"}
 
 
 @patch("limits_to_influx.openstack")
