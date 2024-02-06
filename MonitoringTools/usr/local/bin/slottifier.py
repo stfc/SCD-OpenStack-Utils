@@ -47,13 +47,23 @@ def get_flavor_requirements(flavor) -> Dict:
     :param flavor: flavor to get requirements from
     :return: dictionary of requirements
     """
-    return {
+    try:
+        flavor_reqs = {
+            "cores_required": int(flavor["vcpus"]),
+            "mem_required": int(flavor["ram"]),
+        }
+    except (ValueError, KeyError) as exp:
+        flavor_name = flavor.get("name", "Name Not Found")
+        raise RuntimeError(
+            f"could not get flavor requirements for flavor {flavor_name}"
+        ) from exp
+
+    flavor_reqs.update({
         "gpus_required": int(
             flavor.get("extra_specs", {}).get("accounting:gpu_num", 0)
         ),
-        "cores_required": int(flavor.get("vcpus", 0)),
-        "mem_required": int(flavor.get("ram", 0)),
-    }
+    })
+    return flavor_reqs
 
 
 def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:

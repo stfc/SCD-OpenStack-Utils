@@ -18,8 +18,10 @@ from slottifier_entry import SlottifierEntry
 
 @pytest.fixture(name="mock_hypervisors")
 def mock_hypervisors_fixture():
+    """ fixture for setting up various mock hvs"""
     return {
         "hv1": {
+            "name": "hv1",
             "status": "enabled",
             "vcpus": 8,
             "vcpus_used": 2,
@@ -27,24 +29,38 @@ def mock_hypervisors_fixture():
             "memory_used": 2048,
         },
         "hv2": {
+            "name": "hv2",
             "status": "enabled",
             "vcpus": 4,
             "vcpus_used": 6,
             "memory_size": 2048,
             "memory_used": 4096,
         },
-        "hv3": {"status": "disabled"},
+        "hv3": {
+            "name": "hv3",
+            "status": "disabled"
+        },
     }
 
 
-@pytest.fixture(name="mock_service_info")
+@pytest.fixture(name="mock_compute_services")
 def mock_service_fixture():
-    return {"status": "enabled"}
+    return {
+        "svc1": {"host": "hv1", "name": "svc1"},
+        "svc2": {"host": "hv2", "name": "svc2"},
+        "svc3": {"host": "hv4", "name": "svc3"},
+    }
 
 
 @pytest.fixture(name="mock_aggregate")
 def mock_aggregate_fixture():
+    """ fixture for setting up a mock aggregate"""
     def _mock_aggregate(hosttype=None, gpu_num=None):
+        """
+        helper function for setting up mock aggregate
+        :param hosttype: optional hosttype to set
+        :param gpu_num: optional gpu_num to set
+        """
         ag = {"metadata": {}}
         if hosttype:
             ag["metadata"]["hosttype"] = hosttype
@@ -57,6 +73,7 @@ def mock_aggregate_fixture():
 
 @pytest.fixture(name="mock_flavors_list")
 def mock_flavors_fixture():
+    """ fixture for setting up various mock flavors """
     return [
         {"id": 1, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "A"}},
         {"id": 2, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "B"}},
@@ -66,11 +83,13 @@ def mock_flavors_fixture():
     ]
 
 
-def test_hypervisor_exists_and_enabled(
-    mock_hypervisors, mock_aggregate, mock_service_info
+def test_get_hv_info_exists_and_enabled(
+    mock_hypervisors, mock_aggregate
 ):
+    """ tests get_hv_info when hv exists and enabled - should parse results properly """
+
     assert get_hv_info(
-        mock_hypervisors["hv1"], mock_aggregate(gpu_num="1"), mock_service_info
+        mock_hypervisors["hv1"], mock_aggregate(gpu_num="1"), {"status": "enabled"}
     ) == {
         "cores_available": 6,
         "mem_available": 6144,
@@ -81,11 +100,16 @@ def test_hypervisor_exists_and_enabled(
     }
 
 
-def test_hypervisor_negative_results_floored(
-    mock_hypervisors, mock_aggregate, mock_service_info
+def test_get_hv_info_negative_results_floored(
+    mock_hypervisors, mock_aggregate
 ):
+    """
+    tests get_hv_info when results for available mem/cores are negative
+        - should set it to 0 instead
+    """
+
     assert get_hv_info(
-        mock_hypervisors["hv2"], mock_aggregate(), mock_service_info
+        mock_hypervisors["hv2"], mock_aggregate(), {"status": "enabled"}
     ) == {
         "cores_available": 0,
         "mem_available": 0,
@@ -96,11 +120,14 @@ def test_hypervisor_negative_results_floored(
     }
 
 
-def test_hypervisor_exists_but_disabled(
-    mock_hypervisors, mock_aggregate, mock_service_info
+def test_get_hv_info_exists_but_disabled(
+    mock_hypervisors, mock_aggregate
 ):
+    """
+    tests get_hv_info when hv is disabled - should return default results
+    """
     assert get_hv_info(
-        mock_hypervisors["hv3"], mock_aggregate(), mock_service_info
+        mock_hypervisors["hv3"], mock_aggregate(), {"status": "disabled"}
     ) == {
         "cores_available": 0,
         "mem_available": 0,
@@ -111,7 +138,10 @@ def test_hypervisor_exists_but_disabled(
     }
 
 
-def test_get_flavor_requirements_with_all_values():
+def test_get_flavor_requirements_with_valid_flavor():
+    """
+    tests get_flavor_requirements with valid flavor
+    """
     mock_flavor = {
         "extra_specs": {"accounting:gpu_num": "2"},
         "vcpus": "4",
@@ -125,23 +155,32 @@ def test_get_flavor_requirements_with_all_values():
 
 
 def test_get_flavor_requirements_with_missing_values():
-    assert get_flavor_requirements({}) == {
-        "gpus_required": 0,
-        "cores_required": 0,
-        "mem_required": 0,
-    }
+    """
+    tests get_flavor_requirements with all missing values
+        - should return 0s for requirements
+    """
+    with pytest.raises(RuntimeError):
+        get_flavor_requirements({})
 
 
 def test_get_flavor_requirements_with_partial_values():
-    req_dict = {"ram": "8192"}
+    """
+    tests get_flavor_requirements with missing gpu_num attr
+    should default it to 0
+    """
+    req_dict = {"ram": "8192", "vcpus": 8}
     assert get_flavor_requirements(req_dict) == {
         "gpus_required": 0,
-        "cores_required": 0,
+        "cores_required": 8,
         "mem_required": 8192,
     }
 
 
 def test_get_valid_flavors_with_matching_type(mock_flavors_list, mock_aggregate):
+    """
+    test get_valid_flavors_for_aggregate should find all flavors with matching
+    aggregate hosttype
+    """
     assert get_valid_flavors_for_aggregate(mock_flavors_list, mock_aggregate("A")) == [
         {"id": 1, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "A"}},
         {"id": 4, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "A"}},
@@ -149,12 +188,19 @@ def test_get_valid_flavors_with_matching_type(mock_flavors_list, mock_aggregate)
 
 
 def test_get_valid_flavors_with_empty_flavors_list(mock_aggregate):
+    """
+    test get_valid_flavors_for_aggregate should return empty list if no flavors given
+    """
     assert get_valid_flavors_for_aggregate([], mock_aggregate("A")) == []
 
 
 def test_get_valid_flavors_with_non_matching_hosttype(
     mock_flavors_list, mock_aggregate
 ):
+    """
+    test get_valid_flavors_for_aggregate should return empty list if no flavors found with
+    matching aggregate hosttype
+    """
     assert get_valid_flavors_for_aggregate(mock_flavors_list, mock_aggregate("D")) == []
 
 
@@ -212,6 +258,10 @@ def test_convert_to_data_string_multi_item():
 
 
 def test_calculate_slots_on_hv_non_gpu_disabled():
+    """
+    tests calculate_slots_on_hv calculates slots properly for non-gpu flavor
+        - should return 0s since hv is disabled
+     """
     res = calculate_slots_on_hv(
         "flavor1",
         {"cores_required": 10, "mem_required": 10},
@@ -229,6 +279,11 @@ def test_calculate_slots_on_hv_non_gpu_disabled():
 
 
 def test_calculate_slots_on_hv_gpu_disabled():
+    """
+    tests calculate_slots_on_hv calculates slots properly for gpu flavor
+        - should return 0s since hv is disabled, but keep track of max gpu slots capacity
+    """
+
     res = calculate_slots_on_hv(
         # g- specifies gpu flavor
         "g-flavor1",
@@ -251,6 +306,11 @@ def test_calculate_slots_on_hv_gpu_disabled():
 
 
 def test_calculate_slots_on_hv_mem_available_max():
+    """
+    tests calculate_slots_on_hv calculates slots properly for non-gpu flavor
+    - where memory available is limiting factor
+    """
+
     res = calculate_slots_on_hv(
         "flavor1",
         {"cores_required": 10, "mem_required": 10},
@@ -268,6 +328,10 @@ def test_calculate_slots_on_hv_mem_available_max():
 
 
 def test_calculate_slots_on_hv_cores_available_max():
+    """
+    tests calculate_slots_on_hv calculates slots properly for non-gpu flavor
+    - where cores available is limiting factor
+    """
     res = calculate_slots_on_hv(
         "flavor1",
         {"cores_required": 10, "mem_required": 10},
@@ -285,6 +349,10 @@ def test_calculate_slots_on_hv_cores_available_max():
 
 
 def test_calculate_slots_on_hv_gpu_available_max():
+    """
+    tests calculate_slots_on_hv calculates slots properly for gpu flavor
+    - where gpus available is limiting factor
+    """
     res = calculate_slots_on_hv(
         # specifies a gpu flavor
         "g-flavor1",
@@ -306,6 +374,10 @@ def test_calculate_slots_on_hv_gpu_available_max():
 
 
 def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
+    """
+    tests calculate_slots_on_hv calculates slots properly for gpu flavor
+    - should calculate estimated used gpus slots properly
+    """
     res = calculate_slots_on_hv(
         # specifies a gpu flavor
         "g-flavor1",
@@ -329,6 +401,10 @@ def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
 
 @patch("slottifier.openstack")
 def test_get_openstack_resources(mock_openstack):
+    """
+    tests get_openstack_resources gets all required resources via openstacksdk
+    and outputs them properly
+    """
     mock_conn = mock_openstack.connect.return_value
 
     mock_conn.list_hypervisors.return_value = [{"name": "hv1", "id": 1}]
@@ -353,68 +429,68 @@ def test_get_openstack_resources(mock_openstack):
     }
 
 
-@pytest.fixture(name="mock_all_compute_services")
-def all_compute_services():
-    return [
-        {"host": "host1", "name": "svc1"},
-        {"host": "host2", "name": "svc2"},
-        {"host": "host3", "name": "svc3"},
-    ]
-
-
-@pytest.fixture(name="mock_all_hypervisors")
-def all_hypervisors():
-    return [
-        {"name": "host1"},
-        {"name": "host2"},
-    ]
-
-
 @patch("slottifier.get_hv_info")
 def test_get_all_hv_info_for_aggregate_with_valid_data(
-    mock_get_hv_info, mock_all_hypervisors, mock_all_compute_services
+    mock_get_hv_info, mock_hypervisors, mock_compute_services
 ):
-    mock_aggregate = {"hosts": ["host1", "host2"]}
+    """
+    Tests get_all_hv_info_for_aggregate with valid data.
+    should call get_hv_info with correct hv and service object that match aggregate and
+    add results to list
+    """
+    mock_aggregate = {"hosts": ["hv1", "hv2"]}
     res = get_all_hv_info_for_aggregate(
-        mock_aggregate, mock_all_compute_services, mock_all_hypervisors
+        mock_aggregate, mock_compute_services.values(), mock_hypervisors.values()
     )
     mock_get_hv_info.assert_has_calls(
         [
-            call({"name": "host1"}, mock_aggregate, {"host": "host1", "name": "svc1"}),
-            call({"name": "host2"}, mock_aggregate, {"host": "host2", "name": "svc2"}),
+            # svc1 holds host: hv1
+            call(mock_hypervisors["hv1"], mock_aggregate, mock_compute_services["svc1"]),
+            # svc2 holds host: hv2
+            call(mock_hypervisors["hv2"], mock_aggregate, mock_compute_services["svc2"]),
         ]
     )
     assert res == [mock_get_hv_info.return_value, mock_get_hv_info.return_value]
 
 
 def test_get_all_hv_info_for_aggregate_with_invalid_data(
-    mock_all_hypervisors, mock_all_compute_services
+    mock_hypervisors, mock_compute_services
 ):
+    """
+    Tests get_all_hv_info_for_aggregate with invalid data.
+    should not add hv with invalid data to the resulting list
+    """
     mock_aggregate = {
         "hosts": [
-            # host3 has service but not found in list of hvs
-            "host3",
-            # host4 has no service and not in list of hvs
-            "host4",
+            # hv4 has service but not found in list of hvs
+            "hv4",
+            # hv5 has no service and not in list of hvs
+            "hv5",
         ]
     }
     assert (
         get_all_hv_info_for_aggregate(
-            mock_aggregate, mock_all_compute_services, mock_all_hypervisors
-        )
-        == []
+            mock_aggregate,
+            mock_compute_services.values(),
+            mock_hypervisors.values()
+        ) == []
     )
 
 
 def test_get_all_hv_info_for_aggregate_with_empty_aggregate(
-    mock_all_hypervisors, mock_all_compute_services
+    mock_hypervisors, mock_compute_services
 ):
+    """
+    Tests get_all_hv_info_for_aggregate with aggregate with no hosts.
+    should do nothing and return empty list
+    """
     mock_aggregate = {"hosts": []}
     assert (
         get_all_hv_info_for_aggregate(
-            mock_aggregate, mock_all_compute_services, mock_all_hypervisors
-        )
-        == []
+            mock_aggregate,
+            mock_hypervisors.values(),
+            mock_compute_services.values()
+        ) == []
     )
 
 
@@ -423,6 +499,10 @@ def test_get_all_hv_info_for_aggregate_with_empty_aggregate(
 def test_update_slots_one_flavor_one_hv(
     mock_calculate_slots_on_hv, mock_get_flavor_requirements
 ):
+    """
+    Tests update_slots with one flavor and one hv.
+    should call calculate_slots_on_hv once with the given flavor and hv
+    """
     mock_flavor = {"name": "flv1"}
     mock_host = NonCallableMock()
 
@@ -441,6 +521,10 @@ def test_update_slots_one_flavor_one_hv(
 def test_update_slots_one_flavor_multi_hv(
     mock_calculate_slots_on_hv, mock_get_flavor_requirements
 ):
+    """
+    Tests update_slots with one flavor and multiple hvs.
+    should call calculate_slots_on_hv on each hv with the same flavor
+    """
     mock_flavor = {"name": "flv1"}
     mock_host_1 = NonCallableMock()
     mock_host_2 = NonCallableMock()
@@ -462,6 +546,10 @@ def test_update_slots_one_flavor_multi_hv(
 def test_update_slots_multi_flavor_multi_hv(
     mock_calculate_slots_on_hv, mock_get_flavor_requirements
 ):
+    """
+    Tests update_slots with multiple flavors and multiple hvs.
+    should call calculate_slots_on_hv with each unique hv-flavor pairings
+    """
     mock_flavor_1 = {"name": "flv1"}
     mock_flavor_2 = {"name": "flv2"}
     mock_host_1 = NonCallableMock()
@@ -499,6 +587,9 @@ def test_get_slottifier_details_one_aggregate(
     mock_get_valid_flavors_for_aggregate,
     mock_get_openstack_resources,
 ):
+    """
+    Tests get_slottifier_details with one aggregate.
+    """
     mock_instance = NonCallableMock()
     mock_flavors = [{"name": "flv1"}, {"name": "flv2"}]
     mock_compute_services = NonCallableMock()
@@ -532,6 +623,9 @@ def test_get_slottifier_details_one_aggregate(
 @patch("slottifier.run_scrape")
 @patch("slottifier.parse_args")
 def test_main(mock_parse_args, mock_run_scrape):
+    """
+    tests main function calls run_scrape utility function properly
+    """
     mock_user_args = NonCallableMock()
     main(mock_user_args)
     mock_run_scrape.assert_called_once_with(
