@@ -114,6 +114,9 @@ def test_get_all_limits(
 @patch("limits_to_influx.run_scrape")
 @patch("limits_to_influx.parse_args")
 def test_main(mock_parse_args, mock_run_scrape):
+    """
+    tests main function calls run_scrape utility function properly
+    """
     mock_user_args = NonCallableMock()
     main(mock_user_args)
     mock_run_scrape.assert_called_once_with(

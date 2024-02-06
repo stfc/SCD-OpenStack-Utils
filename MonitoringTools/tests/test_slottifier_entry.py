@@ -2,6 +2,9 @@ from slottifier_entry import SlottifierEntry
 
 
 def test_add():
+    """
+    test that adding two SlottifierEntry dataclasses works properly
+    """
     a = SlottifierEntry(
         slots_available=1,
         estimated_gpu_slots_used=1,

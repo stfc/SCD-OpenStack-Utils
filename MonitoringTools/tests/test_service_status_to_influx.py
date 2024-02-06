@@ -16,6 +16,10 @@ from service_status_to_influx import (
 
 
 def test_get_hypervisor_properties_state_up():
+    """
+    tests that get_hypervisor_properties parses a valid hypervisor entry properly and extracts
+    useful information and returns the result in correct format - when hv state is up
+    """
     mock_hv = {
         "state": "up",
         "memory_size": 1,
@@ -42,6 +46,11 @@ def test_get_hypervisor_properties_state_up():
 
 
 def test_get_hypervisor_properties_state_down():
+    """
+    tests that get_hypervisor_properties parses a valid hypervisor entry properly and extracts
+    useful information and returns the result in correct format - when hv state is down
+    :return:
+    """
     mock_hv = {
         "state": "down",
         "memory_size": 1,
@@ -68,6 +77,10 @@ def test_get_hypervisor_properties_state_down():
 
 
 def test_get_service_properties_enabled_up():
+    """
+    tests that get_service_properties parses a valid service entry properly and extracts
+    useful information and returns the result in correct format - when status=enabled, state=up
+    """
     mock_service = {"binary": "foo", "status": "enabled", "state": "up"}
     expected_result = {
         "foo": {
@@ -82,6 +95,10 @@ def test_get_service_properties_enabled_up():
 
 
 def test_get_service_properties_disabled_down():
+    """
+    tests that get_service_properties parses a valid service entry properly and extracts
+    useful information and returns the result in correct format - when status=disabled, state=down
+    """
     mock_service = {"binary": "bar", "status": "disabled", "state": "down"}
     expected_result = {
         "bar": {
@@ -96,6 +113,11 @@ def test_get_service_properties_disabled_down():
 
 
 def test_get_agent_properties_alive_admin_up():
+    """
+    tests that get_agent_properties parses a valid network agent entry properly and extracts
+    useful information and returns the result in correct format
+    - when is_alive=True, is_admin_state_up=True
+    """
     mock_agent = {
         "binary": "foo",
         "is_alive": True,
@@ -114,6 +136,11 @@ def test_get_agent_properties_alive_admin_up():
 
 
 def test_get_agent_properties_disabled_down():
+    """
+    tests that get_agent_properties parses a valid network agent entry properly and extracts
+    useful information and returns the result in correct format
+    - when is_alive=False, is_admin_state_up=False
+    """
     mock_agent = {
         "binary": "bar",
         "is_alive": False,
@@ -219,18 +246,27 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
 
 
 def test_get_service_prop_string_empty_dict():
-    props = {}
-    expected_result = ""
-    assert get_service_prop_string(props) == expected_result
+    """
+    tests get_service_prop_string returns nothing when given empty service_dict
+    """
+    assert get_service_prop_string({}) == ""
 
 
 def test_get_service_prop_string_with_string_props():
+    """
+    tests get_service_prop_string returns correct prop string
+    when given string props it should not suffix each property value with i
+    """
     props = {"statetext": "foo", "statustext": "bar", "aggregate": "baz"}
     expected_result = 'statetext="foo",statustext="bar",aggregate="baz"'
     assert get_service_prop_string(props) == expected_result
 
 
 def test_get_service_prop_string_with_int_props():
+    """
+    tests get_service_prop_string returns correct prop string
+    when given int props it should suffix each property value with i
+    """
     props = {"prop1": 1, "prop2": 2, "prop3": 3}
     expected_result = 'prop1="1i",prop2="2i",prop3="3i"'
     assert get_service_prop_string(props) == expected_result
@@ -238,6 +274,12 @@ def test_get_service_prop_string_with_int_props():
 
 @patch("service_status_to_influx.get_hypervisor_properties")
 def test_get_all_hv_details(mock_get_hypervisor_properties):
+    """
+    tests get_all_hv_details returns dict of hypervisor status information
+    - for each hypervisor, call get_hypervisor_properties and store in a dict,
+    - then for each aggregate update the aggregate property for each hv with the aggregate name
+        that the hv belongs to
+    """
     mock_conn = MagicMock()
     mock_hvs = [{"name": "hv1"}, {"name": "hv2"}, {"name": "hv3"}]
 
@@ -267,6 +309,10 @@ def test_get_all_hv_details(mock_get_hypervisor_properties):
 
 @patch("service_status_to_influx.get_service_properties")
 def test_update_with_service_statuses(mock_get_service_properties):
+    """
+    tests update_with_service_statuses, for each service found, get its properties
+    and update provided dictionary status_details dict with service info
+    """
     mock_conn = MagicMock()
     mock_status_details = {
         "hv1": {"hv": {}, "foo": {}, "bar": {}},
@@ -312,6 +358,10 @@ def test_update_with_service_statuses(mock_get_service_properties):
 
 @patch("service_status_to_influx.get_agent_properties")
 def test_update_with_agent_statuses(mock_get_agent_properties):
+    """
+    tests update_with_agent_statuses, for each network agent found, get its properties
+    and update provided dictionary status_details dict with agent info
+    """
     mock_conn = MagicMock()
     mock_status_details = {"hv1": {"foo": {}}, "hv2": {}}
 
@@ -356,6 +406,13 @@ def test_get_all_service_statuses(
     mock_get_hv_statuses,
     mock_openstack,
 ):
+    """
+    Tests get_all_service_statuses calls appropriate functions:
+    - get hv status info
+    - update with service status info
+    - update with agent status info
+    - calls convert_to_data_string on result and output
+    """
     mock_instance = NonCallableMock()
     mock_conn = mock_openstack.connect.return_value
     res = get_all_service_statuses(mock_instance)
@@ -376,6 +433,9 @@ def test_get_all_service_statuses(
 @patch("service_status_to_influx.run_scrape")
 @patch("service_status_to_influx.parse_args")
 def test_main(mock_parse_args, mock_run_scrape):
+    """
+    tests main function calls run_scrape utility function properly
+    """
     mock_user_args = NonCallableMock()
     main(mock_user_args)
     mock_run_scrape.assert_called_once_with(
