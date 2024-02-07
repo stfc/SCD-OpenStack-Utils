@@ -32,7 +32,10 @@ def get_limit_prop_string(limit_details):
     :return: a data string of scraped info
     """
     # all limit properties are integers so add 'i' for each value
-    return ",".join([f"{limit}={val}i" for limit, val in limit_details.items()])
+    limit_strings = []
+    for limit, val in limit_details.items():
+        limit_strings.append(f"{limit}={val}i")
+    return ",".join(limit_strings)
 
 
 def extract_limits(limits_dict) -> Dict:
@@ -72,7 +75,7 @@ def extract_limits(limits_dict) -> Dict:
     return parsed_limits
 
 
-def get_limits_for_project(instance, project_id) -> Dict:
+def get_limits_for_project(instance: str, project_id) -> Dict:
     """
     Get limits for a project. This is currently using openstack-cli
     This will be rewritten to instead use openstacksdk
@@ -95,7 +98,7 @@ def is_valid_project(project: Project) -> bool:
     :return: boolean, True if project should be accounted for in limits
     """
     invalid_strings = ["_rally", "844"]
-    return all(s not in project["name"] for s in invalid_strings)
+    return all(string not in project["name"] for string in invalid_strings)
 
 
 def get_all_limits(instance: str) -> str:
@@ -105,11 +108,10 @@ def get_all_limits(instance: str) -> str:
     :return: A data string of scraped info
     """
     conn = openstack.connect(cloud=instance)
-    limit_details = {
-        project["name"]: get_limits_for_project(instance, project["id"])
-        for project in conn.list_projects()
-        if is_valid_project(project)
-    }
+    limit_details = {}
+    for project in conn.list_projects():
+        if is_valid_project(project):
+            limit_details[project["name"]] = get_limits_for_project(instance, project["id"])
     return convert_to_data_string(instance, limit_details)
 
 

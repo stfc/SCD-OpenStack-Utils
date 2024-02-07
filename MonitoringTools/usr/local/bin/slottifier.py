@@ -7,7 +7,7 @@ from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
 
 
-def get_hv_info(hypervisor: Dict, aggregate_info, service_info) -> Dict:
+def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
     """
     Helper function to get hv information on cores/memory available
     :param hypervisor: a dictionary holding info on hypervisor
@@ -39,7 +39,7 @@ def get_hv_info(hypervisor: Dict, aggregate_info, service_info) -> Dict:
     return hv_info
 
 
-def get_flavor_requirements(flavor) -> Dict:
+def get_flavor_requirements(flavor: Dict) -> Dict:
     """
     Helper function to get flavor memory/ram/gpu requirements for a VM of that type to be built on a hv
     :param flavor: flavor to get requirements from
@@ -112,7 +112,7 @@ def convert_to_data_string(instance: str, slots_dict: Dict) -> str:
     return data_string
 
 
-def calculate_slots_on_hv(flavor_name, flavor_reqs, hv_info) -> SlottifierEntry:
+def calculate_slots_on_hv(flavor_name: str, flavor_reqs: Dict, hv_info: Dict) -> SlottifierEntry:
     """
     Helper function that calculates available slots for a flavor on a given hypervisor
     :param flavor_name: name of flavor
@@ -202,7 +202,7 @@ def get_openstack_resources(instance: str) -> Dict:
 
 
 def get_all_hv_info_for_aggregate(
-    aggregate, all_compute_services, all_hypervisors
+    aggregate: Dict, all_compute_services: List, all_hypervisors: List
 ) -> List:
     """
     helper function to get all useful info from hypervisors belonging to a given aggregate
@@ -215,28 +215,27 @@ def get_all_hv_info_for_aggregate(
 
     valid_hvs = []
     for host in aggregate["hosts"]:
-        host_compute_service = next(
-            (cs for cs in all_compute_services if cs["host"] == host), None
-        )
+
+        host_compute_service = None
+        for cs in all_compute_services:
+            if cs["host"] == host:
+                host_compute_service = cs
+
         if not host_compute_service:
             continue
 
-        hv = next(
-            (
-                hv
-                for hv in all_hypervisors
-                if host_compute_service["host"] == hv["name"]
-            ),
-            None,
-        )
-        if not hv:
+        hv_obj = None
+        for hv in all_hypervisors:
+            if host_compute_service["host"] == hv["name"]:
+                hv_obj = hv
+        if not hv_obj:
             continue
 
-        valid_hvs.append(get_hv_info(hv, aggregate, host_compute_service))
+        valid_hvs.append(get_hv_info(hv_obj, aggregate, host_compute_service))
     return valid_hvs
 
 
-def update_slots(flavors, host_info_list, slots_dict) -> Dict:
+def update_slots(flavors: List, host_info_list: List, slots_dict: Dict) -> Dict:
     """
     update total slots by calculating slots available for a set of flavors on a set of hosts
     :param flavors: a list of flavors
