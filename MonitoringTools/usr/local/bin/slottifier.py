@@ -74,6 +74,7 @@ def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
     """
     valid_flavors = []
     hypervisor_hosttype = aggregate["metadata"].get("hosttype", None)
+    hypervisor_storage_type = aggregate["metadata"].get("local-storage-type", None)
 
     if not hypervisor_hosttype:
         return valid_flavors
@@ -90,6 +91,15 @@ def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
             != hypervisor_hosttype
         ):
             continue
+
+        has_local_storage = "aggregate_instance_extra_specs:local-storage-type" in flavor["extra_specs"].keys()
+
+        if (
+            has_local_storage and flavor["extra_specs"]["aggregate_instance_extra_specs:local-storage-type"]
+            != hypervisor_storage_type
+        ):
+            continue
+
         valid_flavors.append(flavor)
     return valid_flavors
 
