@@ -278,6 +278,25 @@ def test_calculate_slots_on_hv_non_gpu_disabled():
     assert res.max_gpu_slots_capacity_enabled == 0
 
 
+def test_calculate_slots_on_hv_gpu_no_gpunum():
+    """
+    tests calculate_slots_on_hv when provided a gpu flavor but gpus_required is set to 0
+    should raise error
+    """
+    with pytest.raises(RuntimeError):
+        calculate_slots_on_hv(
+            # g- specifies gpu flavor
+            "g-flavor1",
+            {"gpus_required": 0, "cores_required": 10, "mem_required": 10},
+            {
+                "compute_service_status": "disabled",
+                # can fit 10 slots, but should be 0 since compute service disabled
+                "cores_available": 100,
+                "mem_available": 100,
+            }
+        )
+
+
 def test_calculate_slots_on_hv_gpu_disabled():
     """
     tests calculate_slots_on_hv calculates slots properly for gpu flavor

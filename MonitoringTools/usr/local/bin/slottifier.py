@@ -6,8 +6,6 @@ from typing import Dict
 from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
 
-UNKNOWN_GPU_NUM_FLAVORS = []
-
 
 def get_hv_info(hypervisor: Dict, aggregate_info, service_info) -> Dict:
     """
@@ -133,10 +131,7 @@ def calculate_slots_on_hv(flavor_name, flavor_reqs, hv_info) -> SlottifierEntry:
     if "g-" in flavor_name:
         # workaround for bugs where gpu number not specified
         if flavor_reqs["gpus_required"] == 0:
-            flavor_reqs["gpus_required"] = 1
-            # For debugging purposes
-            if flavor_name not in UNKNOWN_GPU_NUM_FLAVORS:
-                UNKNOWN_GPU_NUM_FLAVORS.append(flavor_name)
+            raise RuntimeError(f"gpu flavor {flavor_name} does not have 'gpunum' metadata")
 
         theoretical_gpu_slots_available = (
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
@@ -294,13 +289,6 @@ def main(user_args: List):
     """
     influxdb_args = parse_args(user_args, description="Get All Service Statuses")
     run_scrape(influxdb_args, get_slottifier_details)
-
-    # for debugging purposes
-    for missing_flavor in UNKNOWN_GPU_NUM_FLAVORS:
-        print(
-            f"{missing_flavor} missing metadata property 'extra_specs:accounting:gpu_num'"
-            "do not know how many GPUs the flavor requires, assuming 1 gpu required"
-        )
 
 
 if __name__ == "__main__":
