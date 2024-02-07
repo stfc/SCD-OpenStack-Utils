@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import sys
 from typing import Dict, List
 import openstack
@@ -86,7 +85,7 @@ def get_limits_for_project(instance: str, project_id) -> Dict:
     conn = openstack.connect(instance)
     project_details = {
         **extract_limits(conn.get_compute_limits(project_id)),
-        **conn.get_volume_limits(project_id)["absolute"]
+        **conn.get_volume_limits(project_id)["absolute"],
     }
     return project_details
 
@@ -111,7 +110,9 @@ def get_all_limits(instance: str) -> str:
     limit_details = {}
     for project in conn.list_projects():
         if is_valid_project(project):
-            limit_details[project["name"]] = get_limits_for_project(instance, project["id"])
+            limit_details[project["name"]] = get_limits_for_project(
+                instance, project["id"]
+            )
     return convert_to_data_string(instance, limit_details)
 
 

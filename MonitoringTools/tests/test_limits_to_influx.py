@@ -84,24 +84,24 @@ def test_extract_limits_valid():
     """
     mock_project_limits_dict = {
         "server_meta": NonCallableMock(),
-        "personality":  NonCallableMock(),
-        "server_groups_used":  NonCallableMock(),
-        "image_meta":  NonCallableMock(),
-        "personality_size":  NonCallableMock(),
-        "keypairs":  NonCallableMock(),
-        "security_group_rules":  NonCallableMock(),
-        "server_groups":  NonCallableMock(),
-        "total_cores_used":  NonCallableMock(),
-        "total_ram_used":  NonCallableMock(),
-        "instances_used":  NonCallableMock(),
-        "security_groups":  NonCallableMock(),
-        "floating_ips_used":  NonCallableMock(),
-        "total_cores":  NonCallableMock(),
-        "server_group_members":  NonCallableMock(),
-        "floating_ips":  NonCallableMock(),
-        "security_groups_used":  NonCallableMock(),
-        "instances":  NonCallableMock(),
-        "total_ram":  NonCallableMock(),
+        "personality": NonCallableMock(),
+        "server_groups_used": NonCallableMock(),
+        "image_meta": NonCallableMock(),
+        "personality_size": NonCallableMock(),
+        "keypairs": NonCallableMock(),
+        "security_group_rules": NonCallableMock(),
+        "server_groups": NonCallableMock(),
+        "total_cores_used": NonCallableMock(),
+        "total_ram_used": NonCallableMock(),
+        "instances_used": NonCallableMock(),
+        "security_groups": NonCallableMock(),
+        "floating_ips_used": NonCallableMock(),
+        "total_cores": NonCallableMock(),
+        "server_group_members": NonCallableMock(),
+        "floating_ips": NonCallableMock(),
+        "security_groups_used": NonCallableMock(),
+        "instances": NonCallableMock(),
+        "total_ram": NonCallableMock(),
     }
     assert extract_limits(mock_project_limits_dict) == {
         "maxServerMeta": mock_project_limits_dict["server_meta"],
@@ -143,7 +143,9 @@ def test_get_limits_for_project(mock_openstack, mock_extract_limits):
     mock_openstack.connect.assert_called_once_with(mock_instance)
     mock_conn.get_compute_limits.assert_called_once_with(mock_project_id)
     mock_conn.get_volume_limits.assert_called_once_with(mock_project_id)
-    mock_extract_limits.assert_called_once_with(mock_conn.get_compute_limits.return_value)
+    mock_extract_limits.assert_called_once_with(
+        mock_conn.get_compute_limits.return_value
+    )
     assert res == {"lim1": "val1", "lim2": "val2"}
 
 

@@ -1,0 +1,4 @@
+openstacksdk
+pytest
+pylint
+pytest-cov

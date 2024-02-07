@@ -1,8 +1,6 @@
-#!/usr/bin/python
-from typing import List
-import openstack
 import sys
-from typing import Dict
+from typing import List, Dict
+import openstack
 from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
 
@@ -56,17 +54,20 @@ def get_flavor_requirements(flavor: Dict) -> Dict:
             f"could not get flavor requirements for flavor {flavor_name}"
         ) from exp
 
-    flavor_reqs.update({
-        "gpus_required": int(
-            flavor.get("extra_specs", {}).get("accounting:gpu_num", 0)
-        ),
-    })
+    flavor_reqs.update(
+        {
+            "gpus_required": int(
+                flavor.get("extra_specs", {}).get("accounting:gpu_num", 0)
+            ),
+        }
+    )
     return flavor_reqs
 
 
 def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
     """
-    Helper function that filters a list of flavors to find those that can be built on a hv belonging to a given aggregate
+    Helper function that filters a list of flavors
+    to find those that can be built on a hv belonging to a given aggregate
     :param flavor_list: a list of flavors to check
     :param aggregate: specifies the aggregate to find compatible flavors for
     :return: a list of valid flavors for hosttype
@@ -112,7 +113,9 @@ def convert_to_data_string(instance: str, slots_dict: Dict) -> str:
     return data_string
 
 
-def calculate_slots_on_hv(flavor_name: str, flavor_reqs: Dict, hv_info: Dict) -> SlottifierEntry:
+def calculate_slots_on_hv(
+    flavor_name: str, flavor_reqs: Dict, hv_info: Dict
+) -> SlottifierEntry:
     """
     Helper function that calculates available slots for a flavor on a given hypervisor
     :param flavor_name: name of flavor
@@ -131,7 +134,9 @@ def calculate_slots_on_hv(flavor_name: str, flavor_reqs: Dict, hv_info: Dict) ->
     if "g-" in flavor_name:
         # workaround for bugs where gpu number not specified
         if flavor_reqs["gpus_required"] == 0:
-            raise RuntimeError(f"gpu flavor {flavor_name} does not have 'gpunum' metadata")
+            raise RuntimeError(
+                f"gpu flavor {flavor_name} does not have 'gpunum' metadata"
+            )
 
         theoretical_gpu_slots_available = (
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
@@ -169,10 +174,11 @@ def calculate_slots_on_hv(flavor_name: str, flavor_reqs: Dict, hv_info: Dict) ->
 
 def get_openstack_resources(instance: str) -> Dict:
     """
-    This is a helper function that gets information from openstack in one go to calculate flavor slots. This
-    is quicker than getting resources one at a time
+    This is a helper function that gets information from openstack in one go to calculate flavor slots
+    This is quicker than getting resources one at a time
     :param instance: which cloud to calculate slots for
-    :return: a dictionary containing 4 entries, key is an openstack component, value is a list of all components of that
+    :return: a dictionary containing 4 entries, key is an openstack component,
+    value is a list of all components of that
     type: compute_services, aggregates, hypervisors and flavors
     """
     conn = openstack.connect(cloud=instance)

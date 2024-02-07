@@ -7,7 +7,7 @@ class SlottifierEntry:
     A dataclass to hold slottifier information
     :param slots_available: Number of slots available for a flavor
     :param estimated_gpu_slots_used: Number of gpu slots currently used that could host this flavor
-        - estimated by amount of cores/mem already used by hvs as there's no way in openstack to find this out directly
+    estimated by amount of cores/mem already used by hvs as there's no way in openstack to find this out directly
     :param max_gpu_slots_capacity: Number of gpus available on all compatible hypervisors to build this flavor on
     :param max_gpu_slots_capacity_enabled: like max_gpu_slots_capacity, but only counting hosts with nova-compute
     service enabled
@@ -32,13 +32,10 @@ class SlottifierEntry:
 
         return SlottifierEntry(
             slots_available=self.slots_available + other.slots_available,
-
             estimated_gpu_slots_used=self.estimated_gpu_slots_used
             + other.estimated_gpu_slots_used,
-
             max_gpu_slots_capacity=self.max_gpu_slots_capacity
             + other.max_gpu_slots_capacity,
-
             max_gpu_slots_capacity_enabled=self.max_gpu_slots_capacity_enabled
             + other.max_gpu_slots_capacity_enabled,
         )
