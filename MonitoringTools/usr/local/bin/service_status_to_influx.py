@@ -97,10 +97,10 @@ def get_service_prop_string(service_dict: Dict) -> str:
     """
     stats_strings = []
     for stat, val in service_dict.items():
-        parsed_val = val
+        stats_string = f'{stat}="{val}"'
         if stat not in ["statetext", "statustext", "aggregate"]:
-            parsed_val = f"{val}i"
-        stats_strings.append(f'{stat}="{parsed_val}"')
+            stats_string = f"{stat}={val}i"
+        stats_strings.append(stats_string)
     return ",".join(stats_strings)
 
 

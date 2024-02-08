@@ -267,7 +267,7 @@ def test_get_service_prop_string_with_int_props():
     when given int props it should suffix each property value with i
     """
     props = {"prop1": 1, "prop2": 2, "prop3": 3}
-    expected_result = 'prop1="1i",prop2="2i",prop3="3i"'
+    expected_result = "prop1=1i,prop2=2i,prop3=3i"
     assert get_service_prop_string(props) == expected_result
 
 
