@@ -60,6 +60,7 @@ def test_post_to_influxdb_valid(mock_requests):
         "http://localhost:8086/write?db=cloud&precision=s",
         data=mock_data_string,
         auth=(mock_user, mock_pass),
+        timeout=60,
     )
     mock_response = mock_requests.post.return_value
     mock_response.raise_for_status.assert_called_once()
@@ -81,7 +82,7 @@ def test_parse_args_valid_args(mock_read_config_file):
     """
     tests parse_args function with a valid filepath
     """
-    res = parse_args(["../usr/local/bin/influxdb.conf"])
+    res = parse_args(["./usr/local/bin/influxdb.conf"])
     assert res == mock_read_config_file.return_value
 
 
@@ -108,11 +109,9 @@ def test_parse_args_filepath_read_config_fails(mock_read_config_file):
     """
     mock_read_config_file.side_effect = configparser.Error
     with pytest.raises(RuntimeError):
-        parse_args(["../usr/local/bin/influxdb.conf"])
+        parse_args(["./usr/local/bin/influxdb.conf"])
 
-    mock_read_config_file.assert_called_once_with(
-        Path("../usr/local/bin/influxdb.conf")
-    )
+    mock_read_config_file.assert_called_once_with(Path("./usr/local/bin/influxdb.conf"))
 
 
 @patch("send_metric_utils.post_to_influxdb")

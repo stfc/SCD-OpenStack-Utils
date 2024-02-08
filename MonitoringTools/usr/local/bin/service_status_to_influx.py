@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import sys
 from typing import Dict, List
 import openstack
@@ -118,7 +117,7 @@ def get_all_hv_details(conn) -> Dict:
     # populate found hypervisors with what aggregate they belong to - so we can filter by aggregate in grafana
     for aggregate in conn.compute.aggregates():
         for host_name in aggregate["hosts"]:
-            if host_name in hv_details.keys():
+            if host_name in hv_details:
                 hv_details[host_name]["hv"]["aggregate"] = aggregate["name"]
     return hv_details
 

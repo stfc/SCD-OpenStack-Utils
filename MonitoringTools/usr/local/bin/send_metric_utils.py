@@ -1,9 +1,9 @@
-from typing import Dict, Tuple, Callable, List
-from pathlib import Path
 import configparser
-import requests
-import argparse
 from configparser import ConfigParser
+from typing import Dict, Tuple, Callable
+from pathlib import Path
+import argparse
+import requests
 
 
 def read_config_file(config_filepath: Path) -> Dict:
@@ -46,7 +46,7 @@ def post_to_influxdb(
         return
 
     url = f"http://{host}/write?db={db_name}&precision=s"
-    response = requests.post(url, data=data_string, auth=auth)
+    response = requests.post(url, data=data_string, auth=auth, timeout=60)
     response.raise_for_status()
 
 

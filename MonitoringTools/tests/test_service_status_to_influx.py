@@ -1,5 +1,4 @@
 from unittest.mock import patch, call, NonCallableMock, MagicMock
-import pytest
 
 from service_status_to_influx import (
     get_hypervisor_properties,
