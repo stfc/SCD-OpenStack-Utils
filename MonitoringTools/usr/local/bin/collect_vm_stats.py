@@ -8,8 +8,7 @@ def number_servers_total(conn):
     :param conn: OpenStack cloud connection
     :returns: Number of VMs in total across the cloud
     """
-    # all_projects set to false while testing methods against one project
-    server_obj = conn.compute.servers(details=False, all_projects=False)
+    server_obj = conn.compute.servers(details=False, all_projects=True, limit=10000)
     # get number of items in generator object
     instance_list = list(server_obj)
     total_instances = len(instance_list)
@@ -23,9 +22,8 @@ def number_servers_active(conn):
     :param conn: OpenStack Cloud Connection
     :returns: Number of active VMs
     """
-    # all_projects set to false while testing methods against one project
     server_obj = conn.compute.servers(
-        details=False, all_projects=False, status="ACTIVE"
+        details=False, all_projects=True, limit=10000, status="ACTIVE"
     )
     # get number of items in generator object
     instance_list = list(server_obj)
@@ -40,8 +38,9 @@ def number_servers_build(conn):
     :param conn: OpenStack Cloud Connection
     :returns: Number of VMs in BUILD state
     """
-    # all_projects set to false while testing methods against one project
-    server_obj = conn.compute.servers(details=False, all_projects=False, status="BUILD")
+    server_obj = conn.compute.servers(
+        details=False, all_projects=True, limit=10000, status="BUILD"
+    )
     # get number of items in generator object
     instance_list = list(server_obj)
     instance_build = len(instance_list)
@@ -55,9 +54,9 @@ def number_servers_error(conn):
     :param conn: OpenStack Cloud Connection
     :returns: Number of VMs in ERROR state
     """
-    # all_projects set to false while testing methods against one project
-    server_obj = conn.compute.servers(details=False, all_projects=False, status="ERROR")
-    # get number of items in generator object
+    server_obj = conn.compute.servers(
+        details=False, all_projects=True, limit=10000, status="ERROR"
+    )
     # get number of items in generator object
     instance_list = list(server_obj)
     instance_err = len(instance_list)
@@ -71,9 +70,8 @@ def number_servers_shutoff(conn):
     :param conn: OpenStack Cloud Connection
     :returns: Number of VMs in SHUTOFF (STOPPED) state
     """
-    # all_projects set to false while testing methods against one project
     server_obj = conn.compute.servers(
-        details=False, all_projects=False, status="SHUTOFF"
+        details=False, all_projects=True, limit=10000, status="SHUTOFF"
     )
     # get number of items in generator object
     instance_list = list(server_obj)
@@ -94,10 +92,19 @@ def collect_stats(cloud, prod):
 
     # collect stats in order: total, active, build, error, shutoff
     total_vms = number_servers_total(cloud)
+    print(f"Total VMs: {total_vms}")
+
     active_vms = number_servers_active(cloud)
+    print(f"ACTIVE VMs: {active_vms}")
+
     build_vms = number_servers_build(cloud)
+    print(f"BUILD VMs: {build_vms}")
+
     error_vms = number_servers_error(cloud)
+    print(f"ERROR VMs: {error_vms}")
+
     shutoff_vms = number_servers_shutoff(cloud)
+    print(f"SHUTOFF VMs: {shutoff_vms}")
 
     if prod:
         cloud_env = "Prod"
