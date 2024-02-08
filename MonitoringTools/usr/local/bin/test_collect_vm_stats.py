@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import NonCallableMock, Mock
-from vm_stats import (
+from collect_vm_stats import (
     number_servers_active,
     number_servers_build,
     number_servers_error,
@@ -11,7 +11,9 @@ from vm_stats import (
 
 
 class TestVmStats(unittest.TestCase):
-
+    """
+    Unit test class with test cases covering methods in collect_vm_stats script
+    """
     def test_number_servers_total(self):
         """
         Tests that the total number of servers can be queried and counted
