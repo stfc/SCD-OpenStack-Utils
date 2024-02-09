@@ -56,18 +56,21 @@ def mock_service_fixture():
 def mock_aggregate_fixture():
     """fixture for setting up a mock aggregate"""
 
-    def _mock_aggregate(hosttype=None, gpu_num=None):
+    def _mock_aggregate(hosttype=None, gpu_num=None, storagetype=None):
         """
         helper function for setting up mock aggregate
         :param hosttype: optional hosttype to set
         :param gpu_num: optional gpu_num to set
+        :param storagetype: optional storagetype to set
         """
-        ag = {"metadata": {}}
+        aggregate = {"metadata": {}}
         if hosttype:
-            ag["metadata"]["hosttype"] = hosttype
+            aggregate["metadata"]["hosttype"] = hosttype
         if gpu_num:
-            ag["metadata"]["gpunum"] = gpu_num
-        return ag
+            aggregate["metadata"]["gpunum"] = gpu_num
+        if storagetype:
+            aggregate["metadata"]["local-storage-type"] = storagetype
+        return aggregate
 
     return _mock_aggregate
 
@@ -80,7 +83,20 @@ def mock_flavors_fixture():
         {"id": 2, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "B"}},
         {"id": 3, "extra_specs": {}},
         {"id": 4, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "A"}},
-        {"id": 5, "extra_specs": {"aggregate_instance_extra_specs:hosttype": "C"}},
+        {
+            "id": 5,
+            "extra_specs": {
+                "aggregate_instance_extra_specs:hosttype": "C",
+                "aggregate_instance_extra_specs:local-storage-type": "1",
+            },
+        },
+        {
+            "id": 6,
+            "extra_specs": {
+                "aggregate_instance_extra_specs:hosttype": "C",
+                "aggregate_instance_extra_specs:local-storage-type": "2",
+            },
+        },
     ]
 
 
@@ -197,6 +213,23 @@ def test_get_valid_flavors_with_non_matching_hosttype(
     matching aggregate hosttype
     """
     assert not get_valid_flavors_for_aggregate(mock_flavors_list, mock_aggregate("D"))
+
+
+def test_get_valid_flavors_with_storagetype(mock_flavors_list, mock_aggregate):
+    """
+    test get_valid_flavors_for_aggregate should return list of hvs with matching hosttype and storagetype
+    """
+    assert get_valid_flavors_for_aggregate(
+        mock_flavors_list, mock_aggregate(hosttype="C", storagetype="1")
+    ) == [
+        {
+            "id": 5,
+            "extra_specs": {
+                "aggregate_instance_extra_specs:hosttype": "C",
+                "aggregate_instance_extra_specs:local-storage-type": "1",
+            },
+        },
+    ]
 
 
 def test_convert_to_data_string_no_items():

@@ -74,6 +74,7 @@ def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
     """
     valid_flavors = []
     hypervisor_hosttype = aggregate["metadata"].get("hosttype", None)
+    hypervisor_storage_type = aggregate["metadata"].get("local-storage-type", None)
 
     if not hypervisor_hosttype:
         return valid_flavors
@@ -90,6 +91,21 @@ def get_valid_flavors_for_aggregate(flavor_list: List, aggregate: Dict) -> List:
             != hypervisor_hosttype
         ):
             continue
+
+        has_local_storage = (
+            "aggregate_instance_extra_specs:local-storage-type"
+            in flavor["extra_specs"].keys()
+        )
+
+        if (
+            has_local_storage
+            and flavor["extra_specs"][
+                "aggregate_instance_extra_specs:local-storage-type"
+            ]
+            != hypervisor_storage_type
+        ):
+            continue
+
         valid_flavors.append(flavor)
     return valid_flavors
 
@@ -221,19 +237,19 @@ def get_all_hv_info_for_aggregate(
 
     valid_hvs = []
     for host in aggregate["hosts"]:
-
         host_compute_service = None
-        for cs in all_compute_services:
-            if cs["host"] == host:
-                host_compute_service = cs
+        for compute_service in all_compute_services:
+            if compute_service["host"] == host:
+                host_compute_service = compute_service
 
         if not host_compute_service:
             continue
 
         hv_obj = None
-        for hv in all_hypervisors:
-            if host_compute_service["host"] == hv["name"]:
-                hv_obj = hv
+        for hypervisor in all_hypervisors:
+            if host_compute_service["host"] == hypervisor["name"]:
+                hv_obj = hypervisor
+
         if not hv_obj:
             continue
 
@@ -252,9 +268,9 @@ def update_slots(flavors: List, host_info_list: List, slots_dict: Dict) -> Dict:
 
     for flavor in flavors:
         flavor_reqs = get_flavor_requirements(flavor)
-        for hv in host_info_list:
+        for hypervisor in host_info_list:
             slots_dict[flavor["name"]] += calculate_slots_on_hv(
-                flavor["name"], flavor_reqs, hv
+                flavor["name"], flavor_reqs, hypervisor
             )
     return slots_dict
 
