@@ -21,24 +21,29 @@ def test_get_hypervisor_properties_state_up():
     """
     mock_hv = {
         "state": "up",
-        "memory_size": 1,
-        "memory_used": 2,
-        "memory_free": 3,
+        "memory_size": 2,
+        "memory_used": 1,
         "vcpus_used": 4,
         "vcpus": 5,
     }
     expected_result = {
         "hv": {
             "aggregate": "no-aggregate",
-            "memorymax": 1,
-            "memoryused": 2,
-            "memoryavailable": 3,
+            "memorymax": 2,
+            "memoryused": 1,
+            "memoryavailable": 1,
+            "memperc": 0.5,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
+            "cpuperc": 0.8,
             "agent": 1,
             "state": 1,
             "statetext": "Up",
+            "utilperc": 0.8,
+            "cpufull": 0,
+            "memfull": 1,
+            "full": 1,
         }
     }
     assert get_hypervisor_properties(mock_hv) == expected_result
@@ -52,24 +57,29 @@ def test_get_hypervisor_properties_state_down():
     """
     mock_hv = {
         "state": "down",
-        "memory_size": 1,
-        "memory_used": 2,
-        "memory_free": 3,
+        "memory_size": 2,
+        "memory_used": 1,
         "vcpus_used": 4,
         "vcpus": 5,
     }
     expected_result = {
         "hv": {
             "aggregate": "no-aggregate",
-            "memorymax": 1,
-            "memoryused": 2,
-            "memoryavailable": 3,
+            "memorymax": 2,
+            "memoryused": 1,
+            "memoryavailable": 1,
+            "memperc": 0.5,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
+            "cpuperc": 0.8,
             "agent": 1,
             "state": 0,
             "statetext": "Down",
+            "utilperc": 0.8,
+            "cpufull": 0,
+            "memfull": 1,
+            "full": 1,
         }
     }
     assert get_hypervisor_properties(mock_hv) == expected_result
@@ -328,10 +338,10 @@ def test_update_with_service_statuses(mock_get_service_properties):
 
     # stubs out actually getting properties
     mock_get_service_properties.side_effect = [
-        {"nova-compute": {"status": "enabled"}},
+        {"nova-compute": {"status": 1, "statustext": "enabled"}},
         {"other-service": {}},
-        {"other-service": {"status": "enabled"}},
-        {"nova-compute": {"status": "disabled"}},
+        {"other-service": {"status": 1, "statustext": "enabled"}},
+        {"nova-compute": {"status": 0, "statustext": "disabled"}},
     ]
 
     res = update_with_service_statuses(mock_conn, mock_status_details)
@@ -342,16 +352,16 @@ def test_update_with_service_statuses(mock_get_service_properties):
         # shouldn't override what's already there
         # add hv status == nova-compute svc status
         "hv1": {
-            "hv": {"status": "enabled"},
-            "nova-compute": {"status": "enabled"},
+            "hv": {"status": 1, "statustext": "enabled"},
+            "nova-compute": {"status": 1, "statustext": "enabled"},
             "foo": {},
             "bar": {},
             "other-service": {},
         },
         # only nova-compute status adds hv status
-        "hv2": {"hv": {}, "other-service": {"status": "enabled"}},
+        "hv2": {"hv": {}, "other-service": {"status": 1, "statustext": "enabled"}},
         # adds what doesn't exist, no "hv" so no setting status
-        "hv3": {"nova-compute": {"status": "disabled"}},
+        "hv3": {"nova-compute": {"status": 0, "statustext": "disabled"}},
     }
 
 

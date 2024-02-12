@@ -20,15 +20,24 @@ def get_hypervisor_properties(hypervisor: Hypervisor) -> Dict:
             "aggregate": "no-aggregate",
             "memorymax": hypervisor["memory_size"],
             "memoryused": hypervisor["memory_used"],
-            "memoryavailable": hypervisor["memory_free"],
+            "memoryavailable": hypervisor["memory_size"] - hypervisor["memory_used"],
+            "memperc": hypervisor["memory_used"] / hypervisor["memory_size"],
             "cpumax": hypervisor["vcpus"],
             "cpuused": hypervisor["vcpus_used"],
             "cpuavailable": hypervisor["vcpus"] - hypervisor["vcpus_used"],
+            "cpuperc": hypervisor["vcpus_used"] / hypervisor["vcpus"],
             "agent": 1,
             "state": 1 if hypervisor["state"] == "up" else 0,
             "statetext": hypervisor["state"].capitalize(),
         }
     }
+    hv_info = hv_prop_dict["hv"]
+
+    hv_info["utilperc"] = max(hv_info["cpuperc"], hv_info["memperc"])
+    hv_info["cpufull"] = 1 if hv_info["cpuperc"] >= 0.97 else 0
+    hv_info["memfull"] = 1 if hv_info["memoryavailable"] <= 8192 else 0
+    hv_info["full"] = int(hv_info["memfull"] or hv_info["cpufull"])
+
     return hv_prop_dict
 
 
@@ -137,6 +146,9 @@ def update_with_service_statuses(conn, status_details: Dict) -> Dict:
         service_host.update(get_service_properties(service))
         if "hv" in service_host and service["binary"] == "nova-compute":
             service_host["hv"]["status"] = service_host["nova-compute"]["status"]
+            service_host["hv"]["statustext"] = service_host["nova-compute"][
+                "statustext"
+            ]
 
     return status_details
 
