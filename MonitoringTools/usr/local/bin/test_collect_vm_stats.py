@@ -6,14 +6,23 @@ from collect_vm_stats import (
     number_servers_error,
     number_servers_shutoff,
     number_servers_total,
-    collect_stats,
+    get_all_server_statuses,
+    server_obj_to_len,
 )
 
 
 class TestVmStats(unittest.TestCase):
-    """
-    Unit test class with test cases covering methods in collect_vm_stats script
-    """
+
+    def test_server_obj_to_len(self):
+        """
+        Tests that the length of a generator object is returned
+        """
+        mock_generator_obj = iter(
+            [NonCallableMock(), NonCallableMock(), NonCallableMock()]
+        )
+        res = server_obj_to_len(mock_generator_obj)
+        assert res == 3
+
     def test_number_servers_total(self):
         """
         Tests that the total number of servers can be queried and counted
@@ -74,13 +83,13 @@ class TestVmStats(unittest.TestCase):
         num_returned = number_servers_shutoff(mock_conn)
         assert num_returned == 3
 
-    def test_collect_stats_raise_error(self):
+    def test_get_all_server_statuses_raise_error(self):
         """
         Tests that if no cloud connection was given, a value error is raised
         """
         mock_cloud = None
         with self.assertRaises(ValueError):
-            collect_stats(mock_cloud, prod=False)
+            get_all_server_statuses(mock_cloud, prod=False)
 
 
 if __name__ == "__main__":

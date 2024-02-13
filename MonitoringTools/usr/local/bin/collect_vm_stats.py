@@ -1,7 +1,18 @@
-import openstack
+from openstack import connect
 
 
-def number_servers_total(conn):
+def server_obj_to_len(server_obj) -> int:
+    """
+    Method that gets the length of a generator object
+    :param server_obj: OpenStack generator object from a query
+    :return: Integer for the length of the object i.e. number of results
+    """
+    generator_list = list(server_obj)
+    total_results = len(generator_list)
+    return total_results
+
+
+def number_servers_total(conn: connect) -> int:
     """
     Query an OpenStack Cloud to find the total number of instances across
     all projects.
@@ -10,12 +21,11 @@ def number_servers_total(conn):
     """
     server_obj = conn.compute.servers(details=False, all_projects=True, limit=10000)
     # get number of items in generator object
-    instance_list = list(server_obj)
-    total_instances = len(instance_list)
+    total_instances = server_obj_to_len(server_obj)
     return total_instances
 
 
-def number_servers_active(conn):
+def number_servers_active(conn: connect) -> int:
     """
     Query an OpenStack Cloud to find the number of instances in
     ACTIVE state.
@@ -26,12 +36,11 @@ def number_servers_active(conn):
         details=False, all_projects=True, limit=10000, status="ACTIVE"
     )
     # get number of items in generator object
-    instance_list = list(server_obj)
-    instance_active = len(instance_list)
+    instance_active = server_obj_to_len(server_obj)
     return instance_active
 
 
-def number_servers_build(conn):
+def number_servers_build(conn: connect) -> int:
     """
     Query an OpenStack Cloud to find the number of instances in
     BUILD state.
@@ -42,12 +51,11 @@ def number_servers_build(conn):
         details=False, all_projects=True, limit=10000, status="BUILD"
     )
     # get number of items in generator object
-    instance_list = list(server_obj)
-    instance_build = len(instance_list)
+    instance_build = server_obj_to_len(server_obj)
     return instance_build
 
 
-def number_servers_error(conn):
+def number_servers_error(conn: connect) -> int:
     """
     Query an OpenStack Cloud to find the number of instances in
     ERROR state.
@@ -58,12 +66,11 @@ def number_servers_error(conn):
         details=False, all_projects=True, limit=10000, status="ERROR"
     )
     # get number of items in generator object
-    instance_list = list(server_obj)
-    instance_err = len(instance_list)
+    instance_err = server_obj_to_len(server_obj)
     return instance_err
 
 
-def number_servers_shutoff(conn):
+def number_servers_shutoff(conn: connect) -> int:
     """
     Query an OpenStack Cloud to find the number of instances in
     SHUTOFF state.
@@ -74,48 +81,40 @@ def number_servers_shutoff(conn):
         details=False, all_projects=True, limit=10000, status="SHUTOFF"
     )
     # get number of items in generator object
-    instance_list = list(server_obj)
-    instance_shutoff = len(instance_list)
+    instance_shutoff = server_obj_to_len(server_obj)
     return instance_shutoff
 
 
-def collect_stats(cloud, prod):
+def get_all_server_statuses(cloud_name: str, prod: bool) -> str:
     """
     Collects the stats for vms and returns a dict
-    :param cloud: OpenStack Cloud connection
+    :param cloud_name: Name of OpenStack cloud to connect to
     :param prod: Boolean to determine whether Prod or Dev Cloud used
     :return: A comma separated string containing VM states.
     """
     # raise error if cloud connection not given
-    if not cloud:
+    if not cloud_name:
         raise ValueError("An OpenStack Connection is required")
-
-    # collect stats in order: total, active, build, error, shutoff
-    total_vms = number_servers_total(cloud)
-    print(f"Total VMs: {total_vms}")
-
-    active_vms = number_servers_active(cloud)
-    print(f"ACTIVE VMs: {active_vms}")
-
-    build_vms = number_servers_build(cloud)
-    print(f"BUILD VMs: {build_vms}")
-
-    error_vms = number_servers_error(cloud)
-    print(f"ERROR VMs: {error_vms}")
-
-    shutoff_vms = number_servers_shutoff(cloud)
-    print(f"SHUTOFF VMs: {shutoff_vms}")
 
     if prod:
         cloud_env = "Prod"
     else:
-        cloud_env = "PreProd"
+        cloud_env = "Dev"
 
-    vm_stats = f"VMStats, instance={cloud_env} totalVM={total_vms}i,activeVM={active_vms}i,buildVM={build_vms}i,errorVM={error_vms}i,shutoffVM={shutoff_vms}i"
+    # connect to an OpenStack cloud
+    conn = connect(cloud=cloud_name)
+    # collect stats in order: total, active, build, error, shutoff
+    total_vms = number_servers_total(conn)
+    active_vms = number_servers_active(conn)
+    build_vms = number_servers_build(conn)
+    error_vms = number_servers_error(conn)
+    shutoff_vms = number_servers_shutoff(conn)
 
-    return vm_stats
+    server_statuses = f"VMStats,instance={cloud_env}totalVM={total_vms}i,activeVM={active_vms}i,buildVM={build_vms}i,errorVM={error_vms}i,shutoffVM={shutoff_vms}i"
+
+    return server_statuses
 
 
 if __name__ == "__main__":
-    cloud_conn = openstack.connect(cloud="openstack")
-    print(collect_stats(cloud_conn, prod=False))
+    cloud = "openstack"
+    print(get_all_server_statuses(cloud, prod=False))
