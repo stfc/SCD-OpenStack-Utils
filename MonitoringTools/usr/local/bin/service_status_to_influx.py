@@ -21,11 +21,11 @@ def get_hypervisor_properties(hypervisor: Hypervisor) -> Dict:
             "memorymax": hypervisor["memory_size"],
             "memoryused": hypervisor["memory_used"],
             "memoryavailable": hypervisor["memory_size"] - hypervisor["memory_used"],
-            "memperc": hypervisor["memory_used"] / hypervisor["memory_size"],
+            "memperc": round((hypervisor["memory_used"] / hypervisor["memory_size"]) * 100),
             "cpumax": hypervisor["vcpus"],
             "cpuused": hypervisor["vcpus_used"],
             "cpuavailable": hypervisor["vcpus"] - hypervisor["vcpus_used"],
-            "cpuperc": hypervisor["vcpus_used"] / hypervisor["vcpus"],
+            "cpuperc": round((hypervisor["vcpus_used"] / hypervisor["vcpus"]) * 100),
             "agent": 1,
             "state": 1 if hypervisor["state"] == "up" else 0,
             "statetext": hypervisor["state"].capitalize(),
@@ -34,7 +34,7 @@ def get_hypervisor_properties(hypervisor: Hypervisor) -> Dict:
     hv_info = hv_prop_dict["hv"]
 
     hv_info["utilperc"] = max(hv_info["cpuperc"], hv_info["memperc"])
-    hv_info["cpufull"] = 1 if hv_info["cpuperc"] >= 0.97 else 0
+    hv_info["cpufull"] = 1 if hv_info["cpuperc"] >= 97 else 0
     hv_info["memfull"] = 1 if hv_info["memoryavailable"] <= 8192 else 0
     hv_info["full"] = int(hv_info["memfull"] or hv_info["cpufull"])
 
@@ -203,4 +203,5 @@ def main(user_args: List):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    #main(sys.argv[1:])
+    print(get_all_service_statuses("prod"))

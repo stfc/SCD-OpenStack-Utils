@@ -32,15 +32,15 @@ def test_get_hypervisor_properties_state_up():
             "memorymax": 2,
             "memoryused": 1,
             "memoryavailable": 1,
-            "memperc": 0.5,
+            "memperc": 50,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
-            "cpuperc": 0.8,
+            "cpuperc": 80,
             "agent": 1,
             "state": 1,
             "statetext": "Up",
-            "utilperc": 0.8,
+            "utilperc": 80,
             "cpufull": 0,
             "memfull": 1,
             "full": 1,
@@ -68,15 +68,15 @@ def test_get_hypervisor_properties_state_down():
             "memorymax": 2,
             "memoryused": 1,
             "memoryavailable": 1,
-            "memperc": 0.5,
+            "memperc": 50,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
-            "cpuperc": 0.8,
+            "cpuperc": 80,
             "agent": 1,
             "state": 0,
             "statetext": "Down",
-            "utilperc": 0.8,
+            "utilperc": 80,
             "cpufull": 0,
             "memfull": 1,
             "full": 1,
@@ -194,8 +194,8 @@ def test_convert_to_data_string_one_hv_one_service(mock_get_service_prop_string)
     assert (
         res ==
         'ServiceStatus,host="hv1",service="service1",instance=Prod,'
-        'aggregate="ag1",statetext="Up",statustext="Enabled" '
-        'prop1=val1\n'
+        'statetext="Up",statustext="Enabled",aggregate="ag1"'
+        ' prop1=val1\n'
     )
     mock_get_service_prop_string.assert_called_once_with({"prop1": "val1"})
 
@@ -227,10 +227,10 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
         'ServiceStatus,host="hv1",service="service1",instance=Prod,'
-        'aggregate="ag1",statetext="Up",statustext="Enabled" '
+        'statetext="Up",statustext="Enabled",aggregate="ag1" '
         'prop1=val1\n'
         'ServiceStatus,host="hv1",service="service2",instance=Prod,'
-        'aggregate="ag2",statetext="Down",statustext="Disabled" '
+        'statetext="Down",statustext="Disabled",aggregate="ag2" '
         'prop1=val2\n'
     )
     mock_get_service_prop_string.assert_has_calls(
@@ -280,13 +280,13 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
         'ServiceStatus,host="hv1",service="service1",instance=Prod,'
-        'aggregate="ag1",statetext="Up",statustext="Enabled" '
+        'statetext="Up",statustext="Enabled",aggregate="ag1" '
         'prop1=val1\n'
         'ServiceStatus,host="hv1",service="service2",instance=Prod,'
-        'aggregate="ag2",statetext="Down",statustext="Disabled" '
+        'statetext="Down",statustext="Disabled",aggregate="ag2" '
         'prop1=val2\n'
         'ServiceStatus,host="hv2",service="service3",instance=Prod,'
-        'aggregate="ag3",statetext="Up",statustext="Disabled" '
+        'statetext="Up",statustext="Disabled",aggregate="ag3" '
         'prop1=val3\n'
     )
     mock_get_service_prop_string.assert_has_calls(
