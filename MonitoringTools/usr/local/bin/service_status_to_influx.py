@@ -89,10 +89,19 @@ def convert_to_data_string(instance: str, service_details: Dict) -> str:
     data_string = ""
     for hypervisor_name, services in service_details.items():
         for service_binary, service_stats in services.items():
+            aggregate = service_stats.pop("aggregate")
+            statustext = service_stats.pop("statustext")
+            statetext = service_stats.pop("statetext")
+
             data_string += (
-                f'ServiceStatus,host="{hypervisor_name}",'
-                f'service="{service_binary}",instance={instance.capitalize()} '
-                f"{get_service_prop_string(service_stats)}\n"
+                f'ServiceStatus'
+                f',host="{hypervisor_name}"'
+                f',service="{service_binary}"'
+                f',instance={instance.capitalize()}'
+                f',aggregate="{aggregate}"'
+                f',statetext="{statetext}"'
+                f',statustext="{statustext}"'
+                f" {get_service_prop_string(service_stats)}\n"
             )
     return data_string
 
@@ -106,10 +115,7 @@ def get_service_prop_string(service_dict: Dict) -> str:
     """
     stats_strings = []
     for stat, val in service_dict.items():
-        stats_string = f'{stat}="{val}"'
-        if stat not in ["statetext", "statustext", "aggregate"]:
-            stats_string = f"{stat}={val}i"
-        stats_strings.append(stats_string)
+        stats_strings.append(f"{stat}={val}i")
     return ",".join(stats_strings)
 
 

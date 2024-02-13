@@ -180,16 +180,24 @@ def test_convert_to_data_string_one_hv_one_service(mock_get_service_prop_string)
     Tests convert_to_data_string works with single entry in details
     """
     mock_instance = "prod"
-    mock_service_details = NonCallableMock()
+    mock_service_details = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
     mock_details = {"hv1": {"service1": mock_service_details}}
 
     mock_get_service_prop_string.return_value = "prop1=val1"
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert (
-        res == 'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
+        res ==
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'aggregate="ag1",statetext="Up",statustext="Enabled" '
+        'prop1=val1\n'
     )
-    mock_get_service_prop_string.assert_called_once_with(mock_service_details)
+    mock_get_service_prop_string.assert_called_once_with({"prop1": "val1"})
 
 
 @patch("service_status_to_influx.get_service_prop_string")
@@ -198,8 +206,18 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
     Tests convert_to_data_string works with single entry in details with multiple service binaries
     """
     mock_instance = "prod"
-    mock_service_details_1 = NonCallableMock()
-    mock_service_details_2 = NonCallableMock()
+    mock_service_details_1 = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
+    mock_service_details_2 = {
+        "aggregate": "ag2",
+        "statetext": "Down",
+        "statustext": "Disabled",
+        "prop1": "val2",
+    }
     mock_details = {
         "hv1": {"service1": mock_service_details_1, "service2": mock_service_details_2}
     }
@@ -208,11 +226,15 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'aggregate="ag1",statetext="Up",statustext="Enabled" '
+        'prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod,'
+        'aggregate="ag2",statetext="Down",statustext="Disabled" '
+        'prop1=val2\n'
     )
     mock_get_service_prop_string.assert_has_calls(
-        [call(mock_service_details_1), call(mock_service_details_2)]
+        [call({"prop1": "val1"}), call({"prop1": "val2"})]
     )
 
 
@@ -222,9 +244,25 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
     Tests convert_to_data_string works with multiple entries in dict for details
     """
     mock_instance = "prod"
-    mock_service_details_1 = NonCallableMock()
-    mock_service_details_2 = NonCallableMock()
-    mock_service_details_3 = NonCallableMock()
+    mock_service_details_1 = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
+    mock_service_details_2 = {
+        "aggregate": "ag2",
+        "statetext": "Down",
+        "statustext": "Disabled",
+        "prop1": "val2",
+    }
+    mock_service_details_3 = {
+        "aggregate": "ag3",
+        "statetext": "Up",
+        "statustext": "Disabled",
+        "prop1": "val3",
+    }
+
     mock_details = {
         "hv1": {
             "service1": mock_service_details_1,
@@ -241,15 +279,21 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
-        'ServiceStatus,host="hv2",service="service3",instance=Prod prop1=val3\n'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'aggregate="ag1",statetext="Up",statustext="Enabled" '
+        'prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod,'
+        'aggregate="ag2",statetext="Down",statustext="Disabled" '
+        'prop1=val2\n'
+        'ServiceStatus,host="hv2",service="service3",instance=Prod,'
+        'aggregate="ag3",statetext="Up",statustext="Disabled" '
+        'prop1=val3\n'
     )
     mock_get_service_prop_string.assert_has_calls(
         [
-            call(mock_service_details_1),
-            call(mock_service_details_2),
-            call(mock_service_details_3),
+            call({"prop1": "val1"}),
+            call({"prop1": "val2"}),
+            call({"prop1": "val3"}),
         ]
     )
 
@@ -261,20 +305,10 @@ def test_get_service_prop_string_empty_dict():
     assert get_service_prop_string({}) == ""
 
 
-def test_get_service_prop_string_with_string_props():
+def test_get_service_prop_string():
     """
     tests get_service_prop_string returns correct prop string
-    when given string props it should not suffix each property value with i
-    """
-    props = {"statetext": "foo", "statustext": "bar", "aggregate": "baz"}
-    expected_result = 'statetext="foo",statustext="bar",aggregate="baz"'
-    assert get_service_prop_string(props) == expected_result
-
-
-def test_get_service_prop_string_with_int_props():
-    """
-    tests get_service_prop_string returns correct prop string
-    when given int props it should suffix each property value with i
+    it should suffix each property value with i
     """
     props = {"prop1": 1, "prop2": 2, "prop3": 3}
     expected_result = "prop1=1i,prop2=2i,prop3=3i"
