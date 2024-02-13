@@ -173,10 +173,12 @@ def calculate_slots_on_hv(
             theoretical_gpu_slots_available, estimated_slots_used
         )
 
-        slots_dataclass.max_gpu_slots_capacity = hv_info["gpu_capacity"]
+        slots_dataclass.max_gpu_slots_capacity = theoretical_gpu_slots_available
 
         if hv_info["compute_service_status"] == "enabled":
-            slots_dataclass.max_gpu_slots_capacity_enabled = hv_info["gpu_capacity"]
+            slots_dataclass.max_gpu_slots_capacity_enabled = (
+                theoretical_gpu_slots_available
+            )
 
         slots_available = min(
             slots_available,
