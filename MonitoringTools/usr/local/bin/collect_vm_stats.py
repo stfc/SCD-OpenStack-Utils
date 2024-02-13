@@ -1,4 +1,8 @@
+import sys
+from typing import List
+
 from openstack import connect
+from send_metric_utils import run_scrape, parse_args
 
 
 def server_obj_to_len(server_obj) -> int:
@@ -115,6 +119,13 @@ def get_all_server_statuses(cloud_name: str, prod: bool) -> str:
     return server_statuses
 
 
+def main(user_args: List):
+    """
+    Main method to collect server statuses for an influxDB instance
+    """
+    influxdb_args = parse_args(user_args, description="Get All VM Statuses")
+    run_scrape(influxdb_args, get_all_server_statuses)
+
+
 if __name__ == "__main__":
-    cloud = "openstack"
-    print(get_all_server_statuses(cloud, prod=False))
+    main(sys.argv[1:])
