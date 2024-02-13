@@ -89,20 +89,24 @@ def convert_to_data_string(instance: str, service_details: Dict) -> str:
     data_string = ""
     for hypervisor_name, services in service_details.items():
         for service_binary, service_stats in services.items():
-            aggregate = service_stats.pop("aggregate")
             statustext = service_stats.pop("statustext")
             statetext = service_stats.pop("statetext")
-
-            data_string += (
+            new_data_string = (
                 f'ServiceStatus'
                 f',host="{hypervisor_name}"'
                 f',service="{service_binary}"'
                 f',instance={instance.capitalize()}'
-                f',aggregate="{aggregate}"'
                 f',statetext="{statetext}"'
                 f',statustext="{statustext}"'
-                f" {get_service_prop_string(service_stats)}\n"
             )
+
+            aggregate = service_stats.pop("aggregate", None)
+            if aggregate:
+                new_data_string += f',aggregate="{aggregate}"'
+
+            new_data_string += f" {get_service_prop_string(service_stats)}\n"
+            data_string += new_data_string
+
     return data_string
 
 
