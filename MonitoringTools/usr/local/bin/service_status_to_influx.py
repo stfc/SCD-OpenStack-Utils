@@ -203,5 +203,4 @@ def main(user_args: List):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1:])
-    print(get_all_service_statuses("prod"))
+    main(sys.argv[1:])
