@@ -154,8 +154,10 @@ def calculate_slots_on_hv(
                 f"gpu flavor {flavor_name} does not have 'gpunum' metadata"
             )
 
-        theoretical_gpu_slots_available = (
-            hv_info["gpu_capacity"] // flavor_reqs["gpus_required"]
+        theoretical_gpu_slots_available = min(
+            hv_info["gpu_capacity"] // flavor_reqs["gpus_required"],
+            hv_info["core_capacity"] // flavor_reqs["cores_required"],
+            hv_info["mem_capacity"] // flavor_reqs["mem_required"],
         )
 
         estimated_slots_used = (
