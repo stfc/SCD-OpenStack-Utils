@@ -420,6 +420,30 @@ def test_calculate_slots_on_hv_gpu_available_max():
     assert res.max_gpu_slots_capacity_enabled == 5
 
 
+def test_calculate_slots_on_hv_gpu_max_slots_calculated_properly():
+    """
+    tests calculate_slots_on_hv calculates max slots properly for gpu flavor
+    """
+    res = calculate_slots_on_hv(
+        # specifies a gpu flavor
+        "g-flavor1",
+        {"gpus_required": 2, "cores_required": 10, "mem_required": 10},
+        {
+            "compute_service_status": "enabled",
+            # should find 3 slots since we require 2 gpus for each slot
+            "gpu_capacity": 6,
+            "cores_available": 100,
+            "mem_available": 100,
+            "core_capacity": 100,
+            "mem_capacity": 100,
+        },
+    )
+    assert res.slots_available == 3
+    assert res.max_gpu_slots_capacity == 3
+    assert res.estimated_gpu_slots_used == 0
+    assert res.max_gpu_slots_capacity_enabled == 3
+
+
 def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
     """
     tests calculate_slots_on_hv calculates slots properly for gpu flavor

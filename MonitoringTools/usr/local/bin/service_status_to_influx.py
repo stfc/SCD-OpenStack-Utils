@@ -20,15 +20,24 @@ def get_hypervisor_properties(hypervisor: Hypervisor) -> Dict:
             "aggregate": "no-aggregate",
             "memorymax": hypervisor["memory_size"],
             "memoryused": hypervisor["memory_used"],
-            "memoryavailable": hypervisor["memory_free"],
+            "memoryavailable": hypervisor["memory_size"] - hypervisor["memory_used"],
+            "memperc": round((hypervisor["memory_used"] / hypervisor["memory_size"]) * 100),
             "cpumax": hypervisor["vcpus"],
             "cpuused": hypervisor["vcpus_used"],
             "cpuavailable": hypervisor["vcpus"] - hypervisor["vcpus_used"],
+            "cpuperc": round((hypervisor["vcpus_used"] / hypervisor["vcpus"]) * 100),
             "agent": 1,
             "state": 1 if hypervisor["state"] == "up" else 0,
             "statetext": hypervisor["state"].capitalize(),
         }
     }
+    hv_info = hv_prop_dict["hv"]
+
+    hv_info["utilperc"] = max(hv_info["cpuperc"], hv_info["memperc"])
+    hv_info["cpufull"] = 1 if hv_info["cpuperc"] >= 97 else 0
+    hv_info["memfull"] = 1 if hv_info["memoryavailable"] <= 8192 else 0
+    hv_info["full"] = int(hv_info["memfull"] or hv_info["cpufull"])
+
     return hv_prop_dict
 
 
@@ -80,11 +89,24 @@ def convert_to_data_string(instance: str, service_details: Dict) -> str:
     data_string = ""
     for hypervisor_name, services in service_details.items():
         for service_binary, service_stats in services.items():
-            data_string += (
-                f'ServiceStatus,host="{hypervisor_name}",'
-                f'service="{service_binary}",instance={instance.capitalize()} '
-                f"{get_service_prop_string(service_stats)}\n"
+            statustext = service_stats.pop("statustext")
+            statetext = service_stats.pop("statetext")
+            new_data_string = (
+                f'ServiceStatus'
+                f',host="{hypervisor_name}"'
+                f',service="{service_binary}"'
+                f',instance={instance.capitalize()}'
+                f',statetext="{statetext}"'
+                f',statustext="{statustext}"'
             )
+
+            aggregate = service_stats.pop("aggregate", None)
+            if aggregate:
+                new_data_string += f',aggregate="{aggregate}"'
+
+            new_data_string += f" {get_service_prop_string(service_stats)}\n"
+            data_string += new_data_string
+
     return data_string
 
 
@@ -97,10 +119,7 @@ def get_service_prop_string(service_dict: Dict) -> str:
     """
     stats_strings = []
     for stat, val in service_dict.items():
-        stats_string = f'{stat}="{val}"'
-        if stat not in ["statetext", "statustext", "aggregate"]:
-            stats_string = f"{stat}={val}i"
-        stats_strings.append(stats_string)
+        stats_strings.append(f"{stat}={val}i")
     return ",".join(stats_strings)
 
 
@@ -137,6 +156,9 @@ def update_with_service_statuses(conn, status_details: Dict) -> Dict:
         service_host.update(get_service_properties(service))
         if "hv" in service_host and service["binary"] == "nova-compute":
             service_host["hv"]["status"] = service_host["nova-compute"]["status"]
+            service_host["hv"]["statustext"] = service_host["nova-compute"][
+                "statustext"
+            ]
 
     return status_details
 

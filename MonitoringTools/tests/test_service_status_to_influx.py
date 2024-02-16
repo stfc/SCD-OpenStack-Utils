@@ -21,24 +21,29 @@ def test_get_hypervisor_properties_state_up():
     """
     mock_hv = {
         "state": "up",
-        "memory_size": 1,
-        "memory_used": 2,
-        "memory_free": 3,
+        "memory_size": 2,
+        "memory_used": 1,
         "vcpus_used": 4,
         "vcpus": 5,
     }
     expected_result = {
         "hv": {
             "aggregate": "no-aggregate",
-            "memorymax": 1,
-            "memoryused": 2,
-            "memoryavailable": 3,
+            "memorymax": 2,
+            "memoryused": 1,
+            "memoryavailable": 1,
+            "memperc": 50,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
+            "cpuperc": 80,
             "agent": 1,
             "state": 1,
             "statetext": "Up",
+            "utilperc": 80,
+            "cpufull": 0,
+            "memfull": 1,
+            "full": 1,
         }
     }
     assert get_hypervisor_properties(mock_hv) == expected_result
@@ -52,24 +57,29 @@ def test_get_hypervisor_properties_state_down():
     """
     mock_hv = {
         "state": "down",
-        "memory_size": 1,
-        "memory_used": 2,
-        "memory_free": 3,
+        "memory_size": 2,
+        "memory_used": 1,
         "vcpus_used": 4,
         "vcpus": 5,
     }
     expected_result = {
         "hv": {
             "aggregate": "no-aggregate",
-            "memorymax": 1,
-            "memoryused": 2,
-            "memoryavailable": 3,
+            "memorymax": 2,
+            "memoryused": 1,
+            "memoryavailable": 1,
+            "memperc": 50,
             "cpuused": 4,
             "cpumax": 5,
             "cpuavailable": 1,
+            "cpuperc": 80,
             "agent": 1,
             "state": 0,
             "statetext": "Down",
+            "utilperc": 80,
+            "cpufull": 0,
+            "memfull": 1,
+            "full": 1,
         }
     }
     assert get_hypervisor_properties(mock_hv) == expected_result
@@ -170,16 +180,24 @@ def test_convert_to_data_string_one_hv_one_service(mock_get_service_prop_string)
     Tests convert_to_data_string works with single entry in details
     """
     mock_instance = "prod"
-    mock_service_details = NonCallableMock()
+    mock_service_details = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
     mock_details = {"hv1": {"service1": mock_service_details}}
 
     mock_get_service_prop_string.return_value = "prop1=val1"
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert (
-        res == 'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
+        res ==
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'statetext="Up",statustext="Enabled",aggregate="ag1"'
+        ' prop1=val1\n'
     )
-    mock_get_service_prop_string.assert_called_once_with(mock_service_details)
+    mock_get_service_prop_string.assert_called_once_with({"prop1": "val1"})
 
 
 @patch("service_status_to_influx.get_service_prop_string")
@@ -188,8 +206,18 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
     Tests convert_to_data_string works with single entry in details with multiple service binaries
     """
     mock_instance = "prod"
-    mock_service_details_1 = NonCallableMock()
-    mock_service_details_2 = NonCallableMock()
+    mock_service_details_1 = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
+    mock_service_details_2 = {
+        "aggregate": "ag2",
+        "statetext": "Down",
+        "statustext": "Disabled",
+        "prop1": "val2",
+    }
     mock_details = {
         "hv1": {"service1": mock_service_details_1, "service2": mock_service_details_2}
     }
@@ -198,11 +226,15 @@ def test_convert_to_data_string_one_hv_multi_service(mock_get_service_prop_strin
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'statetext="Up",statustext="Enabled",aggregate="ag1" '
+        'prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod,'
+        'statetext="Down",statustext="Disabled",aggregate="ag2" '
+        'prop1=val2\n'
     )
     mock_get_service_prop_string.assert_has_calls(
-        [call(mock_service_details_1), call(mock_service_details_2)]
+        [call({"prop1": "val1"}), call({"prop1": "val2"})]
     )
 
 
@@ -212,9 +244,25 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
     Tests convert_to_data_string works with multiple entries in dict for details
     """
     mock_instance = "prod"
-    mock_service_details_1 = NonCallableMock()
-    mock_service_details_2 = NonCallableMock()
-    mock_service_details_3 = NonCallableMock()
+    mock_service_details_1 = {
+        "aggregate": "ag1",
+        "statetext": "Up",
+        "statustext": "Enabled",
+        "prop1": "val1",
+    }
+    mock_service_details_2 = {
+        "aggregate": "ag2",
+        "statetext": "Down",
+        "statustext": "Disabled",
+        "prop1": "val2",
+    }
+    mock_service_details_3 = {
+        "aggregate": "ag3",
+        "statetext": "Up",
+        "statustext": "Disabled",
+        "prop1": "val3",
+    }
+
     mock_details = {
         "hv1": {
             "service1": mock_service_details_1,
@@ -231,15 +279,21 @@ def test_convert_to_data_string_multi_item(mock_get_service_prop_string):
 
     res = convert_to_data_string(mock_instance, mock_details)
     assert res == (
-        'ServiceStatus,host="hv1",service="service1",instance=Prod prop1=val1\n'
-        'ServiceStatus,host="hv1",service="service2",instance=Prod prop1=val2\n'
-        'ServiceStatus,host="hv2",service="service3",instance=Prod prop1=val3\n'
+        'ServiceStatus,host="hv1",service="service1",instance=Prod,'
+        'statetext="Up",statustext="Enabled",aggregate="ag1" '
+        'prop1=val1\n'
+        'ServiceStatus,host="hv1",service="service2",instance=Prod,'
+        'statetext="Down",statustext="Disabled",aggregate="ag2" '
+        'prop1=val2\n'
+        'ServiceStatus,host="hv2",service="service3",instance=Prod,'
+        'statetext="Up",statustext="Disabled",aggregate="ag3" '
+        'prop1=val3\n'
     )
     mock_get_service_prop_string.assert_has_calls(
         [
-            call(mock_service_details_1),
-            call(mock_service_details_2),
-            call(mock_service_details_3),
+            call({"prop1": "val1"}),
+            call({"prop1": "val2"}),
+            call({"prop1": "val3"}),
         ]
     )
 
@@ -251,20 +305,10 @@ def test_get_service_prop_string_empty_dict():
     assert get_service_prop_string({}) == ""
 
 
-def test_get_service_prop_string_with_string_props():
+def test_get_service_prop_string():
     """
     tests get_service_prop_string returns correct prop string
-    when given string props it should not suffix each property value with i
-    """
-    props = {"statetext": "foo", "statustext": "bar", "aggregate": "baz"}
-    expected_result = 'statetext="foo",statustext="bar",aggregate="baz"'
-    assert get_service_prop_string(props) == expected_result
-
-
-def test_get_service_prop_string_with_int_props():
-    """
-    tests get_service_prop_string returns correct prop string
-    when given int props it should suffix each property value with i
+    it should suffix each property value with i
     """
     props = {"prop1": 1, "prop2": 2, "prop3": 3}
     expected_result = "prop1=1i,prop2=2i,prop3=3i"
@@ -328,10 +372,10 @@ def test_update_with_service_statuses(mock_get_service_properties):
 
     # stubs out actually getting properties
     mock_get_service_properties.side_effect = [
-        {"nova-compute": {"status": "enabled"}},
+        {"nova-compute": {"status": 1, "statustext": "enabled"}},
         {"other-service": {}},
-        {"other-service": {"status": "enabled"}},
-        {"nova-compute": {"status": "disabled"}},
+        {"other-service": {"status": 1, "statustext": "enabled"}},
+        {"nova-compute": {"status": 0, "statustext": "disabled"}},
     ]
 
     res = update_with_service_statuses(mock_conn, mock_status_details)
@@ -342,16 +386,16 @@ def test_update_with_service_statuses(mock_get_service_properties):
         # shouldn't override what's already there
         # add hv status == nova-compute svc status
         "hv1": {
-            "hv": {"status": "enabled"},
-            "nova-compute": {"status": "enabled"},
+            "hv": {"status": 1, "statustext": "enabled"},
+            "nova-compute": {"status": 1, "statustext": "enabled"},
             "foo": {},
             "bar": {},
             "other-service": {},
         },
         # only nova-compute status adds hv status
-        "hv2": {"hv": {}, "other-service": {"status": "enabled"}},
+        "hv2": {"hv": {}, "other-service": {"status": 1, "statustext": "enabled"}},
         # adds what doesn't exist, no "hv" so no setting status
-        "hv3": {"nova-compute": {"status": "disabled"}},
+        "hv3": {"nova-compute": {"status": 0, "statustext": "disabled"}},
     }
 
 
