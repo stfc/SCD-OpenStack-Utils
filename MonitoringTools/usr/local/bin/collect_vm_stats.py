@@ -23,14 +23,16 @@ def run_server_query(
     call_limit=1000,
 ):
     """
-    Helper method for running server query using pagination - openstacksdk calls can only return a maximum number of
-    values - (set by limit) and to continue getting values we need to run another call pass a "marker" value of the last
+    Helper method for running server query using pagination - openstacksdk calls
+    can only return a maximum number of values - (set by limit) and to continue getting values
+    we need to run another call pass a "marker" value of the last
     item seen
     :param conn: OpenStack cloud connection
     :param filters: A dictionary of filters to run on the query (server-side)
     :param page_size: (Default 1000) how many items are returned by single call
     :param call_limit: (Default 1000) max number of paging iterations.
-        - this is required to mitigate some bugs where successive paging loops back on itself leading to endless calls
+        - this is required to mitigate some bugs where successive paging loops back on itself
+        leading to endless calls
     """
 
     pagination_filters = {"limit": page_size, "marker": None}
@@ -46,7 +48,9 @@ def run_server_query(
         if num_calls > call_limit:
             break
 
-        for i, server in enumerate(conn.compute.servers(details=False, all_projects=True, **new_filters)):
+        for i, server in enumerate(
+            conn.compute.servers(details=False, all_projects=True, **new_filters)
+        ):
             query_res.append(server)
 
             # openstacksdk calls break after going over pagination limit
@@ -146,10 +150,12 @@ def get_all_server_statuses(cloud_name: str) -> str:
     error_vms = number_servers_error(conn)
     shutoff_vms = number_servers_shutoff(conn)
 
-    server_statuses = (f"VMStats,instance={cloud_name.capitalize()} "
-                       f"totalVM={total_vms}i,activeVM={active_vms}i,"
-                       f"buildVM={build_vms}i,errorVM={error_vms}i,"
-                       f"shutoffVM={shutoff_vms}i")
+    server_statuses = (
+        f"VMStats,instance={cloud_name.capitalize()} "
+        f"totalVM={total_vms}i,activeVM={active_vms}i,"
+        f"buildVM={build_vms}i,errorVM={error_vms}i,"
+        f"shutoffVM={shutoff_vms}i"
+    )
 
     return server_statuses
 

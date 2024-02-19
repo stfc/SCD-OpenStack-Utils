@@ -7,7 +7,7 @@ from collect_vm_stats import (
     number_servers_total,
     get_all_server_statuses,
     server_obj_to_len,
-    main
+    main,
 )
 
 
@@ -15,9 +15,7 @@ def test_server_obj_to_len():
     """
     Tests that the length of a generator object is returned
     """
-    mock_generator_obj = iter(
-        [NonCallableMock(), NonCallableMock(), NonCallableMock()]
-    )
+    mock_generator_obj = iter([NonCallableMock(), NonCallableMock(), NonCallableMock()])
     res = server_obj_to_len(mock_generator_obj)
     assert res == 3
 
@@ -93,9 +91,10 @@ def test_get_all_server_statuses(mock_connect):
     Tests that get_all_server_statuses calls appropriate functions and returns
     data string to send to influx
     """
+
     def _mock_server_call(num_to_return):
-        """ stubs out server call
-            :param num_to_return: number of mock objects to return
+        """stubs out server call
+        :param num_to_return: number of mock objects to return
         """
         return iter(NonCallableMock() for _ in range(num_to_return))
 
@@ -109,7 +108,7 @@ def test_get_all_server_statuses(mock_connect):
         # error number found
         _mock_server_call(2),
         # shutoff number found
-        _mock_server_call(1)
+        _mock_server_call(1),
     ]
 
     mock_cloud_name = "prod"
@@ -136,4 +135,3 @@ def test_main(mock_parse_args, mock_run_scrape):
     mock_parse_args.assert_called_once_with(
         mock_user_args, description="Get All VM Statuses"
     )
-
