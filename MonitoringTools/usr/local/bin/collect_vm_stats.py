@@ -19,9 +19,9 @@ def server_obj_to_len(server_obj) -> int:
 def run_server_query(
     conn: connect,
     filters: Optional[Dict],
-    page_size=1000,
-    call_limit=1000,
-):
+    page_size: int = 1000,
+    call_limit: int = 1000,
+) -> List:
     """
     Helper method for running server query using pagination - openstacksdk calls
     can only return a maximum number of values - (set by limit) and to continue getting values
@@ -33,6 +33,7 @@ def run_server_query(
     :param call_limit: (Default 1000) max number of paging iterations.
         - this is required to mitigate some bugs where successive paging loops back on itself
         leading to endless calls
+    :return: A list of server objects
     """
 
     pagination_filters = {"limit": page_size, "marker": None}
