@@ -112,11 +112,25 @@ def test_get_server_details(conn, vm_data):
 
 @patch("rabbit_consumer.openstack_api.get_server_details")
 @patch("rabbit_consumer.openstack_api.OpenstackAddress")
-def test_get_server_networks(address, server_details, vm_data):
+def test_get_server_networks_internal(address, server_details, vm_data):
     """
     Test that the function calls the correct functions to get the networks of a VM
     """
     server_details.return_value.addresses = {"Internal": []}
+
+    get_server_networks(vm_data)
+    address.get_internal_networks.assert_called_once_with(
+        server_details.return_value.addresses
+    )
+
+
+@patch("rabbit_consumer.openstack_api.get_server_details")
+@patch("rabbit_consumer.openstack_api.OpenstackAddress")
+def test_get_server_networks_services(address, server_details, vm_data):
+    """
+    Test that the function calls the correct functions to get the networks of a VM
+    """
+    server_details.return_value.addresses = {"Services": []}
 
     get_server_networks(vm_data)
     address.get_internal_networks.assert_called_once_with(
