@@ -71,8 +71,10 @@ def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
     of deserialized OpenstackAddresses.
     """
     server = get_server_details(vm_data)
-    if "Internal" not in server.addresses:
-        logger.warning("No internal network found for server %s", server.name)
+    if "Internal" not in server.addresses and "Services" not in server.addresses:
+        logger.warning(
+            "No internal or services network found for server %s", server.name
+        )
         return []
     return OpenstackAddress.get_internal_networks(server.addresses)
 
