@@ -7,8 +7,6 @@ as expected with the correct params
 from unittest.mock import NonCallableMock, patch
 
 # noinspection PyUnresolvedReferences
-# pylint: disable=unused-import
-from fixtures import fixture_vm_data
 from rabbit_consumer.openstack_api import (
     update_metadata,
     OpenstackConnection,
