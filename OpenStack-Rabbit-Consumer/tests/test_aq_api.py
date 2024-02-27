@@ -10,14 +10,6 @@ from unittest.mock import patch, call, NonCallableMock
 import pytest
 
 # noinspection PyUnresolvedReferences
-# pylint: disable=unused-import
-from fixtures import (
-    fixture_rabbit_message,
-    fixture_vm_data,
-    fixture_openstack_address_list,
-    fixture_openstack_address,
-    fixture_image_metadata,
-)
 from rabbit_consumer.aq_api import (
     verify_kerberos_ticket,
     setup_requests,
