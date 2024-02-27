@@ -139,10 +139,10 @@ def test_get_server_networks_services(address, server_details, vm_data):
 @patch("rabbit_consumer.openstack_api.get_server_details")
 def test_get_server_networks_no_network(server_details, vm_data):
     """
-    Tests that an empty list is returned when there are no internal networks
+    Tests that an empty list is returned when there are no networks
     """
     server_details.return_value = NonCallableMock()
-    server_details.return_value.addresses = {"public": []}
+    server_details.return_value.addresses = {}
 
     result = get_server_networks(vm_data)
     assert not result
