@@ -42,6 +42,20 @@ class OpenstackAddress(DataClassDictMixin):
         return internal_networks
 
     @staticmethod
+    def get_services_networks(addresses: Dict) -> list["OpenstackAddress"]:
+        """
+        Returns a list of network addresses on the services subnet. This
+        is expected to be called from the OpenstackAPI. To get an actual
+        list use the Openstack API wrapper directly.
+        """
+        services_networks = []
+        for address in addresses["Services"]:
+            found = OpenstackAddress.from_dict(address)
+            found.hostname = OpenstackAddress.convert_hostnames(found.addr)
+            services_networks.append(found)
+        return services_networks
+
+    @staticmethod
     def convert_hostnames(ip_addr: str) -> str:
         """
         Converts an ip address to a hostname using DNS lookup.
