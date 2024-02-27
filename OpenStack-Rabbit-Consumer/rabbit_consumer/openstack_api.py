@@ -72,14 +72,11 @@ def get_server_networks(vm_data: VmData) -> List[OpenstackAddress]:
     """
     server = get_server_details(vm_data)
     if "Internal" in server.addresses:
-        OpenstackAddress.get_internal_networks(server.addresses)
-    elif "Services" in server.addresses:
-        OpenstackAddress.get_services_networks(server.addresses)
-    else:
-        logger.warning(
-            "No internal or services network found for server %s", server.name
-        )
-        return []
+        return OpenstackAddress.get_internal_networks(server.addresses)
+    if "Services" in server.addresses:
+        return OpenstackAddress.get_services_networks(server.addresses)
+    logger.warning("No internal or services network found for server %s", server.name)
+    return []
 
 
 def get_server_metadata(vm_data: VmData) -> dict:
