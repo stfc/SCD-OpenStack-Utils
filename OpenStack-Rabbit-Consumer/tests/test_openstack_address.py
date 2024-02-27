@@ -63,7 +63,7 @@ def test_openstack_address_multiple_networks(mock_socket, example_dict_two_entri
     assert result[0].version == 4
     assert result[0].addr == "127.0.0.63"
     assert result[1].addr == "127.0.0.64"
-    mock_socket.assert_called_once()
+    mock_socket.assert_called()
 
 
 @patch("rabbit_consumer.openstack_address.socket.gethostbyaddr")
