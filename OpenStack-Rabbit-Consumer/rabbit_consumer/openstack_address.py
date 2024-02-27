@@ -4,14 +4,13 @@
 This file deserializes a server's network address from an
 OpenStack API response
 """
-import logging
-import socket
+from logging import getLogger
+from socket import gethostbyaddr, herror
 from dataclasses import dataclass, field
-from typing import Dict, Optional
-
+from typing import Dict, Optional, List
 from mashumaro import DataClassDictMixin, field_options
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -28,7 +27,7 @@ class OpenstackAddress(DataClassDictMixin):
     hostname: Optional[str] = None
 
     @staticmethod
-    def get_internal_networks(addresses: Dict) -> list["OpenstackAddress"]:
+    def get_internal_networks(addresses: Dict) -> List["OpenstackAddress"]:
         """
         Returns a list of internal network addresses. This
         is expected to be called from the OpenstackAPI. To get an actual
@@ -42,7 +41,7 @@ class OpenstackAddress(DataClassDictMixin):
         return internal_networks
 
     @staticmethod
-    def get_services_networks(addresses: Dict) -> list["OpenstackAddress"]:
+    def get_services_networks(addresses: Dict) -> List["OpenstackAddress"]:
         """
         Returns a list of network addresses on the services subnet. This
         is expected to be called from the OpenstackAPI. To get an actual
@@ -61,10 +60,10 @@ class OpenstackAddress(DataClassDictMixin):
         Converts an ip address to a hostname using DNS lookup.
         """
         try:
-            return socket.gethostbyaddr(ip_addr)[0]
-        except socket.herror:
+            return gethostbyaddr(ip_addr)[0]
+        except herror:
             logger.info("No hostname found for ip %s", ip_addr)
             raise
-        except Exception:
-            logger.error("Problem converting ip to hostname")
+        except Exception as error:
+            logger.error("Problem converting ip to hostname. " + str(error))
             raise

@@ -18,7 +18,7 @@ from rabbit_consumer.openstack_api import (
 
 
 @patch("rabbit_consumer.openstack_api.ConsumerConfig")
-@patch("rabbit_consumer.openstack_api.openstack.connect")
+@patch("rabbit_consumer.openstack_api.connect")
 def test_openstack_connection(mock_connect, mock_config):
     """
     Test that the OpenstackConnection context manager calls the correct functions

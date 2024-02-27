@@ -5,7 +5,7 @@ This file allows us to set environment variables so that
 credentials are not exposed
 """
 
-import os
+from os import getenv
 from dataclasses import dataclass, field
 from functools import partial
 
@@ -17,8 +17,8 @@ class _AqFields:
     environment variables.
     """
 
-    aq_prefix: str = field(default_factory=partial(os.getenv, "AQ_PREFIX"))
-    aq_url: str = field(default_factory=partial(os.getenv, "AQ_URL"))
+    aq_prefix: str = field(default_factory=partial(getenv, "AQ_PREFIX"))
+    aq_url: str = field(default_factory=partial(getenv, "AQ_URL"))
 
 
 @dataclass
@@ -29,16 +29,16 @@ class _OpenstackFields:
     """
 
     openstack_auth_url: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_AUTH_URL")
+        default_factory=partial(getenv, "OPENSTACK_AUTH_URL")
     )
     openstack_compute_url: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_COMPUTE_URL")
+        default_factory=partial(getenv, "OPENSTACK_COMPUTE_URL")
     )
     openstack_username: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_USERNAME")
+        default_factory=partial(getenv, "OPENSTACK_USERNAME")
     )
     openstack_password: str = field(
-        default_factory=partial(os.getenv, "OPENSTACK_PASSWORD")
+        default_factory=partial(getenv, "OPENSTACK_PASSWORD")
     )
 
 
@@ -49,13 +49,13 @@ class _RabbitFields:
     environment variables.
     """
 
-    rabbit_host: str = field(default_factory=partial(os.getenv, "RABBIT_HOST", None))
-    rabbit_port: str = field(default_factory=partial(os.getenv, "RABBIT_PORT", None))
+    rabbit_host: str = field(default_factory=partial(getenv, "RABBIT_HOST", None))
+    rabbit_port: str = field(default_factory=partial(getenv, "RABBIT_PORT", None))
     rabbit_username: str = field(
-        default_factory=partial(os.getenv, "RABBIT_USERNAME", None)
+        default_factory=partial(getenv, "RABBIT_USERNAME", None)
     )
     rabbit_password: str = field(
-        default_factory=partial(os.getenv, "RABBIT_PASSWORD", None)
+        default_factory=partial(getenv, "RABBIT_PASSWORD", None)
     )
 
 

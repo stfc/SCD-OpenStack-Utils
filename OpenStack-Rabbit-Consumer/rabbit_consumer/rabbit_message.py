@@ -6,7 +6,6 @@ message extracted
 """
 from dataclasses import dataclass, field
 from typing import Optional
-
 from mashumaro import field_options
 from mashumaro.mixins.json import DataClassJSONMixin
 
@@ -43,7 +42,6 @@ class RabbitPayload(DataClassJSONMixin):
     vcpus: int
     memory_mb: int
     vm_host: str = field(metadata=field_options(alias="host"))
-
     metadata: RabbitMeta
 
 

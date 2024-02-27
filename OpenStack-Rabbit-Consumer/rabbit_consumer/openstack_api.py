@@ -4,18 +4,16 @@
 This file defines methods for connecting and interacting with the 
 OpenStack API
 """
-import logging
+from logging import getLogger
 from typing import List, Optional
-
-import openstack
+from openstack import connect
 from openstack.compute.v2.image import Image
 from openstack.compute.v2.server import Server
+from consumer_config import ConsumerConfig
+from openstack_address import OpenstackAddress
+from vm_data import VmData
 
-from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.openstack_address import OpenstackAddress
-from rabbit_consumer.vm_data import VmData
-
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class OpenstackConnection:
@@ -28,7 +26,7 @@ class OpenstackConnection:
         self.conn = None
 
     def __enter__(self):
-        self.conn = openstack.connect(
+        self.conn = connect(
             auth_url=ConsumerConfig().openstack_auth_url,
             username=ConsumerConfig().openstack_username,
             password=ConsumerConfig().openstack_password,
@@ -47,12 +45,13 @@ def check_machine_exists(vm_data: VmData) -> bool:
     Checks to see if the machine exists in Openstack.
     """
     with OpenstackConnection() as conn:
-        return bool(conn.compute.find_server(vm_data.virtual_machine_id))
+        server = conn.compute.find_server(vm_data.virtual_machine_id)
+        return bool(server)
 
 
 def get_server_details(vm_data: VmData) -> Server:
     """
-    Gets the server details from Openstack with details included
+    Gets the server details from Openstack with details included.
     """
     with OpenstackConnection() as conn:
         # Workaround for details missing from find_server

@@ -6,7 +6,6 @@ the Aquilon API
 """
 from unittest import mock
 from unittest.mock import patch, call, NonCallableMock
-
 import pytest
 
 # noinspection PyUnresolvedReferences
@@ -32,14 +31,14 @@ def test_verify_kerberos_ticket_valid():
     """
     Test that verify_kerberos_ticket returns True when the ticket is valid
     """
-    with patch("rabbit_consumer.aq_api.subprocess.call") as mocked_call:
+    with patch("rabbit_consumer.aq_api.call") as mocked_call:
         # Exit code 0 - i.e. valid ticket
         mocked_call.return_value = 0
         assert verify_kerberos_ticket()
         mocked_call.assert_called_once_with(["klist", "-s"])
 
 
-@patch("rabbit_consumer.aq_api.subprocess.call")
+@patch("rabbit_consumer.aq_api.call")
 def test_verify_kerberos_ticket_invalid(subprocess):
     """
     Test that verify_kerberos_ticket raises an exception when the ticket is invalid
@@ -54,69 +53,67 @@ def test_verify_kerberos_ticket_invalid(subprocess):
     subprocess.assert_called_once_with(["klist", "-s"])
 
 
-@patch("rabbit_consumer.aq_api.requests")
+@patch("rabbit_consumer.aq_api.Session")
 @patch("rabbit_consumer.aq_api.Retry")
 @patch("rabbit_consumer.aq_api.HTTPAdapter")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
-def test_setup_requests(verify_kerb, adapter, retry, requests):
+def test_setup_requests(verify_kerb, adapter, retry, session):
     """
     Test that setup_requests sets up the Kerberos ticket and the requests session
     correctly
     """
-    session = requests.Session.return_value
-    response = session.get.return_value
+    response = session.return_value.get.return_value
     response.status_code = 200
 
     setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
     assert (
-        session.verify
+        session.return_value.verify
         == "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     )
 
     verify_kerb.assert_called_once()
     retry.assert_called_once_with(total=5, backoff_factor=0.1, status_forcelist=[503])
     adapter.assert_called_once_with(max_retries=retry.return_value)
-    session.mount.assert_called_once_with("https://", adapter.return_value)
+    session.return_value.mount.assert_called_once_with("https://", adapter.return_value)
 
 
-@patch("rabbit_consumer.aq_api.requests")
+@patch("rabbit_consumer.aq_api.Session")
 @patch("rabbit_consumer.aq_api.Retry")
 @patch("rabbit_consumer.aq_api.HTTPAdapter")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
-def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, requests):
+def test_setup_requests_throws_for_failed(verify_kerb, adapter, retry, session):
     """
     Test that setup_requests throws an exception when the connection fails
     """
-    session = requests.Session.return_value
-    response = session.get.return_value
+    response = session.return_value.get.return_value
     response.status_code = 500
 
     with pytest.raises(ConnectionError):
         setup_requests(NonCallableMock(), NonCallableMock(), NonCallableMock())
 
     assert (
-        session.verify
+        session.return_value.verify
         == "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     )
 
     verify_kerb.assert_called_once()
     retry.assert_called_once_with(total=5, backoff_factor=0.1, status_forcelist=[503])
     adapter.assert_called_once_with(max_retries=retry.return_value)
-    session.mount.assert_called_once_with("https://", adapter.return_value)
-    session.get.assert_called_once()
+    session.return_value.mount.assert_called_once_with("https://", adapter.return_value)
+    session.return_value.get.assert_called_once()
 
 
 @pytest.mark.parametrize("rest_verb", ["get", "post", "put", "delete"])
-@patch("rabbit_consumer.aq_api.requests")
+@patch("rabbit_consumer.aq_api.Session")
 @patch("rabbit_consumer.aq_api.HTTPKerberosAuth")
 @patch("rabbit_consumer.aq_api.verify_kerberos_ticket")
-def test_setup_requests_rest_methods(_, kerb_auth, requests, rest_verb):
+def test_setup_requests_rest_methods(_, kerb_auth, session, rest_verb):
     """
     Test that setup_requests calls the correct REST method
     """
     url, desc, params = NonCallableMock(), NonCallableMock(), NonCallableMock()
 
-    session = requests.Session.return_value
+    session = session.return_value
 
     rest_method = getattr(session, rest_verb)
     response = rest_method.return_value

@@ -6,3 +6,4 @@ urllib3
 mashumaro
 openstacksdk
 six  # for openstacksdk
+pytest

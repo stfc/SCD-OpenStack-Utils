@@ -6,13 +6,11 @@ init from environment variables, and overriding values
 """
 
 from typing import Dict
-
-import pytest
-
+from pytest import fixture
 from rabbit_consumer.aq_metadata import AqMetadata
 
 
-@pytest.fixture(name="image_metadata")
+@fixture(name="image_metadata")
 def fixture_image_metadata() -> Dict[str, str]:
     """
     Creates a dictionary with mock data

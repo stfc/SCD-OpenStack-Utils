@@ -3,17 +3,17 @@
 """
 Fixtures for unit tests, used to create mock objects
 """
-import uuid
-
-import pytest
-
+from uuid import uuid4
+from unittest.mock import NonCallableMock
+from pytest import fixture
 from rabbit_consumer.aq_metadata import AqMetadata
 from rabbit_consumer.openstack_address import OpenstackAddress
 from rabbit_consumer.rabbit_message import RabbitMessage, RabbitMeta, RabbitPayload
 from rabbit_consumer.vm_data import VmData
+from rabbit_consumer.message_consumer import SUPPORTED_MESSAGE_TYPES
 
 
-@pytest.fixture(name="image_metadata")
+@fixture(name="image_metadata")
 def fixture_image_metadata():
     """
     Creates an ImageMetadata object with mock data
@@ -28,7 +28,7 @@ def fixture_image_metadata():
     )
 
 
-@pytest.fixture(name="rabbit_message")
+@fixture(name="rabbit_message")
 def fixture_rabbit_message():
     """
     Creates a RabbitMessage object with mock data
@@ -51,7 +51,7 @@ def fixture_rabbit_message():
     )
 
 
-@pytest.fixture(name="vm_data")
+@fixture(name="vm_data")
 def fixture_vm_data():
     """
     Creates a VmData object with mock data
@@ -61,7 +61,7 @@ def fixture_vm_data():
     )
 
 
-@pytest.fixture(name="openstack_address")
+@fixture(name="openstack_address")
 def fixture_openstack_address():
     """
     Creates an OpenstackAddress object with mock data
@@ -70,11 +70,11 @@ def fixture_openstack_address():
         addr="127.0.0.123",
         mac_addr="00:00:00:00:00:00",
         version=4,
-        hostname=str(uuid.uuid4()),
+        hostname=str(uuid4()),
     )
 
 
-@pytest.fixture(name="openstack_address_list")
+@fixture(name="openstack_address_list")
 def fixture_openstack_address_list(openstack_address):
     """
     Creates a list of OpenstackAddress objects with mock data
@@ -83,5 +83,15 @@ def fixture_openstack_address_list(openstack_address):
     for i in addresses:
         # Set a unique hostname for each address, otherwise the fixture
         # will return the same object twice
-        i.hostname = str(uuid.uuid4())
+        i.hostname = str(uuid4())
     return addresses
+
+
+@fixture(name="valid_event_type")
+def fixture_valid_event_type():
+    """
+    Fixture for a valid event type
+    """
+    mock = NonCallableMock()
+    mock.event_type = SUPPORTED_MESSAGE_TYPES["create"]
+    return mock

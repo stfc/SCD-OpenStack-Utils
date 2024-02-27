@@ -5,8 +5,7 @@ Tests the message consumption flow
 for the consumer
 """
 from unittest.mock import Mock, NonCallableMock, patch, call, MagicMock
-
-import pytest
+from pytest import mark
 
 # noinspection PyUnresolvedReferences
 from rabbit_consumer.consumer_config import ConsumerConfig
@@ -25,16 +24,6 @@ from rabbit_consumer.message_consumer import (
 from rabbit_consumer.vm_data import VmData
 
 
-@pytest.fixture(name="valid_event_type")
-def fixture_valid_event_type():
-    """
-    Fixture for a valid event type
-    """
-    mock = NonCallableMock()
-    mock.event_type = SUPPORTED_MESSAGE_TYPES["create"]
-    return mock
-
-
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.MessageEventType")
 @patch("rabbit_consumer.message_consumer.RabbitMessage")
@@ -47,13 +36,13 @@ def test_on_message_parses_json(
     message_event_type.from_json.return_value = valid_event_type
 
     with (
-        patch("rabbit_consumer.message_consumer.json") as json,
+        patch("rabbit_consumer.message_consumer.loads") as loads,
         patch("rabbit_consumer.message_consumer.is_aq_managed_image"),
     ):
         message = Mock()
         on_message(message)
 
-    decoded_body = json.loads.return_value
+    decoded_body = loads.return_value
     message_parser.from_json.assert_called_once_with(decoded_body["oslo.message"])
     consume.assert_called_once_with(message_parser.from_json.return_value)
     message.ack.assert_called_once()
@@ -70,7 +59,7 @@ def test_on_message_ignores_wrong_message_type(message_event_type, is_managed, c
     message_event.event_type = "wrong"
     message_event_type.from_json.return_value = message_event
 
-    with patch("rabbit_consumer.message_consumer.json"):
+    with patch("rabbit_consumer.message_consumer.loads"):
         message = Mock()
         on_message(message)
 
@@ -79,7 +68,7 @@ def test_on_message_ignores_wrong_message_type(message_event_type, is_managed, c
     message.ack.assert_called_once()
 
 
-@pytest.mark.parametrize("event_type", SUPPORTED_MESSAGE_TYPES.values())
+@mark.parametrize("event_type", SUPPORTED_MESSAGE_TYPES.values())
 @patch("rabbit_consumer.message_consumer.consume")
 @patch("rabbit_consumer.message_consumer.MessageEventType")
 def test_on_message_accepts_event_types(message_event_type, consume, event_type):
@@ -92,7 +81,7 @@ def test_on_message_accepts_event_types(message_event_type, consume, event_type)
 
     with (
         patch("rabbit_consumer.message_consumer.RabbitMessage"),
-        patch("rabbit_consumer.message_consumer.json"),
+        patch("rabbit_consumer.message_consumer.loads"),
     ):
         message = Mock()
         on_message(message)
@@ -113,9 +102,9 @@ class MockedConfig(ConsumerConfig):
     rabbit_password = "rabbit_password"
 
 
-@patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
-@patch("rabbit_consumer.message_consumer.rabbitpy")
-def test_initiate_consumer_channel_setup(rabbitpy, _):
+@patch("rabbit_consumer.message_consumer.Queue")
+@patch("rabbit_consumer.message_consumer.Connection")
+def test_initiate_consumer_channel_setup(connection, queue):
     """
     Test that the function sets up the channel and queue correctly
     """
@@ -125,29 +114,30 @@ def test_initiate_consumer_channel_setup(rabbitpy, _):
         config.return_value = mocked_config
         initiate_consumer()
 
-    rabbitpy.Connection.assert_called_once_with(
+    connection.assert_called_once_with(
         f"amqp://{mocked_config.rabbit_username}:{mocked_config.rabbit_password}@{mocked_config.rabbit_host}:{mocked_config.rabbit_port}/"
     )
 
-    connection = rabbitpy.Connection.return_value.__enter__.return_value
+    connection = connection.return_value.__enter__.return_value
     connection.channel.assert_called_once()
     channel = connection.channel.return_value.__enter__.return_value
 
-    rabbitpy.Queue.assert_called_once_with(channel, name="ral.info", durable=True)
-    queue = rabbitpy.Queue.return_value
+    queue.assert_called_once_with(channel, name="ral.info", durable=True)
+    queue = queue.return_value
     queue.bind.assert_called_once_with("nova", routing_key="ral.info")
 
 
 @patch("rabbit_consumer.message_consumer.verify_kerberos_ticket")
+@patch("rabbit_consumer.message_consumer.Connection")
 @patch("rabbit_consumer.message_consumer.on_message")
-@patch("rabbit_consumer.message_consumer.rabbitpy")
-def test_initiate_consumer_actual_consumption(rabbitpy, message_mock, _):
+@patch("rabbit_consumer.message_consumer.Queue")
+def test_initiate_consumer_actual_consumption(queue, message_mock, _, _2):
     """
     Test that the function actually consumes messages
     """
     queue_messages = [NonCallableMock(), NonCallableMock()]
     # We need our mocked queue to act like a generator
-    rabbitpy.Queue.return_value.__iter__.return_value = queue_messages
+    queue.return_value.__iter__.return_value = queue_messages
 
     initiate_consumer()
 
@@ -269,17 +259,14 @@ def test_consume_delete_machine_good_path(delete_machine_mock, rabbit_message):
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_check_machine_valid(openstack_api, is_aq_managed):
+def test_check_machine_valid(openstack_api, is_aq_managed, vm_data):
     """
     Test that the function returns True when the machine is valid
     """
     mock_message = NonCallableMock()
     is_aq_managed.return_value = True
-
     vm_data = VmData.from_message(mock_message)
-
     openstack_api.check_machine_exists.return_value = True
-
     assert check_machine_valid(mock_message)
     is_aq_managed.assert_called_once_with(vm_data)
     openstack_api.check_machine_exists.assert_called_once_with(vm_data)
@@ -287,7 +274,7 @@ def test_check_machine_valid(openstack_api, is_aq_managed):
 
 @patch("rabbit_consumer.message_consumer.is_aq_managed_image")
 @patch("rabbit_consumer.message_consumer.openstack_api")
-def test_check_machine_invalid_image(openstack_api, is_aq_managed):
+def test_check_machine_invalid_image(openstack_api, is_aq_managed, vm_data):
     """
     Test that the function returns False when the image is not AQ managed
     """
@@ -409,15 +396,15 @@ def test_delete_machine_by_serial(aq_api, vm_data, openstack_address):
 
 
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.socket")
-def test_delete_machine_no_hostname(socket_api, aq_api, vm_data):
+@patch("rabbit_consumer.message_consumer.gethostbyname")
+def test_delete_machine_no_hostname(socket_get_host, aq_api, vm_data):
     """
     Tests
     """
     aq_api.check_host_exists.return_value = False
 
     ip_address = "127.0.0.1"
-    socket_api.gethostbyname.return_value = ip_address
+    socket_get_host.return_value = ip_address
 
     machine_name = aq_api.search_machine_by_serial.return_value
     aq_api.get_machine_details.return_value = f"eth0: {ip_address}"
@@ -428,13 +415,13 @@ def test_delete_machine_no_hostname(socket_api, aq_api, vm_data):
 
 
 @patch("rabbit_consumer.message_consumer.aq_api")
-@patch("rabbit_consumer.message_consumer.socket")
-def test_delete_machine_always_called(socket_api, aq_api, vm_data):
+@patch("rabbit_consumer.message_consumer.gethostbyname")
+def test_delete_machine_always_called(socket_get_host, aq_api, vm_data):
     """
     Tests that the function always calls the delete machine function
     """
     aq_api.check_host_exists.return_value = False
-    socket_api.gethostbyname.return_value = "123123"
+    socket_get_host.return_value = "123123"
 
     aq_api.get_machine_details.return_value = "Machine Details"
 

@@ -4,29 +4,24 @@
 This file defines methods to be used to interact with the 
 Aquilon API
 """
-import logging
-import subprocess
+from logging import getLogger
+from subprocess import call
 from typing import Optional, List
-
-import requests
+from requests import Session
 from requests.adapters import HTTPAdapter
 from requests_kerberos import HTTPKerberosAuth
 from urllib3.util.retry import Retry
-
-from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.aq_metadata import AqMetadata
-from rabbit_consumer.openstack_address import OpenstackAddress
-from rabbit_consumer.rabbit_message import RabbitMessage
-from rabbit_consumer.vm_data import VmData
+from consumer_config import ConsumerConfig
+from aq_metadata import AqMetadata
+from openstack_address import OpenstackAddress
+from rabbit_message import RabbitMessage
+from vm_data import VmData
 
 HOST_CHECK_SUFFIX = "/host/{0}"
-
 UPDATE_INTERFACE_SUFFIX = "/machine/{0}/interface/{1}?boot&default_route"
-
 DELETE_HOST_SUFFIX = "/host/{0}"
 DELETE_MACHINE_SUFFIX = "/machine/{0}"
-
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class AquilonError(Exception):
@@ -41,10 +36,8 @@ def verify_kerberos_ticket() -> bool:
     Raises a RuntimeError if no ticket is found
     """
     logger.debug("Checking for valid Kerberos Ticket")
-
-    if subprocess.call(["klist", "-s"]) == 1:
+    if call(["klist", "-s"]) == 1:
         raise RuntimeError("No shared Kerberos ticket found.")
-
     logger.debug("Kerberos ticket success")
     return True
 
@@ -57,8 +50,7 @@ def setup_requests(
     """
     verify_kerberos_ticket()
     logger.debug("%s: %s - params: %s", method, url, params)
-
-    session = requests.Session()
+    session = Session()
     session.verify = "/etc/grid-security/certificates/aquilon-gridpp-rl-ac-uk-chain.pem"
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
@@ -75,7 +67,6 @@ def setup_requests(
         # This might be an expected error, so don't log it
         logger.debug("AQ Error Response: %s", response.text)
         raise AquilonError(response.text)
-
     if response.status_code != 200:
         logger.error("%s: Failed: %s", desc, response.text)
         logger.error(url)

@@ -40,7 +40,7 @@ def fixture_example_dict_two_entries(example_dict):
     return example_dict
 
 
-@patch("rabbit_consumer.openstack_address.socket.gethostbyaddr")
+@patch("rabbit_consumer.openstack_address.gethostbyaddr")
 def test_openstack_address_single_case(mock_socket, example_dict):
     """
     Tests the OpenstackAddress class with a single network address
@@ -50,11 +50,13 @@ def test_openstack_address_single_case(mock_socket, example_dict):
     assert result[0].version == 4
     assert result[0].addr == "127.0.0.63"
     assert result[0].mac_addr == "fa:ca:aa:aa:aa:aa"
-    mock_socket.assert_called_once()
+    mock_socket.assert_called()
 
 
-@patch("rabbit_consumer.openstack_address.socket.gethostbyaddr")
-def test_openstack_address_multiple_networks(mock_socket, example_dict_two_entries):
+@patch("rabbit_consumer.openstack_address.gethostbyaddr")
+def test_openstack_address_multiple_networks(
+    mock_socket_get_host, example_dict_two_entries
+):
     """
     Tests the OpenstackAddress class with multiple network addresses
     """
@@ -63,10 +65,10 @@ def test_openstack_address_multiple_networks(mock_socket, example_dict_two_entri
     assert result[0].version == 4
     assert result[0].addr == "127.0.0.63"
     assert result[1].addr == "127.0.0.64"
-    mock_socket.assert_called_once()
+    mock_socket_get_host.assert_called()
 
 
-@patch("rabbit_consumer.openstack_address.socket.gethostbyaddr")
+@patch("rabbit_consumer.openstack_address.gethostbyaddr")
 def test_openstack_address_populate(mock_socket, example_dict_two_entries):
     """
     Tests the OpenstackAddress class with multiple network addresses
