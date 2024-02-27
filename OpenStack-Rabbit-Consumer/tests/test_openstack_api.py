@@ -131,13 +131,13 @@ def test_get_server_networks_services(address, server_details, vm_data):
     server_details.return_value.addresses = {"Services": []}
 
     get_server_networks(vm_data)
-    address.get_internal_networks.assert_called_once_with(
+    address.get_services_networks.assert_called_once_with(
         server_details.return_value.addresses
     )
 
 
 @patch("rabbit_consumer.openstack_api.get_server_details")
-def test_get_server_networks_no_internal(server_details, vm_data):
+def test_get_server_networks_no_network(server_details, vm_data):
     """
     Tests that an empty list is returned when there are no internal networks
     """
