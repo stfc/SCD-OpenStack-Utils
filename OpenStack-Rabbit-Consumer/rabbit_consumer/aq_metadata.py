@@ -4,14 +4,13 @@
 This file defines the class to handle deserialised metadata for 
 Aquilon
 """
-import logging
+from logging import getLogger
 from dataclasses import dataclass
 from typing import Dict, Optional
-
 from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -23,11 +22,9 @@ class AqMetadata(DataClassDictMixin):
 
     aq_archetype: str
     aq_domain: str
-
     aq_personality: str
     aq_os_version: str
     aq_os: str
-
     aq_sandbox: Optional[str] = None
 
     # pylint: disable=too-few-public-methods

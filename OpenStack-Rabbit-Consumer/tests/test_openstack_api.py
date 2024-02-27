@@ -7,8 +7,6 @@ as expected with the correct params
 from unittest.mock import NonCallableMock, patch
 
 # noinspection PyUnresolvedReferences
-# pylint: disable=unused-import
-from fixtures import fixture_vm_data
 from rabbit_consumer.openstack_api import (
     update_metadata,
     OpenstackConnection,
@@ -20,7 +18,7 @@ from rabbit_consumer.openstack_api import (
 
 
 @patch("rabbit_consumer.openstack_api.ConsumerConfig")
-@patch("rabbit_consumer.openstack_api.openstack.connect")
+@patch("rabbit_consumer.openstack_api.connect")
 def test_openstack_connection(mock_connect, mock_config):
     """
     Test that the OpenstackConnection context manager calls the correct functions
@@ -112,7 +110,7 @@ def test_get_server_details(conn, vm_data):
 
 @patch("rabbit_consumer.openstack_api.get_server_details")
 @patch("rabbit_consumer.openstack_api.OpenstackAddress")
-def test_get_server_networks(address, server_details, vm_data):
+def test_get_server_networks_internal(address, server_details, vm_data):
     """
     Test that the function calls the correct functions to get the networks of a VM
     """
@@ -125,7 +123,21 @@ def test_get_server_networks(address, server_details, vm_data):
 
 
 @patch("rabbit_consumer.openstack_api.get_server_details")
-def test_get_server_networks_no_internal(server_details, vm_data):
+@patch("rabbit_consumer.openstack_api.OpenstackAddress")
+def test_get_server_networks_services(address, server_details, vm_data):
+    """
+    Test that the function calls the correct functions to get the networks of a VM
+    """
+    server_details.return_value.addresses = {"Services": []}
+
+    get_server_networks(vm_data)
+    address.get_services_networks.assert_called_once_with(
+        server_details.return_value.addresses
+    )
+
+
+@patch("rabbit_consumer.openstack_api.get_server_details")
+def test_get_server_networks_no_network(server_details, vm_data):
     """
     Tests that an empty list is returned when there are no internal networks
     """

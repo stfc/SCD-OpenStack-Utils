@@ -4,23 +4,21 @@
 This file manages how rabbit messages stating AQ VM creation and deletion 
 should be handled and processed between the consumer and Aquilon
 """
-import json
-import logging
-import socket
+from json import loads
+from logging import getLogger
+from socket import gethostbyname
 from typing import Optional, List
+from rabbitpy import Message, Queue, Connection
+import aq_api
+import openstack_api
+from aq_api import verify_kerberos_ticket
+from consumer_config import ConsumerConfig
+from aq_metadata import AqMetadata
+from openstack_address import OpenstackAddress
+from rabbit_message import RabbitMessage, MessageEventType
+from vm_data import VmData
 
-import rabbitpy
-
-from rabbit_consumer import aq_api
-from rabbit_consumer import openstack_api
-from rabbit_consumer.aq_api import verify_kerberos_ticket
-from rabbit_consumer.consumer_config import ConsumerConfig
-from rabbit_consumer.aq_metadata import AqMetadata
-from rabbit_consumer.openstack_address import OpenstackAddress
-from rabbit_consumer.rabbit_message import RabbitMessage, MessageEventType
-from rabbit_consumer.vm_data import VmData
-
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 SUPPORTED_MESSAGE_TYPES = {
     "create": "compute.instance.create.end",
     "delete": "compute.instance.delete.start",
@@ -50,7 +48,6 @@ def get_aq_build_metadata(vm_data: VmData) -> AqMetadata:
     """
     image = openstack_api.get_image(vm_data)
     image_meta = AqMetadata.from_dict(image.metadata)
-
     vm_metadata = openstack_api.get_server_metadata(vm_data)
     image_meta.override_from_vm_meta(vm_metadata)
     return image_meta
@@ -63,10 +60,8 @@ def consume(message: RabbitMessage) -> None:
     """
     if message.event_type == SUPPORTED_MESSAGE_TYPES["create"]:
         handle_create_machine(message)
-
     elif message.event_type == SUPPORTED_MESSAGE_TYPES["delete"]:
         handle_machine_delete(message)
-
     else:
         raise ValueError(f"Unsupported message type: {message.event_type}")
 
@@ -108,7 +103,7 @@ def delete_machine(
             aq_api.delete_host(hostname)
         else:
             # Delete the interfaces
-            ipv4_address = socket.gethostbyname(hostname)
+            ipv4_address = gethostbyname(hostname)
             if ipv4_address in machine_details:
                 aq_api.delete_address(ipv4_address, machine_name)
 
@@ -152,10 +147,8 @@ def handle_create_machine(rabbit_message: RabbitMessage) -> None:
         return
 
     vm_data = VmData.from_message(rabbit_message)
-
     image_meta = get_aq_build_metadata(vm_data)
     network_details = openstack_api.get_server_networks(vm_data)
-
     if not network_details or not network_details[0].hostname:
         vm_name = rabbit_message.payload.vm_name
         logger.info("Skipping novalocal only host: %s", vm_name)
@@ -201,10 +194,8 @@ def handle_machine_delete(rabbit_message: RabbitMessage) -> None:
     """
     logger.info("=== Received Aquilon VM delete message ===")
     _print_debug_logging(rabbit_message)
-
     vm_data = VmData.from_message(rabbit_message)
     delete_machine(vm_data=vm_data)
-
     logger.info(
         "=== Finished Aquilon deletion hook for VM %s ===", vm_data.virtual_machine_id
     )
@@ -233,14 +224,13 @@ def add_aq_details_to_metadata(
     openstack_api.update_metadata(vm_data, metadata)
 
 
-def on_message(message: rabbitpy.Message) -> None:
+def on_message(message: Message) -> None:
     """
     Deserializes the message and calls the consume function on message.
     """
     raw_body = message.body
     logger.debug("New message: %s", raw_body)
-
-    body = json.loads(raw_body.decode("utf-8"))["oslo.message"]
+    body = loads(raw_body.decode("utf-8"))["oslo.message"]
     parsed_event = MessageEventType.from_json(body)
     if parsed_event.event_type not in SUPPORTED_MESSAGE_TYPES.values():
         logger.info("Ignoring event_type: %s", parsed_event.event_type)
@@ -249,7 +239,6 @@ def on_message(message: rabbitpy.Message) -> None:
 
     decoded = RabbitMessage.from_json(body)
     logger.debug("Decoded message: %s", decoded)
-
     consume(decoded)
     message.ack()
 
@@ -262,9 +251,7 @@ def initiate_consumer() -> None:
     logger.debug("Initiating message consumer")
     # Ensure we have valid creds before trying to contact rabbit
     verify_kerberos_ticket()
-
     config = ConsumerConfig()
-
     host = config.rabbit_host
     port = config.rabbit_port
     login_user = config.rabbit_username
@@ -273,20 +260,19 @@ def initiate_consumer() -> None:
         "Connecting to rabbit with: amqp://%s:<password>@%s:%s/", login_user, host, port
     )
     exchanges = ["nova"]
-
     login_str = f"amqp://{login_user}:{login_pass}@{host}:{port}/"
-    with rabbitpy.Connection(login_str) as conn:
+    with Connection(login_str) as conn:
         with conn.channel() as channel:
             logger.debug("Connected to RabbitMQ")
 
             # Durable indicates that the queue will survive a broker restart
-            queue = rabbitpy.Queue(channel, name="ral.info", durable=True)
+            queue = Queue(channel, name="ral.info", durable=True)
             for exchange in exchanges:
                 logger.debug("Binding to exchange: %s", exchange)
                 queue.bind(exchange, routing_key="ral.info")
 
             # Consume the messages from generator
-            message: rabbitpy.Message
+            message: Message
             logger.debug("Starting to consume messages")
             for message in queue:
                 on_message(message)

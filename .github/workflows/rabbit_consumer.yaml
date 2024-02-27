@@ -36,7 +36,7 @@ jobs:
       
       - name: Analyse with pylint
         run: |
-          cd OpenStack-Rabbit-Consumer && pylint --recursive yes rabbit_consumer test
+          cd OpenStack-Rabbit-Consumer && pylint $(git ls-files '*.py')
 
       - name: Prepare coverage
         run: |
