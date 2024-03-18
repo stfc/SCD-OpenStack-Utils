@@ -1,0 +1,45 @@
+name: Pylint-Tests-Codecov
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "reverse_ssl_cert_chain/**"
+      - ".github/workflows/reverse_ssl_cert_chain.yaml"
+
+jobs:
+  Pylint-Tests-Codecov:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.x"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          cd reverse_ssl_cert_chain
+          pip install -r requirements.txt
+
+      - name: Analyse with pylint
+        run: cd reverse_ssl_cert_chain && pylint $(git ls-files '*.py')
+
+      - name: Run tests and collect coverage
+        run: cd reverse_ssl_cert_chain && python3 -m pytest
+
+      - name: Run tests and collect coverage
+        run: cd reverse_ssl_cert_chain && python3 -m pytest . --cov-report xml:coverage.xml --cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          files: ./reverse_ssl_cert_chain/coverage.xml
