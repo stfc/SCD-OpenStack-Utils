@@ -43,6 +43,31 @@ class _OpenstackFields:
 
 
 @dataclass
+class _VaultFields:
+    """
+    Dataclass for all Vault config elements. These are pulled from
+    environment variables.
+    """
+
+    vault_role_id: str = field(default_factory=partial(os.getenv, "VAULT_ROLE_ID"))
+    vault_secret_id: str = field(default_factory=partial(os.getenv, "VAULT_SECRET_ID"))
+    vault_url: str = field(default_factory=partial(os.getenv, "VAULT_URL"))
+
+
+@dataclass
+class _EtcdFields:
+    """
+    Dataclass for all Vault config elements. These are pulled from
+    environment variables.
+    """
+
+    etcd_host: str = field(default_factory=partial(os.getenv, "ETCD_HOST"))
+    etcd_port: str = field(default_factory=partial(os.getenv, "ETCD_PORT"))
+    etcd_username: str = field(default_factory=partial(os.getenv, "ETCD_USERNAME"))
+    etcd_password: str = field(default_factory=partial(os.getenv, "ETCD_PASSWORD"))
+
+
+@dataclass
 class _RabbitFields:
     """
     Dataclass for all RabbitMQ config elements. These are pulled from
@@ -60,7 +85,7 @@ class _RabbitFields:
 
 
 @dataclass
-class ConsumerConfig(_AqFields, _OpenstackFields, _RabbitFields):
+class ConsumerConfig(_AqFields, _OpenstackFields, _VaultFields, _EtcdFields, _RabbitFields):
     """
     Mix-in class for all known config elements
     """
