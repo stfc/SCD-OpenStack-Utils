@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This script will collect data from Prometheus and write it to a CSV file.
 It will correctly format data from "openstack" and "node" queries.
@@ -156,13 +157,18 @@ class JsonToCSV:
 
 
 if __name__ == "__main__":
+    # Example metrics to query for
     metrics_to_query = [
         "openstack_nova_vcpus_used",
         "openstack_nova_memory_used_bytes",
         "node_hwmon_power_average_watt",
     ]
+    # Prometheus host api endpoint
     endpoint = "http://172.16.102.82:9090/api/v1/query_range"
+    # Start and end time as posix seconds - this represents x date and y date
+    start_time = "1710770960"
+    end_time = "1710857376"
     RawData(
-        metrics_to_query, "1710770960", "1710857376", endpoint
+        metrics_to_query, start_time, end_time, endpoint
     ).request_to_json_file()
     JsonToCSV(metrics_to_query).json_to_csv()
