@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import patch, NonCallableMock
+import pytest
 from prom_query_to_csv import RawData, JsonToCSV
 
 
@@ -24,9 +24,11 @@ def instance_json_to_csv_fixture():
     return JsonToCSV(mock_metrics)
 
 
-@patch('prom_query_to_csv.RawData.http_request')
-@patch('prom_query_to_csv.RawData.write_json_file')
-def test_request_to_json_file(mock_write_json_file, mock_http_request, instance_raw_data):
+@patch("prom_query_to_csv.RawData.http_request")
+@patch("prom_query_to_csv.RawData.write_json_file")
+def test_request_to_json_file(
+    mock_write_json_file, mock_http_request, instance_raw_data
+):
     """
     This test makes sure both methods involved are called correctly.
     """
@@ -53,13 +55,15 @@ def test_request_to_json_file(mock_write_json_file, mock_http_request, instance_
     assert not res
 
 
-@patch('prom_query_to_csv.requests.get')
+@patch("prom_query_to_csv.requests.get")
 def test_http_request(mock_get, instance_raw_data):
     """
     This test ensures the requests.get method is called with the correct parameters.
     """
     res = instance_raw_data.http_request("mock_metric")
-    mock_get.assert_called_once_with("http://mock.url.com", params="mock_metric", timeout=300)
+    mock_get.assert_called_once_with(
+        "http://mock.url.com", params="mock_metric", timeout=300
+    )
     assert res == mock_get.return_value
 
 
@@ -73,14 +77,18 @@ def test_write_json_file(mock_open, instance_raw_data):
     res = instance_raw_data.write_json_file("mock_name", mock_response)
     mock_open.assert_called_once_with("mock_name.csv", "w", encoding="utf-8")
     mock_response.json.assert_called_once()
-    mock_open.return_value.__enter__.return_value.write.assert_called_once_with("mock_data")
+    mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
+        "mock_data"
+    )
     assert not res
 
 
-@patch('prom_query_to_csv.JsonToCSV.dict_to_csv')
-@patch('prom_query_to_csv.JsonToCSV.json_to_dict')
-@patch('prom_query_to_csv.JsonToCSV.read_json')
-def test_json_to_csv(mock_read_json, mock_json_to_dict, mock_dict_to_csv, instance_json_to_csv):
+@patch("prom_query_to_csv.JsonToCSV.dict_to_csv")
+@patch("prom_query_to_csv.JsonToCSV.json_to_dict")
+@patch("prom_query_to_csv.JsonToCSV.read_json")
+def test_json_to_csv(
+    mock_read_json, mock_json_to_dict, mock_dict_to_csv, instance_json_to_csv
+):
     """
     This test checks that the read methods are called.
     """
@@ -93,7 +101,7 @@ def test_json_to_csv(mock_read_json, mock_json_to_dict, mock_dict_to_csv, instan
     assert not res
 
 
-@patch('prom_query_to_csv.open')
+@patch("prom_query_to_csv.open")
 def test_read_json(mock_open, instance_json_to_csv):
     """
     This test is testing that the open is called correctly.
@@ -113,16 +121,22 @@ def test_json_to_dict(instance_json_to_csv):
     assert res == {"mock_key": "mock_value"}
 
 
-@patch('prom_query_to_csv.JsonToCSV.dict_to_csv_openstack')
+@patch("prom_query_to_csv.JsonToCSV.dict_to_csv_openstack")
 def test_dict_to_csv_openstack(mock_openstack, instance_json_to_csv):
+    """
+        This calls the openstack handling method when a openstack metric is found
+        """
     mock_data = {"data": {"result": [{"metric": {"__name__": "openstack"}}]}}
     res = instance_json_to_csv.dict_to_csv(mock_data)
     mock_openstack.assert_called_once_with(mock_data["data"]["result"])
     assert not res
 
 
-@patch('prom_query_to_csv.JsonToCSV.dict_to_csv_node')
+@patch("prom_query_to_csv.JsonToCSV.dict_to_csv_node")
 def test_dict_to_csv_node(mock_node, instance_json_to_csv):
+    """
+    This calls the node handling method when a node metric is found
+    """
     mock_data = {"data": {"result": [{"metric": {"__name__": "node"}}]}}
     res = instance_json_to_csv.dict_to_csv(mock_data)
     mock_node.assert_called_once_with(mock_data["data"]["result"])
@@ -130,12 +144,10 @@ def test_dict_to_csv_node(mock_node, instance_json_to_csv):
 
 
 def test_dict_to_csv_neither(instance_json_to_csv):
+    """
+    This test case ensures an error is raised when a metric is found that is neither of the supported metrics.
+    """
     mock_data = {"data": {"result": [{"metric": {"__name__": "error"}}]}}
     with pytest.raises(Exception):
         res = instance_json_to_csv.dict_to_csv(mock_data)
         assert not res
-
-
-
-
-

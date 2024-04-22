@@ -159,7 +159,5 @@ if __name__ == "__main__":
     # Start and end time as posix seconds - this represents x date and y date
     start_time = "1710770960"
     end_time = "1710857376"
-    RawData(
-        metrics_to_query, start_time, end_time, endpoint
-    ).request_to_json_file()
+    RawData(metrics_to_query, start_time, end_time, endpoint).request_to_json_file()
     JsonToCSV(metrics_to_query).json_to_csv()
