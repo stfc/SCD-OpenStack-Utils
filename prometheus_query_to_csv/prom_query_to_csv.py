@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from typing import List, Dict
 from json import loads
-from socket import gethostbyaddr
 from datetime import datetime
-from requests import get, Response
+import socket
+import requests
 
 
 class RawData:
@@ -33,17 +33,17 @@ class RawData:
             response = self.http_request(payload)
             self.write_json_file(metric, response)
 
-    def http_request(self, metric) -> Response:
+    def http_request(self, metric) -> requests.Response:
         """
         This method uses the request library's get function to send a HTTP GET request to the endpoint.
         :param metric: The metric to query for
         :return: The HTTP response
         """
-        response = get(self.endpoint, params=metric, timeout=300)
+        response = requests.get(self.endpoint, params=metric, timeout=300)
         return response
 
     @staticmethod
-    def write_json_file(name: str, response: Response):
+    def write_json_file(name: str, response: requests.Response):
         """
         This method writes the response data to a file.
         :param name: The metric name
@@ -138,7 +138,7 @@ class JsonToCSV:
             for metric in data:
                 for i in range(len(metric["values"]) - 1):
                     time = datetime.fromtimestamp(metric["values"][i][0])
-                    hostname = gethostbyaddr(
+                    hostname = socket.gethostbyaddr(
                         metric["metric"]["instance"].split(":")[0]
                     )[0]
                     value = metric["values"][i][1]
