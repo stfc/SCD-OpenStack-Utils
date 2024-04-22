@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import List, Dict
-from json import loads
 from datetime import datetime
+import json
 import socket
 import requests
 
@@ -91,18 +91,19 @@ class JsonToCSV:
         :return: Returns the data as a dictionary
         """
         data = data.replace("'", '"')
-        json = loads(data)
-        return json
+        json_data = json.loads(data)
+        return json_data
 
-    def dict_to_csv(self, json: Dict):
+    def dict_to_csv(self, json_data: Dict):
         """
         This method writes the data into a CSV file formatted using f strings to only write the data we want.
-        :param json: The data from the file in a dictionary
+        :param json_data: The data from the file in a dictionary
         """
-        data = json["data"]["result"]
-        if data[0]["metric"]["__name__"].startswith("openstack"):
+        data = json_data["data"]["result"]
+        metric_type = data[0]["metric"]["__name__"]
+        if metric_type.startswith("openstack"):
             self.dict_to_csv_openstack(data)
-        elif data[0]["metric"]["__name__"].startswith("node"):
+        elif metric_type.startswith("node"):
             self.dict_to_csv_node(data)
         else:
             raise Exception(
