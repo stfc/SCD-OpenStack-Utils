@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""
-This script will collect data from Prometheus and write it to a CSV file.
-It will correctly format data from "openstack" and "node" queries.
-It uses a time range to query over a period of time. The time is required to be in UNIX Epoch format.
-You may need to play with the step in the RawData class as sometimes you will be querying at an
-interval where there is no data.
-If you are querying a large amount of data, you may need to increase the amount of RAM allocated to Python.
-Pagination is not implemented, so it can be easy to run out of memory.
-"""
-
 from typing import List, Dict
 from json import loads
 from socket import gethostbyaddr
