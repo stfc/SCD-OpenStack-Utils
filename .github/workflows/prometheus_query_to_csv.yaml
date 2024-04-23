@@ -33,9 +33,6 @@ jobs:
         run: cd prometheus_query_to_csv && pylint $(git ls-files '*.py')
 
       - name: Run tests and collect coverage
-        run: cd prometheus_query_to_csv && python3 -m pytest
-
-      - name: Run tests and collect coverage
         run: cd prometheus_query_to_csv && python3 -m pytest . --cov-report xml:coverage.xml --cov
 
       - name: Upload coverage to Codecov
