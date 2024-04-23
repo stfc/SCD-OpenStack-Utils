@@ -18,7 +18,7 @@ def instance_raw_data_fixture():
 @pytest.fixture(name="instance_json_to_csv")
 def instance_json_to_csv_fixture():
     """
-    This fixture returns an isntance of the JsonToCSV class.
+    This fixture returns an instance of the JsonToCSV class.
     """
     mock_metrics = ["metric1", "metric2"]
     return JsonToCSV(mock_metrics)
@@ -124,8 +124,8 @@ def test_json_to_dict(instance_json_to_csv):
 @patch("prom_query_to_csv.JsonToCSV.dict_to_csv_openstack")
 def test_dict_to_csv_openstack(mock_openstack, instance_json_to_csv):
     """
-        This calls the openstack handling method when a openstack metric is found
-        """
+    This calls the openstack handling method when a openstack metric is found
+    """
     mock_data = {"data": {"result": [{"metric": {"__name__": "openstack"}}]}}
     res = instance_json_to_csv.dict_to_csv(mock_data)
     mock_openstack.assert_called_once_with(mock_data["data"]["result"])

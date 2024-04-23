@@ -15,7 +15,7 @@ class RawData:
         self.metrics = metrics
         self.start = start
         self.end = end
-        self.step = 7200
+        self.step = 60
         self.endpoint = url
 
     def request_to_json_file(self):
@@ -40,6 +40,7 @@ class RawData:
         :return: The HTTP response
         """
         response = requests.get(self.endpoint, params=metric, timeout=300)
+        assert response.status_code == 200, "The HTTP response did not return okay."
         return response
 
     @staticmethod
@@ -100,7 +101,13 @@ class JsonToCSV:
         :param json_data: The data from the file in a dictionary
         """
         data = json_data["data"]["result"]
-        metric_type = data[0]["metric"]["__name__"]
+        try:
+            metric_type = data[0]["metric"]["__name__"]
+        except IndexError as exc:
+            raise Exception(
+                "Your query returned no data. "
+                "Check that there is data in the time range then try decreasing the step to query at shorter intervals."
+            ) from exc
         if metric_type.startswith("openstack"):
             self.dict_to_csv_openstack(data)
         elif metric_type.startswith("node"):
@@ -155,9 +162,9 @@ if __name__ == "__main__":
         "node_hwmon_power_average_watt",
     ]
     # Prometheus host api endpoint
-    endpoint = "http://172.16.102.82:9090/api/v1/query_range"
+    ENDPOINT = "http://172.16.102.82:9090/api/v1/query_range"
     # Start and end time as posix seconds - this represents x date and y date
-    start_time = "1710770960"
-    end_time = "1710857376"
-    RawData(metrics_to_query, start_time, end_time, endpoint).request_to_json_file()
+    START_TIME = "1710770960"
+    END_TIME = "1710857376"
+    RawData(metrics_to_query, START_TIME, END_TIME, ENDPOINT).request_to_json_file()
     JsonToCSV(metrics_to_query).json_to_csv()
