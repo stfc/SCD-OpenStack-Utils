@@ -56,15 +56,30 @@ def test_request_to_json_file(
 
 
 @patch("prom_query_to_csv.requests.get")
-def test_http_request(mock_get, instance_raw_data):
+def test_http_request_success(mock_get, instance_raw_data):
     """
     This test ensures the requests.get method is called with the correct parameters.
     """
+    mock_get.return_value.status_code = 200
     res = instance_raw_data.http_request("mock_metric")
     mock_get.assert_called_once_with(
         "http://mock.url.com", params="mock_metric", timeout=300
     )
     assert res == mock_get.return_value
+
+
+@patch("prom_query_to_csv.requests.get")
+def test_http_request_fail(mock_get, instance_raw_data):
+    """
+    This test ensures the requests.get method is called with the correct parameters.
+    """
+    mock_get.return_value.status_code = 404
+    with pytest.raises(AssertionError):
+        res = instance_raw_data.http_request("mock_metric")
+        mock_get.assert_called_once_with(
+            "http://mock.url.com", params="mock_metric", timeout=300
+        )
+        assert res == mock_get.return_value
 
 
 @patch("prom_query_to_csv.open")
