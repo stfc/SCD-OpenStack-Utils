@@ -1,0 +1,10 @@
+slack-sdk
+schedule
+slack-bolt
+aiohttp
+requests
+pytest
+influxdb-client
+pytest-cov
+pylint
+black
