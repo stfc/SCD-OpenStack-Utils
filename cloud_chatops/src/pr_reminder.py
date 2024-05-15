@@ -111,7 +111,7 @@ class PostPRsToSlack:
         :return: The validated information.
         """
         if info["user"] not in self.slack_ids:
-            info["user"] = "U01JG0LKU3W"
+            info["user"] = "U01JG0LKU3W"  # David Fairbrother
         else:
             info["user"] = self.get_username(info["user"])
         opened_date = datetime.fromisoformat(info["created_at"]).replace(tzinfo=None)
