@@ -4,7 +4,7 @@ from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import schedule
 from src.pr_reminder import PostPRsToSlack
-from src.read_data import get_token
+from src.read_data import get_token, validate_required_files
 from src.post_to_influx import PostDataToInflux
 from src.online_notif import online_notif
 
@@ -65,8 +65,10 @@ async def schedule_jobs() -> None:
 
 async def main() -> None:
     """
-    This function is the main entry point for the application. It starts the async loop and runs the scheduler.
+    This function is the main entry point for the application. First, it validates the required files.
+    Then it starts the async loop and runs the scheduler.
     """
+    validate_required_files()
     asyncio.ensure_future(schedule_jobs())
     handler = AsyncSocketModeHandler(app, get_token("SLACK_APP_TOKEN"))
     await handler.start_async()

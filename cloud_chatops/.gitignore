@@ -3,3 +3,4 @@ __pycache__/
 secrets.json
 user_map.json
 repos.csv
+maintainer.txt
