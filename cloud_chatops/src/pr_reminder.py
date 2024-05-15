@@ -135,6 +135,14 @@ class PostPRsToSlack:
     ) -> None:
         """
         This method sends the thread message and prepares the reactions.
+        :param pr_title: The title of the PR.
+        :param user: The author of the PR.
+        :param url: The URL to the PR.
+        :param channel: The channel to send the message to.
+        :param thread_ts: The parent message timestamp to post the thread into.
+        :param mention: To mention users or not.
+        :param draft: If the PR is a draft.
+        :param old: If the PR is older than 6 months.
         """
         message = self.construct_message(pr_title, user, url, mention, draft, old)
         response = self.client.chat_postMessage(
@@ -167,6 +175,13 @@ class PostPRsToSlack:
     ) -> str:
         """
         This method constructs the PR message depending on if the PR is old and if the message should mention or not.
+        :param pr_title: The title of the PR.
+        :param user: The author of the PR.
+        :param url: The URL of the PR.
+        :param mention: To mention users or not.
+        :param draft: If the PR is a draft.
+        :param old: If the PR is older than 6 months.
+        :return:
         """
         message = ["", "", "", "", ""]
         if old:
