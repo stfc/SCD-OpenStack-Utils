@@ -1,6 +1,5 @@
 from slack_sdk import WebClient
-from src.read_data import get_token
-from read_data import get_maintainer
+from src.read_data import get_token, get_maintainer
 
 
 def online_notif() -> bool:
