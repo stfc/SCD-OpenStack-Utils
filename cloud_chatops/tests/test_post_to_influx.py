@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.fixture(scope='function', name='instance')
+@pytest.fixture(scope="function", name="instance")
 def instance_fixture():
     """This fixture returns the module class."""
     with patch("src.post_to_influx.get_token"):

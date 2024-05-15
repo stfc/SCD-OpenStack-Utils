@@ -15,7 +15,9 @@ def validate_required_files() -> None:
     for token in tokens:
         temp = get_token(token)
         if not temp:
-            raise TokensNotGiven(f"Token {token} does not have a value in secrets.json.")
+            raise TokensNotGiven(
+                f"Token {token} does not have a value in secrets.json."
+            )
     user_map = get_user_map()
     if not user_map:
         raise UserMapNotGiven("user_map.json is empty.")

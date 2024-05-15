@@ -4,9 +4,11 @@ from unittest.mock import patch, mock_open
 
 def test_get_token():
     """This test checks that a value is returned when the function is called with a specific token."""
-    with patch("builtins.open", mock_open(read_data='{"mock_token_1": "mock_value_1"}')):
+    with patch(
+        "builtins.open", mock_open(read_data='{"mock_token_1": "mock_value_1"}')
+    ):
         res = get_token("mock_token_1")
-        assert res == 'mock_value_1'
+        assert res == "mock_value_1"
 
 
 def test_get_user_map():
@@ -18,27 +20,27 @@ def test_get_user_map():
 
 def test_get_repos():
     """This test checks that a list is returned if a string list of repos is read with no comma at the end."""
-    with patch("builtins.open", mock_open(read_data='repo1,repo2')):
+    with patch("builtins.open", mock_open(read_data="repo1,repo2")):
         res = get_repos()
-        assert res == ['repo1', 'repo2']
+        assert res == ["repo1", "repo2"]
 
 
 def test_get_repos_trailing_separator():
     """This test checks that a list of repos is returned correctly if there is a trailing comma at the end of the list."""
-    with patch("builtins.open", mock_open(read_data='repo1,repo2,')):
+    with patch("builtins.open", mock_open(read_data="repo1,repo2,")):
         res = get_repos()
-        assert res == ['repo1', 'repo2']
+        assert res == ["repo1", "repo2"]
 
 
 def test_get_maintainer():
     """This test checks that the user's name is returned."""
-    with patch("builtins.open", mock_open(read_data='mock_person')):
+    with patch("builtins.open", mock_open(read_data="mock_person")):
         res = get_maintainer()
-        assert res == 'mock_person'
+        assert res == "mock_person"
 
 
 def test_get_maintainer_no_value():
     """This test checks that the defualt user ID is returned if maintainer.txt is empty."""
-    with patch("builtins.open", mock_open(read_data='')):
+    with patch("builtins.open", mock_open(read_data="")):
         res = get_maintainer()
-        assert res == 'U05RBU0RF4J'
+        assert res == "U05RBU0RF4J"
