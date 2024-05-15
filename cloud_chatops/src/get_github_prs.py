@@ -1,18 +1,7 @@
 from typing import List, Dict, Union
 from src.read_data import get_token
+from src.custom_exceptions import RepoNotFound, UnknownHTTPError
 import requests
-
-
-class RepoNotFound(Exception):
-    """This class creates a custom Exception, so we don't raise "broad" exceptions."""
-
-    pass
-
-
-class UnknownHTTPError(Exception):
-    """This class creates a custom Exception, so we don't raise "broad" exceptions."""
-
-    pass
 
 
 class GetGitHubPRs:
