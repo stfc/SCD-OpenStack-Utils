@@ -52,10 +52,10 @@ async def schedule_jobs() -> None:
     schedule.every().monday.at("09:00").do(
         run_pr, mention=True, channel="pull-requests"
     )
-    schedule.every().wednesday.at("10:00").do(run_pr, channel="pull-requests")
-    schedule.every().friday.at("10:00").do(run_pr, channel="pull-requests")
+    schedule.every().wednesday.at("09:00").do(run_pr, channel="pull-requests")
+    schedule.every().friday.at("09:00").do(run_pr, channel="pull-requests")
 
-    schedule.every().day.at("10:00").do(post_data)
+    schedule.every().day.at("09:00").do(post_data)
 
     assert online_notif()
     while True:
