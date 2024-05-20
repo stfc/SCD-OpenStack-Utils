@@ -30,3 +30,6 @@ class UserMapNotGiven(Exception):
     """Error: User map is empty."""
 
     pass
+
+class BadGitHubToken(Exception):
+    """Error: GitHub REST Api token is invalid."""

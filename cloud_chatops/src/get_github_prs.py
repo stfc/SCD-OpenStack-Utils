@@ -1,6 +1,6 @@
 from typing import List, Dict, Union
 from src.read_data import get_token
-from src.custom_exceptions import RepoNotFound, UnknownHTTPError
+from src.custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
 import requests
 
 
@@ -53,7 +53,11 @@ class GetGitHubPRs:
         to_remove = []
         for repo, response in responses.items():
             if isinstance(response, dict) and len(response) == 2:
-                raise RepoNotFound(f'The repo "{repo}" could not be found.')
+                if response['message'] == 'Bad credentials':
+                    raise BadGitHubToken("Your GitHub api token is invalid. Check that it hasn't expired.")
+                elif response['message'] == 'Not Found':
+                    raise RepoNotFound(f'The repo "{repo}" could not be found.')
+
             elif isinstance(response, list) and not response:
                 to_remove.append(repo)
             elif isinstance(response, list) and response:
