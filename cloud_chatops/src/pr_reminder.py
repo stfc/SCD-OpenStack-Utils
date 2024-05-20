@@ -88,7 +88,7 @@ class PostPRsToSlack:
                         pass
                 else:
                     self.send_thread(**checked_info)
-        if not private_count:
+        if not private_count and private_user:
             self.send_no_prs(reminder_message)
 
     def send_no_prs(self, reminder: WebClient.chat_postMessage) -> None:
