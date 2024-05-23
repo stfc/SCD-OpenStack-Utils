@@ -33,8 +33,7 @@ class GetGitHubPRs:
             responses[repo] = response
         return responses
 
-    @staticmethod
-    def get_http_response(url: str) -> List[Dict]:
+    def get_http_response(self, url: str) -> List[Dict]:
         """
         This method sends a HTTP request to the GitHub Rest API endpoint and returns all open PRs from that repository.
         :param url: The URL to make the request to
@@ -42,34 +41,48 @@ class GetGitHubPRs:
         """
         headers = {"Authorization": "token " + get_token("GITHUB_TOKEN")}
         response = requests.get(url, headers=headers, timeout=60)
+        self.validate_response(response, url)
         return response.json()
 
-    @staticmethod
     def format_http_responses(
-        responses: Union[Dict[str, List], Dict[str, Dict]]
+        self, responses: Union[Dict[str, List], Dict[str, Dict]]
     ) -> Dict[str, List]:
         """
-        This method checks if the response returned a list of PRs (where a single repo has multiple PRs)
-        or if a response returned a single PR (where a single repo has one PR). Then returns them in a list.
-        :param responses: GitHub's responses of a list of PRs or single PR
-        :return: The PRs all in the same structure.
+        This method checks the formats the responses from GitHub are in a consistent format.
+        :param responses: GitHub's HTTP responses.
+        :return: Dictionary of responses.
+        """
+        culled_responses = self.remove_empty_response(responses)
+        for repo, response in culled_responses.items():
+            if isinstance(response, dict):
+                responses[repo] = [response]
+        return responses
+
+    @staticmethod
+    def remove_empty_response(responses: Union[Dict[str, List], Dict[str, Dict]]) -> Union[Dict[str, List], Dict[str, Dict]]:
+        """
+        This method removes all empty responses from the Dictionary.
+        An empty response is the result of no open pull requests.
+        :param responses: The responses to check.
+        :return: The responses with no empty values.
         """
         to_remove = []
         for repo, response in responses.items():
-            if isinstance(response, dict) and len(response) == 2:
-                if response['message'] == 'Bad credentials':
-                    raise BadGitHubToken("Your GitHub api token is invalid. Check that it hasn't expired.")
-                elif response['message'] == 'Not Found':
-                    raise RepoNotFound(f'The repo "{repo}" could not be found.')
-
-            elif isinstance(response, list) and not response:
+            if not response:
                 to_remove.append(repo)
-            elif isinstance(response, list) and response:
-                pass
-            else:
-                raise UnknownHTTPError(
-                    f"An unexpected HTTP response was found: {response}\n"
-                )
+
         for i in to_remove:
             del responses[i]
         return responses
+
+    @staticmethod
+    def validate_response(response: requests.get, url: str) -> None:
+        """
+        This method checks the status code of the HTTP response and handles exceptions accordingly.
+        :param response: The response to check.
+        :param url: The url that was not found.
+        """
+        if response.status_code == 401:
+            raise BadGitHubToken("Your GitHub api token is invalid. Check that it hasn't expired.")
+        elif response.status_code == 404:
+            raise RepoNotFound(f'The repo at the url "{url}" could not be found.')
