@@ -1,16 +1,19 @@
 name: CI/CD Cloud ChatOps
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
-      - "master"
+      - master
 
 jobs:
   Pylint-Tests-Codecov:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [ "3.x" ]
+        python-version: [ "3.12", "3.x" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -25,7 +28,7 @@ jobs:
           cd cloud_chatops && pip install -r requirements.txt
 
       - name: Analyse with pylint
-        run: cd cloud_chatops && pylint $(git ls-files '*.py')
+        run: pylint cloud_chatops
 
       - name: Run tests and collect coverage
         run: cd cloud_chatops && python3 -m pytest
@@ -39,6 +42,7 @@ jobs:
           token: ${{secrets.CODECOV_TOKEN}}
           files: ./cloud_chatops/coverage.xml
   build:
+    if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,4 +64,4 @@ jobs:
           context: .
           file: .cloud_chatops/Dockerfile
           push: true
-          tags: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops"
+          tags: "harbor.stfc.ac.uk/stfc-cloud-staging/cloud-chatops"
