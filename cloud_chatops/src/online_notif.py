@@ -2,7 +2,7 @@ from slack_sdk import WebClient
 from src.read_data import get_token, get_maintainer
 
 
-def online_notif() -> bool:
+def online_notif() -> None:
     """
     This method sends a message to the maintainer notifying that the application is running.
     :return: True
@@ -13,4 +13,3 @@ def online_notif() -> bool:
         channel=maintainer,
         text="Cloud ChatOps is online.",
     )
-    return True
