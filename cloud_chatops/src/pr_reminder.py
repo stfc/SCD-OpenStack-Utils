@@ -40,7 +40,7 @@ class PostPRsToSlack:
         self.CHANNEL = channel
         reminder_message = self.post_reminder_message()
         self.post_thread_messages(
-            self.prs, reminder_message, mention=False, private_user=channel
+            self.prs, reminder_message, mention=False, personal_thread=channel
         )
 
     def post_reminder_message(self) -> WebClient.chat_postMessage:
@@ -59,16 +59,17 @@ class PostPRsToSlack:
         prs: Dict[str, List],
         reminder_message: WebClient.chat_postMessage,
         mention: bool,
-        private_user=None,
+        personal_thread=None,
     ) -> None:
         """
-        This method collates each individual PR reminder message and calls a post method.
-        :param private_user: The user to filter messages for if chosen.
+        This method iterates through each PR and calls the post method for them.
+        :param personal_thread: The user to filter messages for if chosen.
         :param mention: To mention the users or not
         :param prs: A list of PRs from GitHub
         :param reminder_message: The reminder message object
         """
-        private_count = 0
+        found_personal_thread_pr = False
+        found_public_thread_pr = False
         for repo in prs.values():
             for pr in repo:
                 info = {
@@ -82,16 +83,37 @@ class PostPRsToSlack:
                     "draft": pr["draft"],
                 }
                 checked_info = self.check_pr(info)
-                if private_user:
-                    if info["user"] == private_user:
-                        private_count += 1
-                        self.send_thread(**checked_info)
-                    else:
-                        pass
-                else:
-                    self.send_thread(**checked_info)
-        if not private_count and private_user:
+
+                truthys = self.filter_thread_message(personal_thread, checked_info)
+                if 'found_public_thread_pr' in truthys:
+                    found_public_thread_pr = True
+                if 'found_personal_thread_pr' in truthys:
+                    found_personal_thread_pr = True
+            
+        if not found_public_thread_pr and not personal_thread:
             self.send_no_prs(reminder_message)
+        elif not found_personal_thread_pr and personal_thread:
+            self.send_no_prs(reminder_message)
+
+    def filter_thread_message(self, personal_thread: str, info: Dict) -> tuple[str, ...]:
+        found_personal_thread_pr = False
+        found_public_thread_pr = False
+        if personal_thread:
+            if info["user"] == personal_thread:
+                found_personal_thread_pr = True
+                self.send_thread(**info)
+            else:
+                found_public_thread_pr = True
+        else:
+            found_public_thread_pr = True
+            self.send_thread(**info)
+
+        true_values = []
+        if found_personal_thread_pr:
+            true_values.append("found_personal_thread_pr")
+        if found_public_thread_pr:
+            true_values.append("found_public_thread_pr")
+        return tuple(true_values)
 
     def send_no_prs(self, reminder: WebClient.chat_postMessage) -> None:
         """
