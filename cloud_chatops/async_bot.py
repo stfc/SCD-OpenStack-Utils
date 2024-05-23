@@ -16,20 +16,24 @@ app = AsyncApp(token=get_token("SLACK_BOT_TOKEN"))
 @app.command("/prs")
 async def remind_prs(ack, respond, command):
     """
-    This function listens for the Slack command request and runs the appropriate function to respond with.
+    This function calls the messaging method to notify a user about their open PRs or all open PRs if asked.
+    :param command: The return object from Slack API.
+    :param ack: Slacks acknowledgement command.
+    :param respond: Slacks respond command to respond to the command in chat.
     """
-
-    async def command_pr(context):
-        """
-        This function calls the messaging method to notify a user about their open PRs.
-        :param context: The return object from Slack
-        """
-        channel = context["user_id"]
-        PostPRsToSlack().run_private(channel=channel)
-
     await ack()
+    await respond("Gathering the PRs...")
+
+    channel = command["user_id"]
+    if command['text'] == 'mine':
+        PostPRsToSlack().run_private(channel=channel)
+    elif command['text'] == 'all':
+        PostPRsToSlack().run_public(mention=False, channel=channel)
+    else:
+        await respond("Please provide the correct argument: 'mine' or 'all'.")
+        return
+
     await respond("Check out your DMs.")
-    await command_pr(command)
 
 
 async def schedule_jobs() -> None:
