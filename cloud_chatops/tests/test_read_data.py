@@ -43,4 +43,4 @@ def test_get_maintainer_no_value():
     """This test checks that the defualt user ID is returned if maintainer.txt is empty."""
     with patch("builtins.open", mock_open(read_data="")):
         res = get_maintainer()
-        assert res == "U05RBU0RF4J"
+        assert res == "U05RBU0RF4J"  # Default Maintainer: Kalibh Halford

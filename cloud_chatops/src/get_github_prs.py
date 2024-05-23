@@ -10,6 +10,10 @@ class GetGitHubPRs:
     """
 
     def __init__(self, repos: List):
+        """
+        This method initialises the class with the following variables.
+        :param repos: A list of repositories.
+        """
         self.repos = repos
 
     def run(self) -> Dict[str, List]:

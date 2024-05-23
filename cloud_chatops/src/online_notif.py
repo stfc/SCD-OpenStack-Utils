@@ -4,7 +4,7 @@ from src.read_data import get_token, get_maintainer
 
 def online_notif() -> bool:
     """
-    This method sends a message to Kalibh Halford notifying that the application is running.
+    This method sends a message to the maintainer notifying that the application is running.
     :return: True
     """
     maintainer = get_maintainer()

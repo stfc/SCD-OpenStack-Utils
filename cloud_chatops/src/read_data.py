@@ -65,10 +65,10 @@ def get_user_map() -> Dict:
 def get_maintainer() -> str:
     """
     This function will get the maintainer user's Slack ID from the text file.
-    :return: Slack Member ID or Kalibh Halford if not provided
+    :return: Slack Member ID
     """
     with open("./maintainer.txt", "r", encoding="utf-8") as file:
         data = file.read()
         if not data:
-            return "U05RBU0RF4J"
+            return "U05RBU0RF4J"  # Default Maintainer: Kalibh Halford
         return data

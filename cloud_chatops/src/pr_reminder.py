@@ -5,6 +5,8 @@ from src.get_github_prs import GetGitHubPRs
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+"""This module handles the posting of messages to Slack using the Slack SDK WebClient class."""
+
 
 class PostPRsToSlack:
     """
@@ -111,7 +113,10 @@ class PostPRsToSlack:
         :return: The validated information.
         """
         if info["user"] not in self.slack_ids:
-            info["user"] = "U01JG0LKU3W"  # David Fairbrother
+            # If the PR author is not in the Slack ID mapping
+            # then we set the user to mention as David Fairbrother
+            # as the team lead to deal with this PR.
+            info["user"] = "U01JG0LKU3W"
         else:
             info["user"] = self.get_username(info["user"])
         opened_date = datetime.fromisoformat(info["created_at"]).replace(tzinfo=None)
