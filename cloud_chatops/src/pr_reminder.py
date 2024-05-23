@@ -188,20 +188,17 @@ class PostPRsToSlack:
         :param old: If the PR is older than 6 months.
         :return:
         """
-        message = ["", "", "", "", ""]
+        message = []
         if old:
-            message[0] = "*This PR is older than 6 months. Consider closing it:*"
-        message[1] = f"Pull Request: <{url}|{pr_title}>"
+            message.append("*This PR is older than 6 months. Consider closing it:*")
+        message.append(f"Pull Request: <{url}|{pr_title}>")
         if mention and not draft:
-            message[2] = f"Author: <@{user}>"
+            message.append(f"Author: <@{user}>")
         else:
             name = self.get_real_name(user)
-            message[2] = f"Author: {name}"
-        for i in message:
-            if not i:
-                message.pop(message.index(i))
-        message_construction = "\n".join(message)
-        return message_construction
+            message.append(f"Author: {name}")
+
+        return "\n".join(message)
 
     def get_real_name(self, username: str) -> str:
         """
