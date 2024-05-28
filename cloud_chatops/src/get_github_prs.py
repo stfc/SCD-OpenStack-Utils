@@ -105,5 +105,5 @@ class GetGitHubPRs:
 
         if response.status_code != 200:
             raise UnknownHTTPError(
-                f'The HTTP response code is unknown and cannot be handled. Response: {response.status_code}'
+                f"The HTTP response code is unknown and cannot be handled. Response: {response.status_code}"
             )
