@@ -25,7 +25,7 @@ jobs:
           cd cloud_chatops && pip install -r requirements.txt
 
       - name: Analyse with pylint
-        run: pylint cloud_chatops
+        run: pylint cloud_chatops --recursive=yes --rcfile=cloud_chatops/.pylintrc
 
       - name: Run tests and collect coverage
         run: cd cloud_chatops && python3 -m pytest
