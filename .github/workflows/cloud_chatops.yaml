@@ -27,7 +27,7 @@ jobs:
       - name: Analyse with pylint
         run: pylint cloud_chatops/src --rcfile=cloud_chatops/.pylintrc
 
-      - name: Run tests and collect coverage
+      - name: Run tests
         run: cd cloud_chatops && python3 -m pytest
 
       - name: Run tests and collect coverage
