@@ -4,7 +4,7 @@ It can be run here as the entry point or use the main method.
 """
 
 import asyncio
-from slack_app import run_app
+from src.slack_app import run_app
 
 
 def main():
@@ -13,5 +13,4 @@ def main():
 
 
 if __name__ == "__main__":
-    """This method is the entry point if using this file."""
     asyncio.run(run_app())

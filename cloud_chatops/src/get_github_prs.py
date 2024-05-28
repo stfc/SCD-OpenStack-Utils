@@ -16,7 +16,7 @@ class GetGitHubPRs:
 
     def __init__(self, repos: List[str], owner: str):
         """
-        This method initialises the class with the following attributes to be edited and accessed through the run method.
+        This method initialises the class with the following attributes.
         :param repos: A list of repositories to get pull requests for.
         :param repos: The owner of the above repositories.
         """
