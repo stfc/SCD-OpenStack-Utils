@@ -16,4 +16,4 @@ class PrData:
     thread_ts: str
     mention: bool
     draft: bool
-    old: bool
+    old: bool = False
