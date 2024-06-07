@@ -1,7 +1,7 @@
 """This module handles the Slack Application status notifications."""
 
 from slack_sdk import WebClient
-from read_data import get_token, get_maintainer
+from src.read_data import get_token, get_maintainer
 
 
 def online_notif() -> None:

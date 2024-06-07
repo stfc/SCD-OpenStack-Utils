@@ -9,9 +9,9 @@ import asyncio
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import schedule
-from pr_reminder import PostPRsToSlack
-from read_data import get_token, validate_required_files
-from online_notif import online_notif
+from src.pr_reminder import PostPRsToSlack
+from src.read_data import get_token, validate_required_files
+from src.online_notif import online_notif
 
 
 logging.basicConfig(level=logging.DEBUG)
