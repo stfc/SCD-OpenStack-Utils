@@ -4,8 +4,8 @@ It will get all open pull requests in provided STFC owned repositories.
 """
 
 from typing import List, Dict, Union
-from src.read_data import get_token
-from src.custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
+from read_data import get_token
+from custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
 import requests
 
 
