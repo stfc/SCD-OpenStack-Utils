@@ -6,6 +6,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from read_data import get_token, get_user_map, get_repos
 from get_github_prs import GetGitHubPRs
+from pr_dataclass import PrData
 
 
 class PostPRsToSlack:
@@ -58,19 +59,19 @@ class PostPRsToSlack:
         prs_found = False
         for repo in prs.values():
             for pr in repo:
-                info = {
-                    "pr_title": f"{pr['title']} #{pr['number']}",
-                    "user": pr["user"]["login"],
-                    "url": pr["html_url"],
-                    "created_at": pr["created_at"],
-                    "channel": reminder_message.data["channel"],
-                    "thread_ts": reminder_message.data["ts"],
-                    "mention": mention,
-                    "draft": pr["draft"],
-                }
+                info = PrData(
+                    pr_title=f"{pr['title']} #{pr['number']}",
+                    user=pr["user"]["login"],
+                    url=pr["html_url"],
+                    created_at=pr["created_at"],
+                    channel=reminder_message.data["channel"],
+                    thread_ts=reminder_message.data["ts"],
+                    mention=mention,
+                    draft=pr["draft"],
+                )
                 prs_found = True
                 checked_info = self.check_pr(info)
-                self.send_thread(**checked_info)
+                self.send_thread(checked_info)
 
         if not prs_found:
             self.send_no_prs(reminder_message)
@@ -88,59 +89,45 @@ class PostPRsToSlack:
             unfurl_links=False,
         )
 
-    def check_pr(self, info: Dict) -> Dict:
+    def check_pr(self, info: PrData) -> PrData:
         """
         This method validates certain information in the PR data such as who authored the PR and if it's old or not.
         :param info: The information to validate.
         :return: The validated information.
         """
-        if info["user"] not in self.slack_ids:
+        if info.user not in self.slack_ids:
             # If the PR author is not in the Slack ID mapping
             # then we set the user to mention as David Fairbrother
             # as the team lead to deal with this PR.
-            info["user"] = "U01JG0LKU3W"
+            info.user = "U01JG0LKU3W"
         else:
-            info["user"] = self.github_to_slack_username(info["user"])
-        opened_date = datetime.fromisoformat(info["created_at"]).replace(tzinfo=None)
+            info.user = self.github_to_slack_username(info.user)
+        opened_date = datetime.fromisoformat(info.created_at).replace(tzinfo=None)
         datetime_now = datetime.now().replace(tzinfo=None)
         time_cutoff = datetime_now - timedelta(days=30 * 6)
         if opened_date < time_cutoff:
-            info["old"] = True
-        del info["created_at"]
+            info.old = True
+        del info.created_at
         return info
 
     def send_thread(
         self,
-        pr_title: str,
-        user: str,
-        url: str,
-        channel: str,
-        thread_ts: str,
-        mention: bool,
-        draft=False,
-        old=False,
+        data: PrData
     ) -> None:
         """
         This method sends the thread message and prepares the reactions.
-        :param pr_title: The title of the PR.
-        :param user: The author of the PR.
-        :param url: The URL to the PR.
-        :param channel: The channel to send the message to.
-        :param thread_ts: The parent message timestamp to post the thread into.
-        :param mention: To mention users or not.
-        :param draft: If the PR is a draft.
-        :param old: If the PR is older than 6 months.
+        :param data: The PR data as a dataclass
         """
-        message = self.construct_message(pr_title, user, url, mention, draft, old)
+        message = self.construct_message(data.pr_title, data.user, data.url, data.mention, data.draft, data.old)
         response = self.client.chat_postMessage(
-            text=message, channel=channel, thread_ts=thread_ts, unfurl_links=False
+            text=message, channel=data.channel, thread_ts=data.thread_ts, unfurl_links=False
         )
         assert response["ok"]
         reactions = {
-            "old": old,
-            "draft": draft,
+            "old": data.old,
+            "draft": data.draft,
         }
-        self.send_thread_react(channel, response.data["ts"], reactions)
+        self.send_thread_react(data.channel, response.data["ts"], reactions)
 
     def send_thread_react(self, channel: str, ts: str, reactions: Dict) -> None:
         """
