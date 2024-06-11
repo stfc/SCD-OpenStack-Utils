@@ -1,0 +1,9 @@
+[FORMAT]
+# Black will enforce 88 chars on Python code
+# this will enforce 120 chars on docs / comments
+max-line-length=120
+
+# Disable various warnings:
+# R0913: too-many-arguments, disabling this as the PR functions require a large amount of information.
+
+disable=R0913
