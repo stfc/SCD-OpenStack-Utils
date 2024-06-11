@@ -1,12 +1,12 @@
 """This module handles the posting of messages to Slack using the Slack SDK WebClient class."""
 
-from typing import List, Dict
+from typing import List
 from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from src.read_data import get_token, get_user_map, get_repos
-from src.get_github_prs import GetGitHubPRs
-from src.pr_dataclass import PrData
+from read_data import get_token, get_user_map, get_repos
+from get_github_prs import GetGitHubPRs
+from pr_dataclass import PrData
 
 
 class PostPRsToSlack:
