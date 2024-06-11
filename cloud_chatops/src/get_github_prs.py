@@ -1,12 +1,12 @@
 """
 This module handles the HTTP requests and formatting to the GitHub REST Api.
-It will get all open pull requests in provided STFC owned repositories.
+It will get all open pull requests in provided repositories.
 """
 
-from typing import List, Dict, Union
+from typing import List, Dict
 import requests
-from src.read_data import get_token
-from src.custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
+from read_data import get_token
+from custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
 
 
 class GetGitHubPRs:
