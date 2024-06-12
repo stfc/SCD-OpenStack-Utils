@@ -1,6 +1,6 @@
 """
 This module starts the Slack Bolt application Asynchronously running the event loop.
-Using Socket Mode the application listens for events from the Slack API client.
+Using Socket mode, the application listens for events from the Slack API client.
 Slash commands are also defined here.
 """
 
@@ -9,9 +9,9 @@ import asyncio
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import schedule
-from pr_reminder import PostPRsToSlack
-from read_data import get_token, validate_required_files
-from online_notif import online_notif
+from lib.pr_reminder import PostPRsToSlack
+from lib.read_data import get_token, validate_required_files
+from lib.online_notif import online_notif
 
 
 logging.basicConfig(level=logging.DEBUG)

@@ -2,7 +2,7 @@
 
 from typing import List, Dict
 import json
-from custom_exceptions import RepositoriesNotGiven, UserMapNotGiven, TokensNotGiven
+from lib.custom_exceptions import RepositoriesNotGiven, UserMapNotGiven, TokensNotGiven
 
 
 def validate_required_files() -> None:
