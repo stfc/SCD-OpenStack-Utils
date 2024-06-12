@@ -23,3 +23,7 @@ class UserMapNotGiven(RuntimeError):
 
 class BadGitHubToken(RuntimeError):
     """Error: GitHub REST Api token is invalid."""
+
+
+class ChannelNotFound(LookupError):
+    """Error: The channel was not found."""
