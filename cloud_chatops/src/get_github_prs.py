@@ -11,6 +11,8 @@ from custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
 
 
 class GetGitHubPRs:
+    # pylint: disable=R0903
+    # Disabling this as in the future there is likely to be more public functions.
     """
     This class handles getting the open PRs from the GitHub Rest API.
     """
@@ -49,13 +51,15 @@ class GetGitHubPRs:
     def _responses_to_dataclasses(responses: List[Dict]) -> List[PrData]:
         responses_dataclasses = []
         for pr in responses:
-            responses_dataclasses.append(PrData(
-                        pr_title=f"{pr['title']} #{pr['number']}",
-                        user=pr["user"]["login"],
-                        url=pr["html_url"],
-                        created_at=pr["created_at"],
-                        draft=pr["draft"],
-                    ))
+            responses_dataclasses.append(
+                PrData(
+                    pr_title=f"{pr['title']} #{pr['number']}",
+                    user=pr["user"]["login"],
+                    url=pr["html_url"],
+                    created_at=pr["created_at"],
+                    draft=pr["draft"],
+                )
+            )
         return responses_dataclasses
 
 
@@ -63,16 +67,17 @@ class HTTPHandler:
     """
     This class makes the HTTP requests to the GitHub REST API.
     """
+
     def make_request(self, url: str) -> List[Dict]:
         """
         This method gets the HTTP response from the URL given and returns the response as a list.
         :param url: The URL to make the HTTP request to.
         :return: List of PRs.
         """
-        response = self._get_http_response(url)
+        response = self.get_http_response(url)
         return [response] if isinstance(response, dict) else response
 
-    def _get_http_response(self, url: str) -> List[Dict]:
+    def get_http_response(self, url: str) -> List[Dict]:
         """
         This method sends a HTTP request to the GitHub Rest API endpoint and returns all open PRs from that repository.
         :param url: The URL to make the request to
@@ -97,7 +102,9 @@ class HTTPHandler:
                     "Your GitHub api token is invalid. Check that it hasn't expired."
                 )
             case 404:
-                raise RepoNotFound(f'The repository at the url "{response.url}" could not be found.')
+                raise RepoNotFound(
+                    f'The repository at the url "{response.url}" could not be found.'
+                )
 
             case _:
                 raise UnknownHTTPError(

@@ -11,19 +11,20 @@ from custom_exceptions import ChannelNotFound
 
 
 class PostPRsToSlack:
+    # pylint: disable=R0903
+    # Disabling this as there only needs to be one entry point.
     """
     This class handles the Slack posting.
     """
 
     def __init__(self, mention=False):
-        self.repos = get_repos()
-        self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
-        self.slack_ids = get_user_map()
-        self.prs = GetGitHubPRs(get_repos(), "stfc").run()
         self.channel = "C06U37Y02R4"  # STFC-cloud: dev-chatops
         self.thread_ts = ""
         self.mention = mention
+        self.slack_ids = get_user_map()
         self.message_builder = PRMessageBuilder(self.mention)
+        self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
+        self.prs = GetGitHubPRs(get_repos(), "stfc").run()
 
     def run(self, channel=None) -> None:
         """
@@ -86,10 +87,10 @@ class PostPRsToSlack:
             "old": "alarm_clock",
             "draft": "scroll",
         }
-        for react in reactions:
+        for react, react_id in reactions.items():
             if getattr(pr_data, react):
                 react_response = self.client.reactions_add(
-                    channel=self.channel, name=reactions[react], timestamp=message_ts
+                    channel=self.channel, name=react_id, timestamp=message_ts
                 )
                 assert react_response["ok"]
 
@@ -113,17 +114,23 @@ class PostPRsToSlack:
         :return:
         """
         channels = self.client.conversations_list(types="private_channel")["channels"]
-        channel_obj = next((channel for channel in channels if channel["name"] == channel_name), None)
+        channel_obj = next(
+            (channel for channel in channels if channel["name"] == channel_name), None
+        )
         if channel_obj:
             self.channel = channel_obj["id"]
         else:
             raise ChannelNotFound(
-                f'The channel {channel_name} could not be found. Check the bot is a member of the channel.\n'
+                f"The channel {channel_name} could not be found. Check the bot is a member of the channel.\n"
                 f' You can use "/invite @Cloud ChatOps" to invite the app to your channel.'
             )
 
 
 class PRMessageBuilder:
+    """This class handles constructing the PR messages to be sent."""
+
+    # pylint: disable=R0903
+    # Disabling this as there only needs to be one entry point.
     def __init__(self, mention):
         self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
         self.slack_ids = get_user_map()
