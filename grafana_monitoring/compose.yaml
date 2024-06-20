@@ -19,6 +19,10 @@ services:
       - PROD_INFLUX_USERNAME=$PROD_INFLUX_USERNAME
       - PROD_INFLUX_PASSWORD=$PROD_INFLUX_PASSWORD
       - PROD_OPENSEARCH_PASSWORD=$PROD_OPENSEARCH_PASSWORD
+      - PROD_INFLUX_DB_URL=$PROD_INFLUX_DB_URL
+      - PROD_OPENSEARCH_URL=$PROD_OPENSEARCH_URL
+      - GRAFANA_DOMAIN_NAME=$GRAFANA_DOMAIN_NAME
+      - GRAFANA_ROOT_URL=$GRAFANA_ROOT_URL
     volumes:
       - ./cloud_datasource.yaml:/etc/grafana/provisioning/datasources/cloud_datasource.yaml
       - ./cloud-grafana-dashboards/:/etc/grafana/provisioning/dashboards
