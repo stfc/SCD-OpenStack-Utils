@@ -26,3 +26,18 @@ services:
     volumes:
       - ./cloud_datasource.yaml:/etc/grafana/provisioning/datasources/cloud_datasource.yaml
       - ./cloud-grafana-dashboards/:/etc/grafana/provisioning/dashboards
+    networks:
+      - backend
+
+  haproxy:
+    image: haproxytech/haproxy-alpine:2.4
+    networks:
+      - backend
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+
+networks:
+  backend:
