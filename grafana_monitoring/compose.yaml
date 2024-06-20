@@ -1,0 +1,24 @@
+services:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana-instance
+    environment:
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=$IRIS_CLIENT_ID
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=$IRIS_CLIENT_SECRET
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=https://iris-iam.stfc.ac.uk/authorize
+      - GF_AUTH_GENERIC_OAUTH_API_URL=https://iris-iam.stfc.ac.uk/userinfo
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=TRUE
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=https://iris-iam.stfc.ac.uk/token 
+      - GF_AUTH_GENERIC_OAUTH_GROUPS_ATTRIBUTE_PATH=groups[*]
+      - GF_AUTH_GENERIC_OAUTH_ALLOWED_GROUPS=stfc-cloud/admins
+      - GF_AUTH_GENERIC_OAUTH_DOMAIN=grafana.nubes.rl.ac.uk
+      - GF_AUTH_GENERIC_OAUTH_ROOT_URL=https://grafana.nubes.rl.ac.uk:3000/
+      - GF_AUTH_GENERIC_OAUTH_PROTOCOL=http
+      - GF_AUTH_GENERIC_OAUTH_HTTP_PORT=3000
+      - PROD_INFLUX_USERNAME=$PROD_INFLUX_USERNAME
+      - PROD_INFLUX_PASSWORD=$PROD_INFLUX_PASSWORD
+      - PROD_OPENSEARCH_PASSWORD=$PROD_OPENSEARCH_PASSWORD
+    volumes:
+      - ./cloud_datasource.yaml:/etc/grafana/provisioning/datasources/cloud_datasource.yaml
+      - ./cloud-grafana-dashboards/:/etc/grafana/provisioning/dashboards
