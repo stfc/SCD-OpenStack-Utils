@@ -6,7 +6,7 @@ datasources:
     access: proxy
     uid: "openstack_grafana"
     user: $PROD_INFLUX_USERNAME
-    url: "http://influx1.nubes.rl.ac.uk:8086"
+    url: $PROD_INFLUX_DB_URL
     #database: "cloud" # this is a deprecated field but works for v10
     jsonData:
       dbName : "cloud" 
@@ -20,7 +20,7 @@ datasources:
     type: grafana-opensearch-datasource
     access: proxy
     uid: "opensearch-grafana"
-    url: https://172.16.114.193:9200
+    url: $PROD_OPENSEARCH_URL
     basicAuth: true
     basicAuthUser: admin
     jsonData:
