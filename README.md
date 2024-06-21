@@ -61,6 +61,12 @@ This script is used to benchmark the GPU performance of a machine. It is based o
 The script is designed to be run on a machine with a GPU, and will run with the specified number of GPUs (default 1).
 [More Here](gpu_benchmark/)
 
+## grafana_monitoring
+
+This script is used to deploy a grafana container using a docker container, with Iris IAM login included and connection to database.
+The env.sh file should be configured before running.
+[Move Here](grafana_monitoring/)
+
 ## iris casttools
 
 Scripts for collecting metrics for cloud energy collection to be displayed using monitoring softwares.
