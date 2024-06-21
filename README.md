@@ -93,7 +93,7 @@ A Python script to reverse the SSL certificate chain order. For example, a certi
 
 ## terraform_provisioning
 
-A terraform script to create a private network on openstack along with a router and a subnet
+One terraform script to create a private network on openstack along with a router and a subnet and one to deploy a load balancing application.
 [More Here](terraform_provisioning/)
 
 ## word_cloud_generator
