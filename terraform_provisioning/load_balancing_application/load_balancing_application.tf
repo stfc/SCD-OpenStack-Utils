@@ -20,18 +20,18 @@ resource "openstack_networking_network_v2" "private_network" {
   admin_state_up = "true"
 }
 
-# Creates a subnet within our private network
+# Creates a subnet within our private network 
 resource "openstack_networking_subnet_v2" "subnet" {
   name       = "subnet"
   network_id = openstack_networking_network_v2.private_network.id
-  cidr       = "10.0.0.0/24"
+  cidr       = "192.168.3.0/24"
   ip_version = 4
 }
 
 # Creates a router within our network
 resource "openstack_networking_router_v2" "router" {
-  name                = "router"
-  external_network_id = var.external_network_id
+  name                = "${var.deployment_name}-router"
+  external_network_id = var.external
 }
 
 # Connects the router to our subnet
@@ -74,11 +74,8 @@ resource "openstack_lb_listener_v2" "ssh_listener" {
 resource "openstack_lb_listener_v2" "web_server_listener" {
   name = "web_servers"
   protocol        = "TCP"
-  protocol_port   = 80
+  protocol_port   = 80 
   loadbalancer_id = openstack_lb_loadbalancer_v2.loadbalancer.id
-  timeout_client_data = 600000
-  timeout_member_connect = 600000
-  timeout_member_data = 600000
 }
 
 # Creating the ssh pool
@@ -109,12 +106,12 @@ resource "openstack_lb_member_v2" "web_server_member" {
   pool_id       = openstack_lb_pool_v2.web_servers_pool.id
   count = length(openstack_compute_instance_v2.vm)
   address = openstack_compute_instance_v2.vm[count.index].access_ip_v4
-  protocol_port = 80
+  protocol_port = 80 
 }
 
 # Creating the keypairs for the vms
 resource "openstack_compute_keypair_v2" "vm-keypair" {
-  name = "vm-keypair"
+  name = var.vm_keypair_name 
 }
 
 # Creating the private key from the created keypair
@@ -122,7 +119,7 @@ resource "local_file" "vm-keypair-private" {
   connection {
     type = "ssh"
     user = "ubuntu"
-    host = openstack_compute_instance_v2.bastion.access_ip_v4
+    host = openstack_compute_instance_v2.bastion.access_ip_v4 
     port = 22
   }
 
@@ -130,37 +127,21 @@ resource "local_file" "vm-keypair-private" {
   content = openstack_compute_keypair_v2.vm-keypair.private_key
 }
 
-# Copying the private key from the locally created
-/*
-resource "null_resource" "copying_private_key" {
-    connection {
-        type = "ssh"
-        user = "ubuntu"
-        host = openstack_compute_instance_v2.bastion.access_ip_v4
-        port = 22
-    }
-
-    provisioner "file" {
-        source = "id_rsa"
-        destination = "/home/ubuntu/.ssh/id_rsa"
-    }
-
-    depends_on = [ openstack_lb_member_v2.ssh_member ]
-}
-*/
-
 # Create multiple vm's for web serving
 resource "openstack_compute_instance_v2" "vm" {
   count = var.instances
   image_name = var.image_name
   flavor_name = var.flavor_name
-  key_pair = openstack_compute_keypair_v2.vm-keypair.name
+  key_pair = openstack_compute_keypair_v2.vm-keypair.name 
   name = format("vm-%d", count.index)
-
+  
   network {
     uuid = openstack_networking_network_v2.private_network.id
   }
 
   # Due to weird issue faced with terraform creating vm's before subnets are made
-  depends_on = [ openstack_networking_subnet_v2.subnet ]
+  depends_on = [ 
+    openstack_networking_subnet_v2.subnet,
+    openstack_lb_loadbalancer_v2.loadbalancer
+  ]
 }
