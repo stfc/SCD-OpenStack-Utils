@@ -99,6 +99,7 @@ resource "openstack_lb_member_v2" "ssh_member" {
   pool_id       = openstack_lb_pool_v2.ssh_pool.id
   address       = openstack_compute_instance_v2.bastion.access_ip_v4
   protocol_port = 22
+  depends_on = [ openstack_compute_instance_v2.bastion ]
 }
 
 # Creating the web_server member
@@ -109,30 +110,12 @@ resource "openstack_lb_member_v2" "web_server_member" {
   protocol_port = 80 
 }
 
-# Creating the keypairs for the vms
-resource "openstack_compute_keypair_v2" "vm-keypair" {
-  name = var.vm_keypair_name 
-}
-
-# Creating the private key from the created keypair
-resource "local_file" "vm-keypair-private" {
-  connection {
-    type = "ssh"
-    user = "ubuntu"
-    host = openstack_compute_instance_v2.bastion.access_ip_v4 
-    port = 22
-  }
-
-  filename = "/home/ubuntu/.ssh/id_rsa"
-  content = openstack_compute_keypair_v2.vm-keypair.private_key
-}
-
 # Create multiple vm's for web serving
 resource "openstack_compute_instance_v2" "vm" {
   count = var.instances
   image_name = var.image_name
   flavor_name = var.flavor_name
-  key_pair = openstack_compute_keypair_v2.vm-keypair.name 
+  key_pair = var.key_pair 
   name = format("vm-%d", count.index)
   
   network {

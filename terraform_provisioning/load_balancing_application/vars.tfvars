@@ -1,6 +1,7 @@
-external_network_id = ""
+external = ""
+deployment_name = ""
 floating_ip = ""
-image_name = ""
-flavor_name = ""
+image_name = "ubuntu-focal-20.04-nogui"
+flavor_name = "l3.nano"
 key_pair = ""
-instances = 1
+instances = 1 
