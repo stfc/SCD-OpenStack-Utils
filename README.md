@@ -91,6 +91,11 @@ A Python package to bulk upload systems data to Netbox from files creating devic
 A Python script to reverse the SSL certificate chain order. For example, a certificate as CA -> Root would output as Root -> CA.
 [More Here](reverse_ssl_cert_chain/)
 
+## terraform_provisioning
+
+A terraform script to create a private network on openstack along with a router and a subnet
+[More Here](terraform_provisioning/)
+
 ## word_cloud_generator
 
 A Python script that when run, creates a filter word cloud from the summary of tickets over a time period.
