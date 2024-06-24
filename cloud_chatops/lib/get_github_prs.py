@@ -34,7 +34,7 @@ class GetGitHubPRs:
         :return: The responses from the HTTP requests.
         """
         responses = self._request_all_repos_http()
-        return self._responses_to_dataclasses(responses)
+        return self._parse_pr_to_dataclass(responses)
 
     def _request_all_repos_http(self) -> List[Dict]:
         """
@@ -48,7 +48,12 @@ class GetGitHubPRs:
         return responses
 
     @staticmethod
-    def _responses_to_dataclasses(responses: List[Dict]) -> List[PrData]:
+    def _parse_pr_to_dataclass(responses: List[Dict]) -> List[PrData]:
+        """
+        This module converts the responses from the HTTP request into Dataclasses to be more easily handled.
+        :param responses: List of responses made from HTTP requests
+        :return: Responses in dataclasses
+        """
         responses_dataclasses = []
         for pr in responses:
             responses_dataclasses.append(
