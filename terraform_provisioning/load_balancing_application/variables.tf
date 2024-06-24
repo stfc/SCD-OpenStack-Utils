@@ -1,11 +1,11 @@
-variable "external" {
-  description = "The id of the external network to connect the router to"
-  type = string 
+variable "deployment_name" {
+  description = "The name of the deployment (prepended to things)"
+  type = string
 }
 
-variable "deployment_name" {
-  description = "The name of the deployment (prepended to router name)"
-  type = string
+variable "external_network_id" {
+  description = "The id of the external network to connect the router to"
+  type = string 
 }
 
 variable "floating_ip" {

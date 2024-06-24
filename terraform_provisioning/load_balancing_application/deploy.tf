@@ -16,22 +16,22 @@ provider "openstack" {
 
 # Creates a private network
 resource "openstack_networking_network_v2" "private_network" {
-  name           = "private_network"
+  name           = "${var.deployment_name}-private_network"
   admin_state_up = "true"
 }
 
 # Creates a subnet within our private network 
 resource "openstack_networking_subnet_v2" "subnet" {
-  name       = "subnet"
+  name       = "${var.deployment_name}-subnet"
   network_id = openstack_networking_network_v2.private_network.id
-  cidr       = "192.168.3.0/24"
+  cidr       = "192.168.1.0/24"
   ip_version = 4
 }
 
 # Creates a router within our network
 resource "openstack_networking_router_v2" "router" {
   name                = "${var.deployment_name}-router"
-  external_network_id = var.external
+  external_network_id = var.external_network_id
 }
 
 # Connects the router to our subnet
@@ -42,17 +42,17 @@ resource "openstack_networking_router_interface_v2" "router_interface" {
 
 # Create a load balancer and places it in the subnet we made earlier
 resource "openstack_lb_loadbalancer_v2" "loadbalancer" {
-  name = "loadbalancer"
+  name = "${var.deployment_name}-loadbalancer"
   vip_subnet_id = openstack_networking_subnet_v2.subnet.id
   vip_address = var.floating_ip
 }
 
 # Creating the bastion vm to access the other vm's
 resource "openstack_compute_instance_v2" "bastion" {
+  name = "${var.deployment_name}-bastion"
   image_name = var.image_name
   flavor_name = var.flavor_name
   key_pair = var.key_pair
-  name = "bastion"
 
   network {
     uuid = openstack_networking_network_v2.private_network.id
@@ -61,7 +61,7 @@ resource "openstack_compute_instance_v2" "bastion" {
 
 # Create a ssh listener for the bastion vm
 resource "openstack_lb_listener_v2" "ssh_listener" {
-  name = "bastion-ssh"
+  name = "${var.deployment_name}-bastion-ssh"
   protocol        = "TCP"
   protocol_port   = 22
   loadbalancer_id = openstack_lb_loadbalancer_v2.loadbalancer.id
@@ -72,7 +72,7 @@ resource "openstack_lb_listener_v2" "ssh_listener" {
 
 # Create an ssh listener for the web servers
 resource "openstack_lb_listener_v2" "web_server_listener" {
-  name = "web_servers"
+  name = "${var.deployment_name}-web_servers"
   protocol        = "TCP"
   protocol_port   = 80 
   loadbalancer_id = openstack_lb_loadbalancer_v2.loadbalancer.id
@@ -80,7 +80,7 @@ resource "openstack_lb_listener_v2" "web_server_listener" {
 
 # Creating the ssh pool
 resource "openstack_lb_pool_v2" "ssh_pool" {
-  name = "ssh-pool"
+  name = "${var.deployment_name}-ssh-pool"
   protocol    = "TCP"
   lb_method   = "SOURCE_IP"
   listener_id = openstack_lb_listener_v2.ssh_listener.id
@@ -88,7 +88,7 @@ resource "openstack_lb_pool_v2" "ssh_pool" {
 
 # Creating a web_servers pool
 resource "openstack_lb_pool_v2" "web_servers_pool" {
-  name = "web_servers_pool"
+  name = "${var.deployment_name}-web_servers_pool"
   protocol    = "TCP"
   lb_method   = "SOURCE_IP"
   listener_id = openstack_lb_listener_v2.web_server_listener.id
@@ -112,11 +112,11 @@ resource "openstack_lb_member_v2" "web_server_member" {
 
 # Create multiple vm's for web serving
 resource "openstack_compute_instance_v2" "vm" {
+  name = format("${var.deployment_name}-vm-%d", count.index)
   count = var.instances
   image_name = var.image_name
   flavor_name = var.flavor_name
   key_pair = var.key_pair 
-  name = format("vm-%d", count.index)
   
   network {
     uuid = openstack_networking_network_v2.private_network.id
