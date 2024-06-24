@@ -15,7 +15,7 @@ import requests
 from datetime import datetime
 
 
-def rally_extract_results(report_path: Path, config_path: Path):
+def rally_extract_results(report_path: Path, config_path: Path) -> None:
     """
     This function reads a rally report file and parses it to get what tests have succeeded/failed
     and sends that information to influxdb
@@ -39,7 +39,7 @@ def rally_extract_results(report_path: Path, config_path: Path):
     )
 
 
-def build_datastring(metrics: List, instance: str):
+def build_datastring(metrics: List, instance: str) -> str:
     """
     Helper function that creates a data-string that influxdb can read
     :param metrics: a set of parsed metrics from the rally report file
@@ -112,7 +112,8 @@ def parse_entry_single_result(test_entry: Dict) -> Dict:
     """
     success_flag = 1
     if test_entry["sla"]:
-        success_flag = int(all(sla["success"] for sla in test_entry["sla"]))
+        temp_list = [sla["success"] for sla in test_entry["sla"]]
+        success_flag = int(all(temp_list))
 
     metric = {
         "fields": {
@@ -198,6 +199,10 @@ def main(user_args: List):
     parser.add_argument(
         "rally_filepath", type=Path, help="Path to rally report file"
     )
+    check_args(args)
+    rally_extract_results(args.rally_filepath, config_path)
+
+def check_args(args;  argparse.parser) -> None:
     try:
         args = parser.parse_args(user_args)
     except argparse.ArgumentTypeError as exp:
@@ -212,8 +217,6 @@ def main(user_args: List):
         raise RuntimeError(
             f"could not read influx db config file '{args.config_filepath}'"
         ) from exp
-
-    rally_extract_results(args.rally_filepath, config_path)
 
 
 if __name__ == "__main__":
