@@ -1,5 +1,5 @@
 variable "deployment_name" {
-  description = "The name of the deployment (prepended to things)"
+  description = "The name of the deployment (prepended to resources)"
   type = string
 }
 
