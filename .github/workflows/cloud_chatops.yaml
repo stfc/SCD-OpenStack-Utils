@@ -34,7 +34,7 @@ jobs:
         run: cd cloud_chatops && python3 -m pytest . --cov-report xml:coverage.xml --cov
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{secrets.CODECOV_TOKEN}}
           files: ./cloud_chatops/coverage.xml
