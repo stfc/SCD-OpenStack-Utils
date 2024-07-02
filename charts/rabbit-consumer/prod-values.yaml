@@ -3,7 +3,7 @@ consumer:
     defaultPrefix: vm-openstack-Prod-
 
   rabbitmq:
-    host: openstack.stfc.ac.uk
+    host: hv747.nubes.rl.ac.uk
 
   openstack:
     authUrl: https://openstack.stfc.ac.uk:5000/v3
