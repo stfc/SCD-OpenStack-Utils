@@ -264,17 +264,19 @@ def generate_login_str(config: ConsumerConfig) -> str:
     if not isinstance(config.rabbit_hosts, str):
         raise ValueError("Rabbit hosts must be a comma separated string of hosts")
 
+    debug_str = "amqp://"
     connect_str = "amqp://"
 
     for host in config.rabbit_hosts.split(","):
         host = host.strip()
         connect_str += f"{config.rabbit_username}:{config.rabbit_password}@{host}:{config.rabbit_port},"
+        debug_str += f"{config.rabbit_username}:<password>@{host}:{config.rabbit_port},"
 
     # Trim the trailing comma
     connect_str = connect_str[:-1]
+    debug_str = debug_str[:-1]
 
-    sanitised_connect_str = connect_str.replace(config.rabbit_password, "<password>")
-    logger.debug("Connecting to rabbit with: %s", sanitised_connect_str)
+    logger.debug("Connecting to rabbit with: %s", debug_str)
 
     return connect_str
 
