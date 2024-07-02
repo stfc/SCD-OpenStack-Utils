@@ -43,11 +43,12 @@ jobs:
           cd OpenStack-Rabbit-Consumer && python -m coverage xml
 
       - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: OpenStack-Rabbit-Consumer/coverage.xml
           fail_ci_if_error: true
           flags: rabbit_consumer
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   push_dev_image_harbor:
     runs-on: ubuntu-latest
