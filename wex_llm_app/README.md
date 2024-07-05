@@ -46,4 +46,14 @@ Create a web application that allows users to send questions to a LLM backend an
         * Set up a separate VM instance (with or without Docker) to run HAProxy and Let's Encrypt services.
         * Configure HAProxy to load balance traffic across the multiple web server instances.
         * Host the Ollama service directly on a separate GPU VM.
-        
+      
+**Useful Resources:**
+
+1. [HTML, CSS, JS resources](https://developer.mozilla.org/en-US/)
+2. [HTML Tutorial](https://www.w3schools.com/html/)
+3. [CSS Tutorial](https://www.w3schools.com/css/)
+4. [JavaScript Tutorial](https://www.w3schools.com/js/)
+5. [Terraform Documentation](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs)
+6. [Ansible Documentation](https://docs.ansible.com/)
+7. [Docker Documnetation](https://docs.docker.com/)
+8. [Ollama Documentation](https://github.com/ollama/ollama) 
