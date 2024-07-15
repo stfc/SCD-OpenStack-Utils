@@ -127,6 +127,7 @@ class PRMessageBuilder:
 
     # pylint: disable=R0903
     # Disabling this as there only needs to be one entry point.
+    # The default user here is David Fairbrother
     def __init__(self, mention, default_user_id="U01JG0LKU3W"):
         self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
         self.slack_ids = get_user_map()
