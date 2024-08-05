@@ -16,7 +16,7 @@ class PostPRsToSlack:
     """
     This class handles the Slack posting.
     """
-
+    # The default channel is dev-chatops
     def __init__(self, mention=False, channel="C06U37Y02R4"):
         self.channel = channel
         self.thread_ts = ""
