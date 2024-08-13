@@ -107,7 +107,7 @@ def aq_make(addresses: List[OpenstackAddress]) -> None:
     # suppressing 400 error that occurs - the VM gets created fine
     # TODO: find out why this occurs
     except AquilonError:
-        logger.debug("make request failed, continuing", hostname)
+        logger.debug("make request failed, continuing")
 
 
 def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
