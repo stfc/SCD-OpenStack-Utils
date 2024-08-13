@@ -24,6 +24,7 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: |
+          sudo apt-get update --fix-missing
           python -m pip install --upgrade pip
           # Required for requests-kerberos
           sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libkrb5-dev

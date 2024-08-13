@@ -151,7 +151,7 @@ def test_aq_make_aquilon_error(config, setup, openstack_address_list):
     config.return_value.aq_url = domain
     setup.side_effect = AquilonError()
 
-    #pylint:disable=bare-except
+    # pylint:disable=bare-except
     try:
         aq_make(openstack_address_list)
     except:
@@ -159,7 +159,6 @@ def test_aq_make_aquilon_error(config, setup, openstack_address_list):
 
     expected_url = f"{domain}/host/{openstack_address_list[0].hostname}/command/make"
     setup.assert_called_once_with(expected_url, "post", mock.ANY)
-
 
 
 @pytest.mark.parametrize("hostname", ["  ", "", None])

@@ -109,6 +109,7 @@ def aq_make(addresses: List[OpenstackAddress]) -> None:
     except AquilonError:
         logger.debug("make request failed, continuing", hostname)
 
+
 def aq_manage(addresses: List[OpenstackAddress], image_meta: AqMetadata) -> None:
     """
     Manages the list of Aquilon addresses passed to it back to the production domain
