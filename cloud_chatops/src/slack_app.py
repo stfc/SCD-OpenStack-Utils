@@ -9,9 +9,9 @@ import asyncio
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import schedule
-from src.pr_reminder import PostPRsToSlack
-from src.read_data import get_token, validate_required_files
-from src.online_notif import online_notif
+from pr_reminder import PostPRsToSlack
+from read_data import get_token, validate_required_files
+from online_notif import online_notif
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,11 +23,11 @@ async def schedule_jobs() -> None:
     This function schedules tasks for the async loop to run when the time is right.
     """
 
-    def run_pr(channel, mention=False):
+    def run_pr(channel, mention=False) -> None:
         """
         This is a placeholder function for the schedule to accept.
         """
-        PostPRsToSlack().run(mention=mention, channel=channel)
+        PostPRsToSlack(mention=mention, channel=channel).run()
 
     schedule.every().monday.at("09:00").do(
         run_pr, mention=True, channel="pull-requests"
