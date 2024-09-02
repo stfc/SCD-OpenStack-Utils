@@ -27,7 +27,7 @@ async def schedule_jobs() -> None:
         """
         This is a placeholder function for the schedule to accept.
         """
-        PostPRsToSlack(mention=mention, channel=channel).run()
+        PostPRsToSlack(mention=mention).run(channel=channel)
 
     schedule.every().monday.at("09:00").do(
         run_pr, mention=True, channel="pull-requests"

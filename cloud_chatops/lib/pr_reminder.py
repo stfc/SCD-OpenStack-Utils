@@ -16,9 +16,9 @@ class PostPRsToSlack:
     """
     This class handles the Slack posting.
     """
-    # The default channel is dev-chatops
-    def __init__(self, mention=False, channel="C06U37Y02R4"):
-        self.channel = channel
+
+    def __init__(self, mention=False):
+        self.channel = "C06U37Y02R4"  # STFC-cloud: dev-chatops
         self.thread_ts = ""
         self.mention = mention
         self.slack_ids = get_user_map()
@@ -26,10 +26,14 @@ class PostPRsToSlack:
         self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
         self.prs = GetGitHubPRs(get_repos(), "stfc").run()
 
-    def run(self) -> None:
+    def run(self, channel=None) -> None:
         """
         This method sets class attributes then cals the reminder and thread post methods.
+        :param channel: Changes the channel to post the messages to.
         """
+        if channel:
+            self._set_channel_id(channel)
+
         self._post_reminder_message()
         self._post_thread_messages(self.prs)
 
@@ -127,12 +131,10 @@ class PRMessageBuilder:
 
     # pylint: disable=R0903
     # Disabling this as there only needs to be one entry point.
-    # The default user here is David Fairbrother
-    def __init__(self, mention, default_user_id="U01JG0LKU3W"):
+    def __init__(self, mention):
         self.client = WebClient(token=get_token("SLACK_BOT_TOKEN"))
         self.slack_ids = get_user_map()
         self.mention = mention
-        self.default_user_id = default_user_id
 
     def make_message(self, pr_data: PrData) -> str:
         """
@@ -179,7 +181,10 @@ class PRMessageBuilder:
         :return: Slack ID or GitHub username
         """
         if user not in self.slack_ids:
-            user = self.default_user_id
+            # If the PR author is not in the Slack ID mapping
+            # then we set the user to mention as David Fairbrother
+            # as the team lead to deal with this PR.
+            user = "U01JG0LKU3W"
         else:
             user = self.slack_ids[user]
         return user
@@ -194,7 +199,9 @@ class PRMessageBuilder:
         opened_date = datetime.fromisoformat(time_created).replace(tzinfo=None)
         datetime_now = datetime.now().replace(tzinfo=None)
         time_cutoff = datetime_now - timedelta(days=30 * 6)
-        return opened_date < time_cutoff
+        if opened_date < time_cutoff:
+            return True
+        return False
 
     def _check_pr_info(self, info: PrData) -> PrData:
         """
