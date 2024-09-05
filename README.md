@@ -107,7 +107,3 @@ One terraform script to create a private network on openstack along with a route
 A Python script that when run, creates a filter word cloud from the summary of tickets over a time period.
 [More Here](word_cloud_generator/)
 
-## wex_llm_app
-
-Developed by Cloud WEX Students. A web application to host and interact with a large language model instance.
-[More Here](wex_llm_app)
