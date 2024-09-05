@@ -25,13 +25,10 @@ jobs:
           cd cloud_chatops && pip install -r requirements.txt
 
       - name: Analyse with pylint
-        run: pylint cloud_chatops/src --rcfile=cloud_chatops/.pylintrc
-
-      - name: Run tests
-        run: cd cloud_chatops && python3 -m pytest
+        run: pylint cloud_chatops --rcfile=cloud_chatops/.pylintrc
 
       - name: Run tests and collect coverage
-        run: cd cloud_chatops && python3 -m pytest . --cov-report xml:coverage.xml --cov
+        run: cd cloud_chatops && python3 -m pytest tests --cov-report xml:coverage.xml --cov
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
