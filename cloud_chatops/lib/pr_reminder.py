@@ -9,6 +9,12 @@ from lib.get_github_prs import GetGitHubPRs
 from lib.pr_dataclass import PrData
 from lib.custom_exceptions import ChannelNotFound
 
+DEFAULT_CHANNEL = "C06U37Y02R4" # STFC-cloud: dev-chatops
+# If the PR author is not in the Slack ID mapping
+# then we set the user to mention as David Fairbrother
+# as the team lead to deal with this PR.
+DEFAULT_AUTHOR = "U01JG0LKU3W"
+
 
 class PostPRsToSlack:
     # pylint: disable=R0903
@@ -18,7 +24,7 @@ class PostPRsToSlack:
     """
 
     def __init__(self, mention=False):
-        self.channel = "C06U37Y02R4"  # STFC-cloud: dev-chatops
+        self.channel = DEFAULT_CHANNEL
         self.thread_ts = ""
         self.mention = mention
         self.slack_ids = get_user_map()
@@ -181,10 +187,7 @@ class PRMessageBuilder:
         :return: Slack ID or GitHub username
         """
         if user not in self.slack_ids:
-            # If the PR author is not in the Slack ID mapping
-            # then we set the user to mention as David Fairbrother
-            # as the team lead to deal with this PR.
-            user = "U01JG0LKU3W"
+            user = DEFAULT_AUTHOR
         else:
             user = self.slack_ids[user]
         return user
@@ -199,9 +202,7 @@ class PRMessageBuilder:
         opened_date = datetime.fromisoformat(time_created).replace(tzinfo=None)
         datetime_now = datetime.now().replace(tzinfo=None)
         time_cutoff = datetime_now - timedelta(days=30 * 6)
-        if opened_date < time_cutoff:
-            return True
-        return False
+        return opened_date < time_cutoff
 
     def _check_pr_info(self, info: PrData) -> PrData:
         """
