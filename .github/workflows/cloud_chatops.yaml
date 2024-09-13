@@ -1,9 +1,13 @@
 name: CI/CD Cloud ChatOps
 
 on:
-  pull_request:
+  push:
     branches:
       - master
+  pull_request:
+    paths:
+      - "cloud_chatops/**"
+      - ".github/workflows/cloud_chatops.yaml"
 
 jobs:
   Pylint-Tests-Codecov:
