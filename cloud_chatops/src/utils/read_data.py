@@ -2,7 +2,11 @@
 
 from typing import List, Dict
 import json
-from lib.custom_exceptions import RepositoriesNotGiven, UserMapNotGiven, TokensNotGiven
+from utils.custom_exceptions import (
+    RepositoriesNotGiven,
+    UserMapNotGiven,
+    TokensNotGiven,
+)
 
 
 def validate_required_files() -> None:
@@ -34,7 +38,7 @@ def get_token(secret: str) -> str:
     :param secret: The secret to find
     :return: A secret as string
     """
-    with open("secrets.json", "r", encoding="utf-8") as file:
+    with open("/opt/cloud_chatops_secrets/secrets.json", "r", encoding="utf-8") as file:
         data = file.read()
     secrets = json.loads(data)
     return secrets[secret]
@@ -45,7 +49,7 @@ def get_repos() -> List[str]:
     This function reads the repo csv file and returns a list of repositories
     :return: List of repositories as strings
     """
-    with open("repos.csv", "r", encoding="utf-8") as file:
+    with open("/opt/cloud_chatops_secrets/repos.csv", "r", encoding="utf-8") as file:
         data = file.read()
         repos = data.split(",")
         if not repos[-1]:
@@ -58,7 +62,9 @@ def get_user_map() -> Dict:
     This function gets the GitHub to Slack username mapping from the map file.
     :return: Dictionary of username mapping
     """
-    with open("user_map.json", "r", encoding="utf-8") as file:
+    with open(
+        "/opt/cloud_chatops_secrets/user_map.json", "r", encoding="utf-8"
+    ) as file:
         data = file.read()
         user_map = json.loads(data)
     return user_map
@@ -69,7 +75,9 @@ def get_maintainer() -> str:
     This function will get the maintainer user's Slack ID from the text file.
     :return: Slack Member ID
     """
-    with open("maintainer.txt", "r", encoding="utf-8") as file:
+    with open(
+        "/opt/cloud_chatops_secrets/maintainer.txt", "r", encoding="utf-8"
+    ) as file:
         data = file.read()
         if not data:
             return "U05RBU0RF4J"  # Default Maintainer: Kalibh Halford

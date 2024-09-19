@@ -1,6 +1,7 @@
 """This test file covers all tests for the read_data module."""
+
 from unittest.mock import patch, mock_open
-from lib.read_data import get_token, get_repos, get_user_map, get_maintainer
+from utils.read_data import get_token, get_repos, get_user_map, get_maintainer
 
 
 def test_get_token():
