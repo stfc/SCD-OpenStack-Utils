@@ -5,9 +5,13 @@ It will get all open pull requests in provided repositories.
 
 from typing import List, Dict
 import requests
-from lib.read_data import get_token
-from lib.pr_dataclass import PrData
-from lib.custom_exceptions import RepoNotFound, UnknownHTTPError, BadGitHubToken
+from utils.read_data import get_token
+from utils.pr_dataclass import PrData
+from utils.custom_exceptions import (
+    RepoNotFound,
+    UnknownHTTPError,
+    BadGitHubToken,
+)
 
 
 class GetGitHubPRs:
