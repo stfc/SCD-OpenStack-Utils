@@ -6,9 +6,9 @@ on:
       - master
   pull_request:
     paths:
+      - ".github/workflows/cloud_chatops.yaml"
       - "cloud_chatops/src/**"
       - "cloud_chatops/tests/**"
-      - ".github/workflows/cloud_chatops.yaml"
       - "cloud_chatops/Dockerfile"
       - "cloud_chatops/compose.yaml"
 
