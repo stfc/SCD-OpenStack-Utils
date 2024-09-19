@@ -1,15 +1,8 @@
 name: Rabbit Consumer
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    paths:
-      - ".github/workflows/rabbit_consumer.yaml"
-      - "OpenStack-Rabbit-Consumer/**"
   schedule: 
-      - cron: "30 18 * * FRI" # Every Friday at 18:30
+      - cron: "1 * * * *" # Every minute
 
 jobs:
   test_and_lint:
