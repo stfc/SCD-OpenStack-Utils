@@ -35,8 +35,8 @@ jobs:
       - name: Analyse with pylint
         run: |
           cd cloud_chatops
-          pylint src --rcfile=cloud_chatops/.pylintrc
-          pylint tests --rcfile=cloud_chatops/.pylintrc
+          pylint src --rcfile=.pylintrc
+          pylint tests --rcfile=.pylintrc
 
       - name: Run tests
         run: |
