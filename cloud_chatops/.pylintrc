@@ -4,5 +4,7 @@
 max-line-length=120
 
 # Disable various warnings:
+# E0401 Ignored as imports work and will be tested when deployed in dev
+# R0801 Ignored to be fixed in future PRs
 
-disable=
+disable=E0401,R0801
