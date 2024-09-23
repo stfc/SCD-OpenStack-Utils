@@ -4,10 +4,10 @@ from typing import List
 from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from utils.read_data import get_token, get_user_map, get_repos
-from utils.get_github_prs import GetGitHubPRs
-from utils.pr_dataclass import PrData
-from utils.custom_exceptions import ChannelNotFound
+from src.utils.read_data import get_token, get_user_map, get_repos
+from src.utils.get_github_prs import GetGitHubPRs
+from src.utils.pr_dataclass import PrData
+from src.utils.custom_exceptions import ChannelNotFound
 
 DEFAULT_CHANNEL = "C06U37Y02R4"  # STFC-cloud: dev-chatops
 # If the PR author is not in the Slack ID mapping

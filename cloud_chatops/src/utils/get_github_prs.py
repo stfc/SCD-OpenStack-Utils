@@ -5,9 +5,9 @@ It will get all open pull requests in provided repositories.
 
 from typing import List, Dict
 import requests
-from utils.read_data import get_token
-from utils.pr_dataclass import PrData
-from utils.custom_exceptions import (
+from src.utils.read_data import get_token
+from src.utils.pr_dataclass import PrData
+from src.utils.custom_exceptions import (
     RepoNotFound,
     UnknownHTTPError,
     BadGitHubToken,

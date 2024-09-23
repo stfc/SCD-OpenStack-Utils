@@ -8,9 +8,9 @@ import asyncio
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import schedule
-from pr_reminder import PostPRsToSlack
-from commands import PostToDMs
-from utils.read_data import get_token, validate_required_files
+from src.pr_reminder import PostPRsToSlack
+from src.commands import PostToDMs
+from src.utils.read_data import get_token, validate_required_files
 
 
 logging.basicConfig(level=logging.DEBUG)
