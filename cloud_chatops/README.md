@@ -4,7 +4,7 @@ Using Slack's Bolt for Python library here I have developed a Slack Application 
 This application is designed to help promote the closing of GitHub pull requests either by getting them approved and merged or closed when they go stale.<br>
 In principle, the app will notify authors about their pull requests until they are closed.<br>
 ### Deployment
-The entry point for is in [main.py](main.py) which will run the application.<br>
+The entry point for is in [main.py](src/main.py) which will run the application.<br>
 The required files (below) need to be in the [cloud_chatops](.) directory.<br>
 ### Functionality
 As of current, the application gets all open pull requests from any Cloud owned repository and will send a message to our pull-request channel about each pull request notifying the author.<br>
