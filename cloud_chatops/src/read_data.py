@@ -1,12 +1,26 @@
 """This module handles reading data from files such as secrets and user maps."""
 
 from typing import List, Dict
+import sys
+import os
 import json
 from custom_exceptions import (
     RepositoriesNotGiven,
     UserMapNotGiven,
     TokensNotGiven,
 )
+
+PATH = "/usr/src/app/cloud_chatops_secrets/"
+try:
+    if sys.argv[1] == "local":
+        PATH = f"{os.environ['HOME']}/cloud_chatops_secrets/"
+except IndexError:
+    pass
+except KeyError:
+    print(
+        "Are you trying to run locally? Couldn't find HOME in your environment variables."
+    )
+    sys.exit()
 
 
 def validate_required_files() -> None:
@@ -38,7 +52,7 @@ def get_token(secret: str) -> str:
     :param secret: The secret to find
     :return: A secret as string
     """
-    with open("/opt/cloud_chatops_secrets/secrets.json", "r", encoding="utf-8") as file:
+    with open(PATH + "secrets.json", "r", encoding="utf-8") as file:
         data = file.read()
     secrets = json.loads(data)
     return secrets[secret]
@@ -49,7 +63,7 @@ def get_repos() -> List[str]:
     This function reads the repo csv file and returns a list of repositories
     :return: List of repositories as strings
     """
-    with open("/opt/cloud_chatops_secrets/repos.csv", "r", encoding="utf-8") as file:
+    with open(PATH + "repos.csv", "r", encoding="utf-8") as file:
         data = file.read()
         repos = data.split(",")
         if not repos[-1]:
@@ -62,9 +76,7 @@ def get_user_map() -> Dict:
     This function gets the GitHub to Slack username mapping from the map file.
     :return: Dictionary of username mapping
     """
-    with open(
-        "/opt/cloud_chatops_secrets/user_map.json", "r", encoding="utf-8"
-    ) as file:
+    with open(PATH + "user_map.json", "r", encoding="utf-8") as file:
         data = file.read()
         user_map = json.loads(data)
     return user_map
@@ -75,9 +87,7 @@ def get_maintainer() -> str:
     This function will get the maintainer user's Slack ID from the text file.
     :return: Slack Member ID
     """
-    with open(
-        "/opt/cloud_chatops_secrets/maintainer.txt", "r", encoding="utf-8"
-    ) as file:
+    with open(PATH + "maintainer.txt", "r", encoding="utf-8") as file:
         data = file.read()
         if not data:
             return "U05RBU0RF4J"  # Default Maintainer: Kalibh Halford
