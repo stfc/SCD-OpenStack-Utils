@@ -1,4 +1,4 @@
-name: Cloud Chatops CI/CD
+name: Cloud Chatops
 
 on:
   push:
@@ -11,9 +11,10 @@ on:
 
 jobs:
   test_and_lint:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: ['ubuntu-20.04','ubuntu-22.04']
         python-version: [ "3.12", "3.x" ]
     steps:
       - uses: actions/checkout@v4
