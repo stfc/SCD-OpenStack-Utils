@@ -1,9 +1,0 @@
-slack-sdk
-schedule
-slack-bolt
-aiohttp
-requests
-pytest
-pytest-cov
-pylint
-black
