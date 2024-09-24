@@ -4,10 +4,10 @@ from typing import List
 from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from src.utils.enum_states import PRsFoundState
-from src.utils.read_data import get_token, get_user_map, get_repos
-from src.utils.get_github_prs import GetGitHubPRs
-from src.utils.pr_dataclass import PrData
+from enum_states import PRsFoundState
+from read_data import get_token, get_user_map, get_repos
+from get_github_prs import GetGitHubPRs
+from pr_dataclass import PrData
 
 # If the PR author is not in the Slack ID mapping
 # then we set the user to mention as David Fairbrother

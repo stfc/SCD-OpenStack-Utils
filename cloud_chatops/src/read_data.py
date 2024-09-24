@@ -2,7 +2,7 @@
 
 from typing import List, Dict
 import json
-from src.utils.custom_exceptions import (
+from custom_exceptions import (
     RepositoriesNotGiven,
     UserMapNotGiven,
     TokensNotGiven,
