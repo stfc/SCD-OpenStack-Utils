@@ -7,3 +7,6 @@ max-line-length=120
 # R0801 - Duplicate Code - Ignored to be fixed in future PRs
 
 disable=R0801
+
+[MASTER]
+init-hook='import sys; sys.path.append("src")'
