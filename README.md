@@ -1,5 +1,7 @@
 # SCD OpenStack Utilities
 
+[![codecov](https://codecov.io/gh/stfc/SCD-OpenStack-Utils/graph/badge.svg?token=3kMzEM91WZ)](https://codecov.io/gh/stfc/SCD-OpenStack-Utils)
+
 ## MonitoringTools
 
 Monitoring Tools to collect vm stats for things such as influxDB. 
