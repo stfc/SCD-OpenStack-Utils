@@ -57,7 +57,7 @@ jobs:
       - name: Build Wheels
         run: cd iriscasttools && python setup.py bdist_wheel
       - name: Upload Wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: iriscasttools-${{ env.version }}-py3-none-any.whl
           path: iriscasttools/dist/iriscasttools-${{ env.version }}-py3-none-any.whl
@@ -89,7 +89,7 @@ jobs:
           python setup.py bdist_rpm
           cd dist
           mv iriscasttools-${{ env.version }}-1.noarch.rpm iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
           path: iriscasttools/dist/iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
