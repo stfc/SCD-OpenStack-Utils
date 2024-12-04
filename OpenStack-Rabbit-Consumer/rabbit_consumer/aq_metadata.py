@@ -14,6 +14,10 @@ from mashumaro.config import BaseConfig
 logger = logging.getLogger(__name__)
 
 
+# Case in-sensitive values that are considered invalid
+_INVALID_VALUES = ["none", "null", ""]
+
+
 @dataclass
 class AqMetadata(DataClassDictMixin):
     """
@@ -48,8 +52,26 @@ class AqMetadata(DataClassDictMixin):
     def override_from_vm_meta(self, vm_meta: Dict[str, str]):
         """
         Overrides the values in the metadata with the values from the VM's
-        metadata
+        metadata if they are present and sane
         """
         for attr, alias in self.Config.aliases.items():
-            if alias in vm_meta:
-                setattr(self, attr, vm_meta[alias])
+            if alias not in vm_meta:
+                continue
+
+            if not vm_meta[alias]:
+                logger.warning(
+                    "Empty value found for metadata property: '%s'",
+                    alias,
+                )
+                continue
+
+            user_val = vm_meta[alias].lower().strip()
+            if user_val in _INVALID_VALUES:
+                logger.warning(
+                    "Invalid metadata value '%s' found for metadata property '%s', skipping",
+                    user_val,
+                    alias,
+                )
+                continue
+
+            setattr(self, attr, vm_meta[alias])
