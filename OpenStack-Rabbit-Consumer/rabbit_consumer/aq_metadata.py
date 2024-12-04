@@ -6,7 +6,7 @@ Aquilon
 """
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
@@ -58,20 +58,27 @@ class AqMetadata(DataClassDictMixin):
             if alias not in vm_meta:
                 continue
 
-            if not vm_meta[alias]:
-                logger.warning(
-                    "Empty value found for metadata property: '%s'",
-                    alias,
-                )
-                continue
-
-            user_val = vm_meta[alias].lower().strip()
-            if user_val in _INVALID_VALUES:
+            if not self._is_metadata_val_valid(vm_meta[alias]):
                 logger.warning(
                     "Invalid metadata value '%s' found for metadata property '%s', skipping",
-                    user_val,
+                    vm_meta[alias],
                     alias,
                 )
                 continue
 
             setattr(self, attr, vm_meta[alias])
+
+    @staticmethod
+    def _is_metadata_val_valid(val: Union[str, None]) -> bool:
+        """
+        Tests if an individual metadata value is sane, i.e.
+        a str which is not null, or a blocked value.
+        If this is valid, it returns true
+        """
+        if not val:
+            return False
+
+        user_val = val.lower().strip()
+        if user_val in _INVALID_VALUES:
+            return False
+        return True
