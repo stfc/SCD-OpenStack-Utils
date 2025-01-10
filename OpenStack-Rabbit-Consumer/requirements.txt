@@ -1,8 +1,0 @@
-rabbitpy
-requests
-requests_kerberos
-pika
-urllib3
-mashumaro
-openstacksdk
-six  # for openstacksdk
