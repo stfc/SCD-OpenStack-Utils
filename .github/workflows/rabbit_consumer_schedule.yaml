@@ -85,3 +85,10 @@ jobs:
           default_author: github_actions
           committer_name: GitHub Actions
           committer_email: actions@github.com
+          new_branch: rabbitconsumer_wkflow
+
+      - name: create pull request
+        run: gh pr create -B master -H rabbitconsumer_wkflow --title 'Merge rabbitconsumer_wkflow into master' --body 'Created by Github action'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
