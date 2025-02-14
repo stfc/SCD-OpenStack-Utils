@@ -1,0 +1,2 @@
+python-openstackclient==5.8.1
+pyyaml
