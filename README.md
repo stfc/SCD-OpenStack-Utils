@@ -99,3 +99,6 @@ One terraform script to create a private network on openstack along with a route
 A Python script that when run, creates a filter word cloud from the summary of tickets over a time period.
 [More Here](word_cloud_generator/)
 
+# Weekly-Reporting
+A Python script to upload data to the weekly reporting InfluxDB instance for the Cloud statistics reporting.
+[More Here](Weekly-Reporting/)
