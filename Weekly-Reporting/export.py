@@ -1,4 +1,5 @@
 """Export weekly reports statistics data to an InfluxDB bucket."""
+
 from pprint import pprint
 from typing import Dict, List
 
@@ -30,11 +31,7 @@ def main(args: argparse.Namespace):
         points = _create_points_inventory(args.inventory_file)
     api_token = _get_token(args.token_file)
     _write_data(
-        points=points,
-        host=args.host,
-        org=args.org,
-        bucket=args.bucket,
-        token=api_token
+        points=points, host=args.host, org=args.org, bucket=args.bucket, token=api_token
     )
 
 
@@ -54,7 +51,9 @@ def _check_args(args: argparse.Namespace):
     if not args.report_file and not args.inventory_file:
         raise RuntimeError("Argument --report-file or --inventory-file not given.")
     if args.report_file and args.inventory_file:
-        raise RuntimeError("Argument --report-file and --inventory-file given. Only one data file can be provided.")
+        raise RuntimeError(
+            "Argument --report-file and --inventory-file given. Only one data file can be provided."
+        )
     if not Path(args.token_file).is_file():
         raise RuntimeError(f"Cannot find token file at path {args.token_file}.")
     if args.report_file and not Path(args.report_file).is_file():
@@ -126,18 +125,30 @@ def _from_key(key: str, data: Dict) -> List[Point]:
     if key == "virtual_worker_nodes":
         return _from_vwn(data)
     else:
-        raise RuntimeError(f"Key {key} not supported. Please contact service maintainer.")
+        raise RuntimeError(
+            f"Key {key} not supported. Please contact service maintainer."
+        )
 
 
 def _from_cpu(data: Dict) -> List[Point]:
     """Extract cpu data from yaml into a Point."""
-    return [Point("cpu").field("in_use", data["in_use"]).field("total", data["total"]).time(time)]
+    return [
+        Point("cpu")
+        .field("in_use", data["in_use"])
+        .field("total", data["total"])
+        .time(time)
+    ]
 
 
 def _from_memory(data: Dict) -> List[Point]:
     """Extract memory data from yaml into a Point."""
 
-    return [Point("memory").field("in_use", data["in_use"]).field("total", data["total"]).time(time)]
+    return [
+        Point("memory")
+        .field("in_use", data["in_use"])
+        .field("total", data["total"])
+        .time(time)
+    ]
 
 
 def _from_storage(data: Dict) -> List[Point]:
@@ -153,8 +164,14 @@ def _from_hv(data: Dict) -> List[Point]:
     """Extract hv data from yaml into Points."""
     points = []
     points.append(Point("hv").field("active", data["active"]["active"]).time(time))
-    points.append(Point("hv").field("active_and_cpu_full", data["active"]["cpu_full"]).time(time))
-    points.append(Point("hv").field("active_and_memory_full", data["active"]["memory_full"]).time(time))
+    points.append(
+        Point("hv").field("active_and_cpu_full", data["active"]["cpu_full"]).time(time)
+    )
+    points.append(
+        Point("hv")
+        .field("active_and_memory_full", data["active"]["memory_full"])
+        .time(time)
+    )
     points.append(Point("hv").field("down", data["down"]).time(time))
     points.append(Point("hv").field("disabled", data["disabled"]).time(time))
     return points
@@ -162,18 +179,26 @@ def _from_hv(data: Dict) -> List[Point]:
 
 def _from_vm(data: Dict) -> List[Point]:
     """Extract vm data from yaml into a Point."""
-    return [(
-        Point("vm")
-        .field("active", data["active"])
-        .field("shutoff", data["shutoff"])
-        .field("errored", data["errored"])
-        .field("building", data["building"])
-        .time(time))]
+    return [
+        (
+            Point("vm")
+            .field("active", data["active"])
+            .field("shutoff", data["shutoff"])
+            .field("errored", data["errored"])
+            .field("building", data["building"])
+            .time(time)
+        )
+    ]
 
 
 def _from_fip(data: Dict) -> List[Point]:
     """Extract floating ip data from yaml into a Point."""
-    return [Point("floating_ip").field("in_use", data["in_use"]).field("total", data["total"]).time(time)]
+    return [
+        Point("floating_ip")
+        .field("in_use", data["in_use"])
+        .field("total", data["total"])
+        .time(time)
+    ]
 
 
 def _from_vwn(data: Dict) -> List[Point]:
@@ -205,5 +230,3 @@ if __name__ == "__main__":
     parser.add_argument("--inventory-file", help="Inventory ini file.")
     arguments = parser.parse_args()
     main(arguments)
-
-
