@@ -1,0 +1,82 @@
+---
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    update_cache: true
+
+- name: Create key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add Grafana key and repository to apt
+  become: true
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /etc/apt/keyrings/grafana.asc
+        mode: '0755'
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
+        state: present
+
+- name: Install Grafana OSS
+  become: true
+  ansible.builtin.apt:
+    name: grafana
+    update_cache: true
+
+- name: Copy datasource file template
+  become: true
+  ansible.builtin.template:
+    src: cloud_datasource.yaml.j2
+    dest: /etc/grafana/provisioning/datasources/cloud_datasource.yaml
+    owner: root
+    group: grafana
+    mode: '0644'
+
+- name: Copy config file template
+  become: true
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: grafana
+    mode: '0644'
+
+- name: Copy dashboards script template
+  become: true
+  ansible.builtin.template:
+    src: provision_dashboards.sh.j2
+    dest: /usr/local/sbin/provision_dashboards.sh
+    owner: root
+    group: root
+    mode: '0774'
+
+- name: Create a cron job for the dashboards script
+  become: true
+  become_user: root
+  ansible.builtin.cron:
+    name: "reset grafana dashboards"
+    minute: "*"
+    hour: "*"
+    job: "/usr/local/sbin/provision_dashboards.sh"
+
+- name: Run the dashboards script once before Grafana restarts
+  become: true
+  ansible.builtin.shell: /usr/local/sbin/provision_dashboards.sh
+
+- name: Make sure grafana-server.service is running
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: grafana-server.service

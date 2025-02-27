@@ -1,0 +1,25 @@
+global
+  maxconn 4096
+
+defaults
+  mode http
+  timeout client 10s
+  timeout connect 5s
+  timeout server 10s
+  timeout http-request 10s
+  log global
+
+frontend stats
+  bind *:8404
+  stats enable
+  stats uri /
+  stats refresh 10s
+
+frontend {{ domain }}
+  bind :80
+  bind :443 ssl crt /etc/haproxy/{{ domain }}.crt
+  http-request redirect scheme https code 301 unless { ssl_fc }
+  default_backend localhost
+
+backend localhost
+  server grafana 127.0.0.1:3000 check

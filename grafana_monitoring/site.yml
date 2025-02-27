@@ -1,0 +1,11 @@
+---
+- name: Deploy Cloud Grafana
+  hosts: grafana
+  remote_user: ubuntu
+  roles:
+    - role: grafana
+      tags:
+        - grafana
+    - role: haproxy
+      tags:
+        - haproxy

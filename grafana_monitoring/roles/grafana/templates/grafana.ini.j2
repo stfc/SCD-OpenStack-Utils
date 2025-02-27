@@ -1,0 +1,32 @@
+[server]
+# Configure server settings
+domain = {{ domain }}
+root_url = https://{{ domain }}:443/
+http_addr = 127.0.0.1
+protocol = http
+http_port = 3000
+
+[auth.generic_oauth]
+# Configure Iris IAM log in
+enabled = true
+name = "IRIS IAM"
+client_id = {{ client_id }}
+client_secret = {{ client_secret }}
+scopes = "openid profile email"
+auth_url = https://iris-iam.stfc.ac.uk/authorize
+token_url = https://iris-iam.stfc.ac.uk/token
+api_url = https://iris-iam.stfc.ac.uk/userinfo
+groups_attribute_path = groups[*]
+allowed_groups = "stfc-cloud/team,stfc-cloud/admins"
+
+[log]
+# Raise the log level as the default is "info"
+log_level = critical
+
+[security]
+admin_password="{{ grafana_admin_password }}"
+
+{% if env == "staging" %}
+[users]
+auto_assign_org_role=Editor
+{% endif %}

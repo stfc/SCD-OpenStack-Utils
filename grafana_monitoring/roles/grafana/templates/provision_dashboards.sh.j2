@@ -1,0 +1,17 @@
+#!/bin/bash
+set -ex
+FOLDER=/etc/grafana/provisioning/dashboards
+
+if [[ ! -d "$FOLDER/.git" ]]; then
+ rm -rfv "$FOLDER"
+ git clone https://github.com/stfc/cloud-grafana-dashboards.git "$FOLDER"
+ cd $FOLDER
+ git switch {{ grafana_dashboards_branch }}
+fi
+
+cd "$FOLDER"
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+
+if [[ "$BRANCH_NAME" == "{{ grafana_dashboards_branch }}" ]]; then
+   git fetch && git reset --h origin/{{ grafana_dashboards_branch }}
+fi
