@@ -1,0 +1,14 @@
+[grafana]
+dev-grafana.nubes.rl.ac.uk
+[grafana:vars]
+env="staging"
+grafana_admin_password="cloudy123"
+grafana_dashboards_branch="main"
+domain="dev-grafana.nubes.rl.ac.uk"
+client_id=""
+client_secret=""
+weekly_reports_token_dw=""
+weekly_reports_token_kh=""
+prod_opensearch_password=""
+prod_influx_password=""
+prod_influx_username=""

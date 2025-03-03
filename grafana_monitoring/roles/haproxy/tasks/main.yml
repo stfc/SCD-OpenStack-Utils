@@ -1,0 +1,30 @@
+---
+- name: Install HAProxy
+  become: true
+  ansible.builtin.apt:
+    name: haproxy
+    update_cache: true
+
+- name: Copy config file template
+  become: true
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: haproxy
+    mode: '0644'
+
+- name: Copy certificate
+  become: true
+  ansible.builtin.copy:
+    src: "{{ domain }}.crt"
+    dest: "/etc/haproxy/{{ domain }}.crt"
+    owner: root
+    group: haproxy
+    mode: '0644'
+
+- name: Make sure haproxy.service is running
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: haproxy.service

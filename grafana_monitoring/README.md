@@ -1,11 +1,38 @@
-All required environment variables can be found in env.sh and should be updated before deploying, environment variables are included in compose.yaml and will be copied to the container
+# Ansible Deployment of Cloud Grafana
 
-# compose.yaml
-Specifies the image, name, and environment variables used when arranging docker
+## What?
+An Ansible playbook to deploy our staging / production Grafana instances. It installs Grafana with HAProxy and uses a bash script to clone our [dashboard repository](https://github.com/stfc/cloud-grafana-dashboards) to the Grafana provisioning folder. The bash script is also run with cron to keep the dashboards up-to-date..
 
-# cloud_datasource.yaml
-When grafana see this file it makes connection to the databases specified in this file
+## Why?
+To replace the Aquilon configuration...
 
-# env.sh
-Stores environment variables which cannot be published onto github
-User should edit and run this script to export the environment variables
+## How?
+1. Clone this repository
+    ```shell
+    git clone https://github.com/stfc/SCD-OpenStack-Utils
+    ```
+2. Install ansible with pip (with a virtual environment)
+    ```shell
+    sudo apt install python3-venv
+    python3 -m venv ansible
+    source ansible/bin/activate
+    pip install ansible
+    ```
+3. Make an IRIS IAM client with the redirect URI of:
+    ```
+    https://<your-domain>:443/login/generic_oauth
+    ```
+4. Fill in the staging or production inventory with the credentials
+5. (Optional): Change the `grafana` group inventory hosts to whatever IP they are running on
+6. Copy your SSL certificate with name format `<your-domain>.crt` to `roles/haproxy/files/` and make sure the key is prepended to the top.
+7. Run the ansible playbook
+    ```shell
+    anisble-playbook run site.yaml --inventory staging/production
+    ```
+8. If you need to make changes to either the Grafana or HAProxy config you can run each role separately with their tags
+    ```shell
+    anisble-playbook run site.yaml --inventory staging/production --tags grafana
+    # or
+    anisble-playbook run site.yaml --inventory staging/production --tags haproxy
+    ```
+   
