@@ -3,6 +3,7 @@ from typing import List, Dict
 import openstack
 from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
+from openstackquery import HypervisorQuery
 
 
 def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
@@ -214,7 +215,11 @@ def get_openstack_resources(instance: str) -> Dict:
     }
 
     # needs to be list_hypervisors and not conn.compute.hypervisors otherwise vcpu/mem info is empty for some reason
-    all_hypervisors = {h["id"]: h for h in conn.list_hypervisors()}
+    hv = HypervisorQuery()
+    hv.select_all()
+    hv.run(instance)
+    hv.group_by("id")
+    all_hypervisors = {h["id"]: h for h in hv.to_props()}
     all_flavors = {
         flavor["id"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
     }
@@ -313,7 +318,8 @@ def main(user_args: List):
     :param user_args: args passed into script by user
     """
     influxdb_args = parse_args(user_args, description="Get All Service Statuses")
-    run_scrape(influxdb_args, get_slottifier_details)
+    #run_scrape(influxdb_args, get_slottifier_details)
+    print(get_slottifier_details())
 
 
 if __name__ == "__main__":

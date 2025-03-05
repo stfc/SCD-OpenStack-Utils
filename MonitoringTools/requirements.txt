@@ -1,4 +1,5 @@
 openstacksdk
+https://github.com/stfc/openstack-query-library/releases/download/v0.1.6/openstackquery-0.1.6-py3-none-any.whl
 pytest
 pylint
 pytest-cov
