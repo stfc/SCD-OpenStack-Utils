@@ -16,26 +16,97 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
     """
     hv_info = {
         "vcpus_avail": 0,
-        "memory_used": 0,
+        "hypervisor_memory_used": 0,
         "gpu_capacity": 0,
-        "vcpus": 0,
-        "memory_size": 0,
+        "hypervisor_vcpus": 0,
+        "hypervisor_memory_size": 0,
         "compute_service_status": "disabled",
     }
-    if hypervisor and hypervisor["status"] != "disabled":
-        hv_info["vcpus_avail"] = max(
-            0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
-        )
-        hv_info["memory_used"] = max(
-            0, hypervisor["memory_size"] - hypervisor["memory_used"]
-        )
-        hv_info["vcpus"] = hypervisor["vcpus"]
-        hv_info["memory_size"] = hypervisor["memory_size"]
 
-        hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
+    # Check the "Not Found" values before converting to integers
+    vcpus = hypervisor.get("hypervisor_vcpus", "0")
+    vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
+
+    # Only convert to int if the value is not 'Not Found'
+    if vcpus != "Not Found":
+        vcpus = int(vcpus)
+    else:
+        vcpus = 0
+
+    if vcpus_used != "Not Found":
+        vcpus_used = int(vcpus_used)
+    else:
+        vcpus_used = 0
+
+    memory_size = hypervisor.get("hypervisor_memory_size", "0")
+    memory_used = hypervisor.get("hypervisor_memory_used", "0")
+
+    # Similarly handle the memory values
+    if memory_size != "Not Found":
+        memory_size = int(memory_size)
+    else:
+        memory_size = 0
+
+    if memory_used != "Not Found":
+        memory_used = int(memory_used)
+    else:
+        memory_used = 0
+
+    # Print the values to see what they are
+    #print("hypervisor_vcpus:", vcpus)
+    #print("hypervisor_vcpus_used:", vcpus_used)
+
+    if hypervisor and hypervisor.get("hypervisor_status") != "disabled":
+        # Calculate available vcpus and memory
+        hv_info["vcpus_avail"] = max(0, vcpus - vcpus_used)
+        hv_info["hypervisor_memory_used"] = max(0, memory_size - memory_used)
+        hv_info["hypervisor_vcpus"] = vcpus
+        hv_info["hypervisor_memory_size"] = memory_size
+
+        # Get GPU capacity and compute service status
+        hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", "0"))
         hv_info["compute_service_status"] = service_info["status"]
 
     return hv_info
+
+
+# def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
+#     """
+#     Helper function to get hv information on cores/memory available
+#     :param hypervisor: a dictionary holding info on hypervisor
+#     :param aggregate_info: a dictionary holding info on aggregate hypervisor belongs to
+#     :param service_info: a dictionary holding info on nova compute service running on hypervisor
+#     :return: a dictionary of cores/memory available for given hv
+#     """
+#     hv_info = {
+#         "vcpus_avail": 0,
+#         "hypervisor_memory_used": 0,
+#         "gpu_capacity": 0,
+#         "hypervisor_vcpus": 0,
+#         "hypervisor_memory_size": 0,
+#         "compute_service_status": "disabled",
+#     }
+#     vcpus = hypervisor.get("hypervisor_vcpus", "0")
+#     vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
+#
+#     # Print the values to see what they are
+#     print("hypervisor_vcpus:", vcpus)
+#     print("hypervisor_vcpus_used:", vcpus_used)
+#
+#     if hypervisor and hypervisor["hypervisor_status"] != "disabled":
+#         hv_info["vcpus_avail"] = max(
+#             0, int(hypervisor["hypervisor_vcpus"]) - int(hypervisor["hypervisor_vcpus_used"])
+#         )
+#         hv_info["hypervisor_memory_used"] = max(
+#             0, hypervisor["hypervisor_memory_size"] - hypervisor["hypervisor_memory_used"]
+#         )
+#         hv_info["hypervisor_vcpus"] = int(hypervisor["hypervisor_vcpus"])
+#         hv_info["hypervisor_memory_size"] = hypervisor["hypervisor_memory_size"]
+#
+#         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
+#         hv_info["compute_service_status"] = service_info["status"]
+#
+#     return hv_info
     
 
 
@@ -149,7 +220,7 @@ def calculate_slots_on_hv(
 
     slots_available = min(
         hv_info["vcpus_avail"] // flavor_reqs["cores_required"],
-        hv_info["memory_used"] // flavor_reqs["mem_required"],
+        hv_info["hypervisor_memory_used"] // flavor_reqs["mem_required"],
     )
 
     if "g-" in flavor_name:
@@ -161,14 +232,14 @@ def calculate_slots_on_hv(
 
         theoretical_gpu_slots_available = min(
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"],
-            hv_info["vcpus"] // flavor_reqs["cores_required"],
-            hv_info["memory_size"] // flavor_reqs["mem_required"],
+            hv_info["hypervisor_vcpus"] // flavor_reqs["cores_required"],
+            hv_info["hypervisor_memory_size"] // flavor_reqs["mem_required"],
         )
 
         estimated_slots_used = (
             min(
-                hv_info["vcpus"] // flavor_reqs["cores_required"],
-                hv_info["memory_size"] // flavor_reqs["mem_required"],
+                hv_info["hypervisor_vcpus"] // flavor_reqs["cores_required"],
+                hv_info["hypervisor_memory_size"] // flavor_reqs["mem_required"],
             )
             - slots_available
         )
@@ -225,13 +296,20 @@ def get_openstack_resources(instance: str) -> Dict:
     hv.group_by("id")
     hv_props = hv.to_props()
 
-    print(hv.to_props())
+    #print(hv.to_props())
     print("HV Props type:", type(hv_props))
 
     all_hypervisors = {}
-    for hypervisor_id, hypervisor in hv_props.items():
-        if isinstance(hypervisor, dict):
-            all_hypervisors[hypervisor_id] = hypervisor
+    for hypervisor_id, hypervisor_list in hv_props.items():
+        if isinstance(hypervisor_list, list):  # Check if it's a list
+            for hypervisor in hypervisor_list:
+                if isinstance(hypervisor, dict):  # Check if each item in the list is a dict
+                    all_hypervisors[hypervisor_id] = hypervisor
+    # for hypervisor_id, hypervisor in hv_props.items():
+    #     print("Checking hypervisor:", hypervisor)
+    #     if isinstance(hypervisor, dict):
+    #         all_hypervisors[hypervisor_id] = hypervisor
+    print("All Hypervisor List:", all_hypervisors)
 
     #all_hypervisors = {h["id"]: h for h in hv.to_props()}
 
@@ -271,7 +349,7 @@ def get_all_hv_info_for_aggregate(
 
         hv_obj = None
         for hypervisor in all_hypervisors:
-            if host_compute_service["host"] == hypervisor["name"]:
+            if host_compute_service["host"] == hypervisor["hypervisor_name"]:
                 hv_obj = hypervisor
 
         if not hv_obj:
@@ -332,7 +410,7 @@ def main(user_args: List):
     send slottifier info to influx
     :param user_args: args passed into script by user
     """
-    influxdb_args = parse_args(user_args, description="Get All Service Statuses")
+    #influxdb_args = parse_args(user_args, description="Get All Service Statuses")
     #run_scrape(influxdb_args, get_slottifier_details)
     print("The Result is:", get_slottifier_details("dev"))
 
