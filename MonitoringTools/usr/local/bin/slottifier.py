@@ -15,27 +15,28 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
     :return: a dictionary of cores/memory available for given hv
     """
     hv_info = {
-        "cores_available": 0,
-        "mem_available": 0,
+        "vcpus_avail": 0,
+        "memory_used": 0,
         "gpu_capacity": 0,
-        "core_capacity": 0,
-        "mem_capacity": 0,
+        "vcpus": 0,
+        "memory_size": 0,
         "compute_service_status": "disabled",
     }
     if hypervisor and hypervisor["status"] != "disabled":
-        hv_info["cores_available"] = max(
+        hv_info["vcpus_avail"] = max(
             0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
         )
-        hv_info["mem_available"] = max(
+        hv_info["memory_used"] = max(
             0, hypervisor["memory_size"] - hypervisor["memory_used"]
         )
-        hv_info["core_capacity"] = hypervisor["vcpus"]
-        hv_info["mem_capacity"] = hypervisor["memory_size"]
+        hv_info["vcpus"] = hypervisor["vcpus"]
+        hv_info["memory_size"] = hypervisor["memory_size"]
 
         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
         hv_info["compute_service_status"] = service_info["status"]
 
     return hv_info
+    
 
 
 def get_flavor_requirements(flavor: Dict) -> Dict:
@@ -143,9 +144,12 @@ def calculate_slots_on_hv(
     """
     slots_dataclass = SlottifierEntry()
 
+    print("Flavor Requirements:", flavor_reqs)
+    print("Hypervisor Info:", hv_info)
+
     slots_available = min(
-        hv_info["cores_available"] // flavor_reqs["cores_required"],
-        hv_info["mem_available"] // flavor_reqs["mem_required"],
+        hv_info["vcpus_avail"] // flavor_reqs["cores_required"],
+        hv_info["memory_used"] // flavor_reqs["mem_required"],
     )
 
     if "g-" in flavor_name:
@@ -157,14 +161,14 @@ def calculate_slots_on_hv(
 
         theoretical_gpu_slots_available = min(
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"],
-            hv_info["core_capacity"] // flavor_reqs["cores_required"],
-            hv_info["mem_capacity"] // flavor_reqs["mem_required"],
+            hv_info["vcpus"] // flavor_reqs["cores_required"],
+            hv_info["memory_size"] // flavor_reqs["mem_required"],
         )
 
         estimated_slots_used = (
             min(
-                hv_info["core_capacity"] // flavor_reqs["cores_required"],
-                hv_info["mem_capacity"] // flavor_reqs["mem_required"],
+                hv_info["vcpus"] // flavor_reqs["cores_required"],
+                hv_info["memory_size"] // flavor_reqs["mem_required"],
             )
             - slots_available
         )
@@ -219,7 +223,18 @@ def get_openstack_resources(instance: str) -> Dict:
     hv.select_all()
     hv.run(instance)
     hv.group_by("id")
-    all_hypervisors = {h["id"]: h for h in hv.to_props()}
+    hv_props = hv.to_props()
+
+    print(hv.to_props())
+    print("HV Props type:", type(hv_props))
+
+    all_hypervisors = {}
+    for hypervisor_id, hypervisor in hv_props.items():
+        if isinstance(hypervisor, dict):
+            all_hypervisors[hypervisor_id] = hypervisor
+
+    #all_hypervisors = {h["id"]: h for h in hv.to_props()}
+
     all_flavors = {
         flavor["id"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
     }
@@ -319,8 +334,7 @@ def main(user_args: List):
     """
     influxdb_args = parse_args(user_args, description="Get All Service Statuses")
     #run_scrape(influxdb_args, get_slottifier_details)
-    print(get_slottifier_details())
-
+    print("The Result is:", get_slottifier_details("dev"))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
