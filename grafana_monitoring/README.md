@@ -27,12 +27,12 @@ To replace the Aquilon configuration...
 6. Copy your SSL certificate with name format `<your-domain>.crt` to `roles/haproxy/files/` and make sure the key is prepended to the top.
 7. Run the ansible playbook
     ```shell
-    anisble-playbook run site.yaml --inventory staging/production
+    ansible-playbook site.yaml --inventory staging/production
     ```
 8. If you need to make changes to either the Grafana or HAProxy config you can run each role separately with their tags
     ```shell
-    anisble-playbook run site.yaml --inventory staging/production --tags grafana
+    ansible-playbook site.yaml --inventory staging/production --tags grafana
     # or
-    anisble-playbook run site.yaml --inventory staging/production --tags haproxy
+    ansible-playbook site.yaml --inventory staging/production --tags haproxy
     ```
    
