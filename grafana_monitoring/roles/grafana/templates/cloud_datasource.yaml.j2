@@ -33,10 +33,10 @@ datasources:
     secureJsonData:
       basicAuthPassword: {{ prod_opensearch_password }}
 
-  - name: WeeklyReportsInfluxDB-KH
+  - name: WeeklyReportsInfluxDB
     type: influxdb
     access: proxy
-    uid: "weekly-reports-kh"
+    uid: "weekly-reports"
     url: "https://172.16.114.22:8086"
     basicAuth: false
     jsonData:
@@ -46,7 +46,7 @@ datasources:
       organization: Cloud
       version: Flux
     secureJsonData:
-      token: {{ weekly_reports_token_kh }}
+      token: {{ weekly_reports_token }}
 
   - name: WeeklyReportsInfluxDB-DW
     type: influxdb
