@@ -23,7 +23,7 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
         "compute_service_status": "disabled",
     }
 
-    # Check the "Not Found" values before converting to integers
+    # Retrieve all vcpus data, default to 0 if nothing is found
     vcpus = hypervisor.get("hypervisor_vcpus", "0")
     vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
 
@@ -41,7 +41,6 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
     memory_size = hypervisor.get("hypervisor_memory_size", "0")
     memory_used = hypervisor.get("hypervisor_memory_used", "0")
 
-    # Similarly handle the memory values
     if memory_size != "Not Found":
         memory_size = int(memory_size)
     else:
@@ -52,18 +51,15 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
     else:
         memory_used = 0
 
-    # Print the values to see what they are
     #print("hypervisor_vcpus:", vcpus)
     #print("hypervisor_vcpus_used:", vcpus_used)
 
     if hypervisor and hypervisor.get("hypervisor_status") != "disabled":
-        # Calculate available vcpus and memory
         hv_info["vcpus_avail"] = max(0, vcpus - vcpus_used)
         hv_info["hypervisor_memory_used"] = max(0, memory_size - memory_used)
         hv_info["hypervisor_vcpus"] = vcpus
         hv_info["hypervisor_memory_size"] = memory_size
 
-        # Get GPU capacity and compute service status
         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", "0"))
         hv_info["compute_service_status"] = service_info["status"]
 
@@ -79,29 +75,22 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
 #     :return: a dictionary of cores/memory available for given hv
 #     """
 #     hv_info = {
-#         "vcpus_avail": 0,
-#         "hypervisor_memory_used": 0,
+#         "cores_available": 0,
+#         "mem_available": 0,
 #         "gpu_capacity": 0,
-#         "hypervisor_vcpus": 0,
-#         "hypervisor_memory_size": 0,
+#         "core_capacity": 0,
+#         "mem_capacity": 0,
 #         "compute_service_status": "disabled",
 #     }
-#     vcpus = hypervisor.get("hypervisor_vcpus", "0")
-#     vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
-#
-#     # Print the values to see what they are
-#     print("hypervisor_vcpus:", vcpus)
-#     print("hypervisor_vcpus_used:", vcpus_used)
-#
-#     if hypervisor and hypervisor["hypervisor_status"] != "disabled":
-#         hv_info["vcpus_avail"] = max(
-#             0, int(hypervisor["hypervisor_vcpus"]) - int(hypervisor["hypervisor_vcpus_used"])
+#     if hypervisor and hypervisor["status"] != "disabled":
+#         hv_info["cores_available"] = max(
+#             0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
 #         )
-#         hv_info["hypervisor_memory_used"] = max(
-#             0, hypervisor["hypervisor_memory_size"] - hypervisor["hypervisor_memory_used"]
+#         hv_info["mem_available"] = max(
+#             0, hypervisor["memory_size"] - hypervisor["memory_used"]
 #         )
-#         hv_info["hypervisor_vcpus"] = int(hypervisor["hypervisor_vcpus"])
-#         hv_info["hypervisor_memory_size"] = hypervisor["hypervisor_memory_size"]
+#         hv_info["core_capacity"] = hypervisor["vcpus"]
+#         hv_info["mem_capacity"] = hypervisor["memory_size"]
 #
 #         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
 #         hv_info["compute_service_status"] = service_info["status"]
