@@ -1,0 +1,15 @@
+# Variables used for the Grafana configuration
+
+env: "production"  # Environment you are building in development or production
+domain: "grafana.nubes.rl.ac.uk"  # Domain of the Grafana instance. E.g. grafana.nubes.rl.ac.uk
+grafana_dashboards_branch: "main"  # Branch to pull the dashboards from
+
+# Secret variables links
+client_id: "{{ vault_client_id }}"
+client_secret: "{{ vault_client_secret }}"
+weekly_reports_token: "{{ vault_weekly_reports_token }}"
+weekly_reports_token_dw: "{{ vault_weekly_reports_token_dw }}"
+prod_opensearch_password: "{{ vault_prod_opensearch_password }}"
+prod_influx_username: "{{ vault_prod_influx_username }}"
+prod_influx_password: "{{ vault_prod_influx_password }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
