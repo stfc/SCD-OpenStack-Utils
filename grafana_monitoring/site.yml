@@ -9,3 +9,6 @@
     - role: haproxy
       tags:
         - haproxy
+    - role: certbot
+      tags:
+        - certbot
