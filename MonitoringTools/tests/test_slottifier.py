@@ -471,14 +471,42 @@ def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
 
 
 @patch("slottifier.openstack")
-def test_get_openstack_resources(mock_openstack):
+@patch("slotiffier.HypervisorQuery")
+def test_get_openstack_resources(mock_hypervisor_query, mock_openstack): # do I use self?
     """
     tests get_openstack_resources gets all required resources via openstacksdk
-    and outputs them properly
+    and the query library and outputs them properly
     """
     mock_conn = mock_openstack.connect.return_value
 
-    mock_conn.list_hypervisors.return_value = [{"name": "hv1", "id": 1}]
+    #Run the mock queries
+    mock_hv = mock_hypervisor_query.return_value
+
+    # Create a mock hv_props dictionary.
+    mock_hv.to_props.return_value = {
+        'hypervisor1': {'id': [1], 'name': ['hv1']},
+        'hypervisor2': {'id': [2], 'name': ['hv2']}
+    }
+
+    # Run the for loops that iterate over the lists/dictionary
+    # all_hypervisors = {}
+    # for hypervisor, hv_info in mock_hv.to_props(flatten=True).items():
+    #     for k, v in hv_info.items():
+    #         hv_info[k] = v[0]
+    #     all_hypervisors[hypervisor] = hv_info
+
+    # Not sure about this?? Do I use self?
+    self.assertEqual(all_hypervisors, {
+        'hypervisor1': {'id': 1, 'name': 'hv1'},
+        'hypervisor2': {'id': 2, 'name': 'hv2'}
+    })
+
+    mock_hv.select_all.assert_called_once()
+    mock_hv.run.assert_called_once_with(mock_openstack)
+    mock_hv.group_by.assert_called_once('id')
+
+    #mock_conn.list_hypervisors.return_value = [{"name": "hv1", "id": 1}] # OLD hypervisor list stuff
+
     mock_conn.compute.aggregates.return_value = [{"name": "ag1", "id": 2}]
     mock_conn.compute.services.return_value = [{"name": "svc1", "id": 3}]
     mock_conn.compute.flavors.return_value = [{"name": "flv1", "id": 4}]

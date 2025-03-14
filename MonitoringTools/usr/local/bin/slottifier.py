@@ -23,7 +23,6 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
         "compute_service_status": "disabled",
     }
 
-    # Retrieve all vcpus data, default to 0 if nothing is found
     vcpus = hypervisor.get("hypervisor_vcpus", "0")
     vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
 
@@ -51,9 +50,6 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
     else:
         memory_used = 0
 
-    #print("hypervisor_vcpus:", vcpus)
-    #print("hypervisor_vcpus_used:", vcpus_used)
-
     if hypervisor and hypervisor.get("hypervisor_status") != "disabled":
         hv_info["vcpus_avail"] = max(0, vcpus - vcpus_used)
         hv_info["hypervisor_memory_used"] = max(0, memory_size - memory_used)
@@ -64,40 +60,6 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
         hv_info["compute_service_status"] = service_info["status"]
 
     return hv_info
-
-
-# def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
-#     """
-#     Helper function to get hv information on cores/memory available
-#     :param hypervisor: a dictionary holding info on hypervisor
-#     :param aggregate_info: a dictionary holding info on aggregate hypervisor belongs to
-#     :param service_info: a dictionary holding info on nova compute service running on hypervisor
-#     :return: a dictionary of cores/memory available for given hv
-#     """
-#     hv_info = {
-#         "cores_available": 0,
-#         "mem_available": 0,
-#         "gpu_capacity": 0,
-#         "core_capacity": 0,
-#         "mem_capacity": 0,
-#         "compute_service_status": "disabled",
-#     }
-#     if hypervisor and hypervisor["status"] != "disabled":
-#         hv_info["cores_available"] = max(
-#             0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
-#         )
-#         hv_info["mem_available"] = max(
-#             0, hypervisor["memory_size"] - hypervisor["memory_used"]
-#         )
-#         hv_info["core_capacity"] = hypervisor["vcpus"]
-#         hv_info["mem_capacity"] = hypervisor["memory_size"]
-#
-#         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
-#         hv_info["compute_service_status"] = service_info["status"]
-#
-#     return hv_info
-    
-
 
 def get_flavor_requirements(flavor: Dict) -> Dict:
     """
@@ -278,29 +240,18 @@ def get_openstack_resources(instance: str) -> Dict:
         aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()
     }
 
-    # needs to be list_hypervisors and not conn.compute.hypervisors otherwise vcpu/mem info is empty for some reason
+    # Querying the query library
     hv = HypervisorQuery()
     hv.select_all()
     hv.run(instance)
     hv.group_by("id")
-    hv_props = hv.to_props()
-
-    #print(hv.to_props())
-    print("HV Props type:", type(hv_props))
+    hv_props = hv.to_props(flatten=True)
 
     all_hypervisors = {}
-    for hypervisor_id, hypervisor_list in hv_props.items():
-        if isinstance(hypervisor_list, list):  # Check if it's a list
-            for hypervisor in hypervisor_list:
-                if isinstance(hypervisor, dict):  # Check if each item in the list is a dict
-                    all_hypervisors[hypervisor_id] = hypervisor
-    # for hypervisor_id, hypervisor in hv_props.items():
-    #     print("Checking hypervisor:", hypervisor)
-    #     if isinstance(hypervisor, dict):
-    #         all_hypervisors[hypervisor_id] = hypervisor
-    print("All Hypervisor List:", all_hypervisors)
-
-    #all_hypervisors = {h["id"]: h for h in hv.to_props()}
+    for hypervisor, hv_info in hv_props.items():
+        for k, v in hv_info.items():
+            hv_info[k] = v[0]
+        all_hypervisors[hypervisor] = hv_info
 
     all_flavors = {
         flavor["id"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
@@ -399,9 +350,8 @@ def main(user_args: List):
     send slottifier info to influx
     :param user_args: args passed into script by user
     """
-    #influxdb_args = parse_args(user_args, description="Get All Service Statuses")
-    #run_scrape(influxdb_args, get_slottifier_details)
-    print("The Result is:", get_slottifier_details("dev"))
+    influxdb_args = parse_args(user_args, description="Get All Service Statuses")
+    run_scrape(influxdb_args, get_slottifier_details)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
