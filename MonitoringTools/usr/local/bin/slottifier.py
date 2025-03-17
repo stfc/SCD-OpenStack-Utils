@@ -8,18 +8,18 @@ from openstackquery import HypervisorQuery
 
 def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
     """
-    Helper function to get hv information on cores/memory available
+    Helper function to get hv information on vcpus/memory available
     :param hypervisor: a dictionary holding info on hypervisor
     :param aggregate_info: a dictionary holding info on aggregate hypervisor belongs to
     :param service_info: a dictionary holding info on nova compute service running on hypervisor
-    :return: a dictionary of cores/memory available for given hv
+    :return: a dictionary of vcpus/memory available for given hv
     """
     hv_info = {
-        "vcpus_avail": 0,
-        "hypervisor_memory_used": 0,
+        "vcpus_available": 0,
+        "mem_available": 0,
         "gpu_capacity": 0,
-        "hypervisor_vcpus": 0,
-        "hypervisor_memory_size": 0,
+        "vcpus_capacity": 0,
+        "mem_capacity": 0,
         "compute_service_status": "disabled",
     }
 
@@ -51,10 +51,10 @@ def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> D
         memory_used = 0
 
     if hypervisor and hypervisor.get("hypervisor_status") != "disabled":
-        hv_info["vcpus_avail"] = max(0, vcpus - vcpus_used)
-        hv_info["hypervisor_memory_used"] = max(0, memory_size - memory_used)
-        hv_info["hypervisor_vcpus"] = vcpus
-        hv_info["hypervisor_memory_size"] = memory_size
+        hv_info["vcpus_available"] = max(0, vcpus - vcpus_used)
+        hv_info["mem_available"] = max(0, memory_size - memory_used)
+        hv_info["vcpus_capacity"] = vcpus
+        hv_info["mem_capacity"] = memory_size
 
         hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", "0"))
         hv_info["compute_service_status"] = service_info["status"]
@@ -166,12 +166,9 @@ def calculate_slots_on_hv(
     """
     slots_dataclass = SlottifierEntry()
 
-    print("Flavor Requirements:", flavor_reqs)
-    print("Hypervisor Info:", hv_info)
-
     slots_available = min(
-        hv_info["vcpus_avail"] // flavor_reqs["cores_required"],
-        hv_info["hypervisor_memory_used"] // flavor_reqs["mem_required"],
+        hv_info["vcpus_available"] // flavor_reqs["cores_required"],
+        hv_info["mem_available"] // flavor_reqs["mem_required"],
     )
 
     if "g-" in flavor_name:
@@ -183,14 +180,14 @@ def calculate_slots_on_hv(
 
         theoretical_gpu_slots_available = min(
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"],
-            hv_info["hypervisor_vcpus"] // flavor_reqs["cores_required"],
-            hv_info["hypervisor_memory_size"] // flavor_reqs["mem_required"],
+            hv_info["vcpus_capacity"] // flavor_reqs["cores_required"],
+            hv_info["mem_capacity"] // flavor_reqs["mem_required"],
         )
 
         estimated_slots_used = (
             min(
-                hv_info["hypervisor_vcpus"] // flavor_reqs["cores_required"],
-                hv_info["hypervisor_memory_size"] // flavor_reqs["mem_required"],
+                hv_info["vcpus_capacity"] // flavor_reqs["cores_required"],
+                hv_info["mem_capacity"] // flavor_reqs["mem_required"],
             )
             - slots_available
         )
@@ -223,6 +220,7 @@ def get_openstack_resources(instance: str) -> Dict:
     """
     This is a helper function that gets information from openstack in one go to calculate flavor slots
     This is quicker than getting resources one at a time
+    It queries the Query Library for all hypervisors within the instance.
     :param instance: which cloud to calculate slots for
     :return: a dictionary containing 4 entries, key is an openstack component,
     value is a list of all components of that
@@ -245,6 +243,7 @@ def get_openstack_resources(instance: str) -> Dict:
     hv.select_all()
     hv.run(instance)
     hv.group_by("id")
+    # Flattens the incoming list of dictionaries, into a dictionary of lists
     hv_props = hv.to_props(flatten=True)
 
     all_hypervisors = {}
