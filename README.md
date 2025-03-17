@@ -98,3 +98,7 @@ One terraform script to create a private network on openstack along with a route
 
 A Python script that when run, creates a filter word cloud from the summary of tickets over a time period.
 [More Here](word_cloud_generator/)
+
+## chatops_deployment
+
+An IaC HA deployment for the Cloud ChatOps application.
