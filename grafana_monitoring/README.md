@@ -33,6 +33,6 @@ To replace the Aquilon configuration...
     ```
 7. If you need to make changes to any of the services' config you can run each role separately with their tags
     ```shell
-    ansible-playbook site.yaml --inventory staging/production --tags <grafana | haproxy | certbot>
+    ansible-playbook site.yaml --inventory <staging | production> --tags <grafana | haproxy | certbot>
     ```
    
