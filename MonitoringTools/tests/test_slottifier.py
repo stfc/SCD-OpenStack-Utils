@@ -161,7 +161,7 @@ def test_get_hv_info_exists_but_disabled(mock_hypervisors, mock_aggregate):
 
 def test_get_hv_info_but_values_are_not_found(mock_hypervisors, mock_aggregate):
     """
-    tests get_hv_info when hv is enabled and contains string values of "Not_Found" - should return all "Not Found" values as 0
+    tests strings that contain values of "Not_Found" - should return all "Not Found" values as 0
     """
     assert get_hv_info(
         mock_hypervisors["hv4"], mock_aggregate(), {"status": "enabled"}
