@@ -3,39 +3,63 @@ from typing import List, Dict
 import openstack
 from slottifier_entry import SlottifierEntry
 from send_metric_utils import parse_args, run_scrape
+from openstackquery import HypervisorQuery
 
 
 def get_hv_info(hypervisor: Dict, aggregate_info: Dict, service_info: Dict) -> Dict:
     """
-    Helper function to get hv information on cores/memory available
+    Helper function to get hv information on vcpus/memory available
     :param hypervisor: a dictionary holding info on hypervisor
     :param aggregate_info: a dictionary holding info on aggregate hypervisor belongs to
     :param service_info: a dictionary holding info on nova compute service running on hypervisor
-    :return: a dictionary of cores/memory available for given hv
+    :return: a dictionary of vcpus/memory available for given hv
     """
     hv_info = {
-        "cores_available": 0,
+        "vcpus_available": 0,
         "mem_available": 0,
         "gpu_capacity": 0,
-        "core_capacity": 0,
+        "vcpus_capacity": 0,
         "mem_capacity": 0,
         "compute_service_status": "disabled",
     }
-    if hypervisor and hypervisor["status"] != "disabled":
-        hv_info["cores_available"] = max(
-            0, hypervisor["vcpus"] - hypervisor["vcpus_used"]
-        )
-        hv_info["mem_available"] = max(
-            0, hypervisor["memory_size"] - hypervisor["memory_used"]
-        )
-        hv_info["core_capacity"] = hypervisor["vcpus"]
-        hv_info["mem_capacity"] = hypervisor["memory_size"]
 
-        hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", 0))
+    vcpus = hypervisor.get("hypervisor_vcpus", "0")
+    vcpus_used = hypervisor.get("hypervisor_vcpus_used", "0")
+
+    # Only convert to int if the value is not 'Not Found'
+    if vcpus != "Not Found":
+        vcpus = int(vcpus)
+    else:
+        vcpus = 0
+
+    if vcpus_used != "Not Found":
+        vcpus_used = int(vcpus_used)
+    else:
+        vcpus_used = 0
+
+    memory_size = hypervisor.get("hypervisor_memory_size", "0")
+    memory_used = hypervisor.get("hypervisor_memory_used", "0")
+
+    if memory_size != "Not Found":
+        memory_size = int(memory_size)
+    else:
+        memory_size = 0
+
+    if memory_used != "Not Found":
+        memory_used = int(memory_used)
+    else:
+        memory_used = 0
+
+    if hypervisor and hypervisor.get("hypervisor_status") != "disabled":
+        hv_info["vcpus_available"] = max(0, vcpus - vcpus_used)
+        hv_info["mem_available"] = max(0, memory_size - memory_used)
+        hv_info["vcpus_capacity"] = vcpus
+        hv_info["mem_capacity"] = memory_size
+
+        hv_info["gpu_capacity"] = int(aggregate_info["metadata"].get("gpunum", "0"))
         hv_info["compute_service_status"] = service_info["status"]
 
     return hv_info
-
 
 def get_flavor_requirements(flavor: Dict) -> Dict:
     """
@@ -143,7 +167,7 @@ def calculate_slots_on_hv(
     slots_dataclass = SlottifierEntry()
 
     slots_available = min(
-        hv_info["cores_available"] // flavor_reqs["cores_required"],
+        hv_info["vcpus_available"] // flavor_reqs["cores_required"],
         hv_info["mem_available"] // flavor_reqs["mem_required"],
     )
 
@@ -156,13 +180,13 @@ def calculate_slots_on_hv(
 
         theoretical_gpu_slots_available = min(
             hv_info["gpu_capacity"] // flavor_reqs["gpus_required"],
-            hv_info["core_capacity"] // flavor_reqs["cores_required"],
+            hv_info["vcpus_capacity"] // flavor_reqs["cores_required"],
             hv_info["mem_capacity"] // flavor_reqs["mem_required"],
         )
 
         estimated_slots_used = (
             min(
-                hv_info["core_capacity"] // flavor_reqs["cores_required"],
+                hv_info["vcpus_capacity"] // flavor_reqs["cores_required"],
                 hv_info["mem_capacity"] // flavor_reqs["mem_required"],
             )
             - slots_available
@@ -196,6 +220,7 @@ def get_openstack_resources(instance: str) -> Dict:
     """
     This is a helper function that gets information from openstack in one go to calculate flavor slots
     This is quicker than getting resources one at a time
+    It queries the Query Library for all hypervisors within the instance.
     :param instance: which cloud to calculate slots for
     :return: a dictionary containing 4 entries, key is an openstack component,
     value is a list of all components of that
@@ -213,8 +238,20 @@ def get_openstack_resources(instance: str) -> Dict:
         aggregate["id"]: aggregate for aggregate in conn.compute.aggregates()
     }
 
-    # needs to be list_hypervisors and not conn.compute.hypervisors otherwise vcpu/mem info is empty for some reason
-    all_hypervisors = {h["id"]: h for h in conn.list_hypervisors()}
+    # Querying the query library
+    hv = HypervisorQuery()
+    hv.select_all()
+    hv.run(instance)
+    hv.group_by("id")
+    # Flattens the incoming list of dictionaries, into a dictionary of lists
+    hv_props = hv.to_props(flatten=True)
+
+    all_hypervisors = {}
+    for hypervisor, hv_info in hv_props.items():
+        for k, v in hv_info.items():
+            hv_info[k] = v[0]
+        all_hypervisors[hypervisor] = hv_info
+
     all_flavors = {
         flavor["id"]: flavor for flavor in conn.compute.flavors(get_extra_specs=True)
     }
@@ -251,7 +288,7 @@ def get_all_hv_info_for_aggregate(
 
         hv_obj = None
         for hypervisor in all_hypervisors:
-            if host_compute_service["host"] == hypervisor["name"]:
+            if host_compute_service["host"] == hypervisor["hypervisor_name"]:
                 hv_obj = hypervisor
 
         if not hv_obj:
@@ -314,7 +351,6 @@ def main(user_args: List):
     """
     influxdb_args = parse_args(user_args, description="Get All Service Statuses")
     run_scrape(influxdb_args, get_slottifier_details)
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])

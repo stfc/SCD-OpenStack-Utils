@@ -21,22 +21,33 @@ def mock_hypervisors_fixture():
     """fixture for setting up various mock hvs"""
     return {
         "hv1": {
-            "name": "hv1",
-            "status": "enabled",
-            "vcpus": 8,
-            "vcpus_used": 2,
-            "memory_size": 8192,
-            "memory_used": 2048,
+            "hypervisor_name": "hv1",
+            "hypervisor_status": "enabled",
+            "hypervisor_vcpus": 8,
+            "hypervisor_vcpus_used": 2,
+            "hypervisor_memory_size": 8192,
+            "hypervisor_memory_used": 2048,
         },
         "hv2": {
-            "name": "hv2",
-            "status": "enabled",
-            "vcpus": 4,
-            "vcpus_used": 6,
-            "memory_size": 2048,
-            "memory_used": 4096,
+            "hypervisor_name": "hv2",
+            "hypervisor_status": "enabled",
+            "hypervisor_vcpus": 4,
+            "hypervisor_vcpus_used": 6,
+            "hypervisor_memory_size": 2048,
+            "hypervisor_memory_used": 4096,
         },
-        "hv3": {"name": "hv3", "status": "disabled"},
+        "hv3": {
+            "hypervisor_name": "hv3",
+            "hypervisor_status": "disabled",
+        },
+        "hv4": {
+            "hypervisor_name": "hv4",
+            "hypervisor_status": "enabled",
+            "hypervisor_vcpus": "Not Found",
+            "hypervisor_vcpus_used": "Not Found",
+            "hypervisor_memory_size": "Not Found",
+            "hypervisor_memory_used": "Not Found",
+        }
     }
 
 
@@ -106,10 +117,10 @@ def test_get_hv_info_exists_and_enabled(mock_hypervisors, mock_aggregate):
     assert get_hv_info(
         mock_hypervisors["hv1"], mock_aggregate(gpu_num="1"), {"status": "enabled"}
     ) == {
-        "cores_available": 6,
+        "vcpus_available": 6,
         "mem_available": 6144,
         "gpu_capacity": 1,
-        "core_capacity": 8,
+        "vcpus_capacity": 8,
         "mem_capacity": 8192,
         "compute_service_status": "enabled",
     }
@@ -124,10 +135,10 @@ def test_get_hv_info_negative_results_floored(mock_hypervisors, mock_aggregate):
     assert get_hv_info(
         mock_hypervisors["hv2"], mock_aggregate(), {"status": "enabled"}
     ) == {
-        "cores_available": 0,
+        "vcpus_available": 0,
         "mem_available": 0,
         "gpu_capacity": 0,
-        "core_capacity": 4,
+        "vcpus_capacity": 4,
         "mem_capacity": 2048,
         "compute_service_status": "enabled",
     }
@@ -140,13 +151,28 @@ def test_get_hv_info_exists_but_disabled(mock_hypervisors, mock_aggregate):
     assert get_hv_info(
         mock_hypervisors["hv3"], mock_aggregate(), {"status": "disabled"}
     ) == {
-        "cores_available": 0,
+        "vcpus_available": 0,
         "mem_available": 0,
         "gpu_capacity": 0,
-        "core_capacity": 0,
+        "vcpus_capacity": 0,
         "mem_capacity": 0,
         "compute_service_status": "disabled",
     }
+
+def test_get_hv_info_but_values_are_not_found(mock_hypervisors, mock_aggregate):
+    """
+    tests strings that contain values of "Not_Found" - should return all "Not Found" values as 0
+    """
+    assert get_hv_info(
+        mock_hypervisors["hv4"], mock_aggregate(), {"status": "enabled"}
+    ) == {
+               "vcpus_available": 0,
+               "mem_available": 0,
+               "gpu_capacity": 0,
+               "vcpus_capacity": 0,
+               "mem_capacity": 0,
+               "compute_service_status": "enabled",
+           }
 
 
 def test_get_flavor_requirements_with_valid_flavor():
@@ -296,7 +322,7 @@ def test_calculate_slots_on_hv_non_gpu_disabled():
         {
             "compute_service_status": "disabled",
             # can fit 10 slots, but should be 0 since compute service disabled
-            "cores_available": 100,
+            "vcpus_available": 100,
             "mem_available": 100,
         },
     )
@@ -319,7 +345,7 @@ def test_calculate_slots_on_hv_gpu_no_gpunum():
             {
                 "compute_service_status": "disabled",
                 # can fit 10 slots, but should be 0 since compute service disabled
-                "cores_available": 100,
+                "vcpus_available": 100,
                 "mem_available": 100,
             },
         )
@@ -338,9 +364,9 @@ def test_calculate_slots_on_hv_gpu_disabled():
         {
             "compute_service_status": "disabled",
             # can fit 10 slots, but should be 0 since compute service disabled
-            "cores_available": 100,
+            "vcpus_available": 100,
             "mem_available": 100,
-            "core_capacity": 100,
+            "vcpus_capacity": 100,
             "mem_capacity": 100,
             "gpu_capacity": 10,
         },
@@ -363,7 +389,7 @@ def test_calculate_slots_on_hv_mem_available_max():
         {"cores_required": 10, "mem_required": 10},
         {
             "compute_service_status": "enabled",
-            "cores_available": 100,
+            "vcpus_available": 100,
             # can fit only one slot
             "mem_available": 10,
         },
@@ -385,7 +411,7 @@ def test_calculate_slots_on_hv_cores_available_max():
         {
             "compute_service_status": "enabled",
             # can fit 10 cpu slots
-            "cores_available": 100,
+            "vcpus_available": 100,
             "mem_available": 1000,
         },
     )
@@ -408,9 +434,9 @@ def test_calculate_slots_on_hv_gpu_available_max():
             "compute_service_status": "enabled",
             # should find only 5 slots available since gpus are the limiting factor
             "gpu_capacity": 5,
-            "cores_available": 100,
+            "vcpus_available": 100,
             "mem_available": 100,
-            "core_capacity": 100,
+            "vcpus_capacity": 100,
             "mem_capacity": 100,
         },
     )
@@ -432,9 +458,9 @@ def test_calculate_slots_on_hv_gpu_max_slots_calculated_properly():
             "compute_service_status": "enabled",
             # should find 3 slots since we require 2 gpus for each slot
             "gpu_capacity": 6,
-            "cores_available": 100,
+            "vcpus_available": 100,
             "mem_available": 100,
-            "core_capacity": 100,
+            "vcpus_capacity": 100,
             "mem_capacity": 100,
         },
     )
@@ -457,10 +483,10 @@ def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
             "compute_service_status": "enabled",
             # should find only 5 slots available since gpus are the limiting factor
             "gpu_capacity": 5,
-            "cores_available": 10,
+            "vcpus_available": 10,
             "mem_available": 10,
             # there's 4 flavor slots that could have already been used
-            "core_capacity": 50,
+            "vcpus_capacity": 50,
             "mem_capacity": 50,
         },
     )
@@ -471,14 +497,23 @@ def test_calculate_slots_on_hv_calculates_used_gpu_capacity():
 
 
 @patch("slottifier.openstack")
-def test_get_openstack_resources(mock_openstack):
+@patch("slottifier.HypervisorQuery")
+def test_get_openstack_resources(mock_hypervisor_query, mock_openstack): # do I use self?
     """
     tests get_openstack_resources gets all required resources via openstacksdk
-    and outputs them properly
+    and the query library and outputs them properly
     """
     mock_conn = mock_openstack.connect.return_value
 
-    mock_conn.list_hypervisors.return_value = [{"name": "hv1", "id": 1}]
+    #Run the mock queries
+    mock_hv = mock_hypervisor_query.return_value
+
+    # Create a mock hv_props dictionary.
+    mock_hv.to_props.return_value = {
+        'hypervisor1': {'id': [1], 'name': ['hv1']},
+        'hypervisor2': {'id': [2], 'name': ['hv2']}
+    }
+
     mock_conn.compute.aggregates.return_value = [{"name": "ag1", "id": 2}]
     mock_conn.compute.services.return_value = [{"name": "svc1", "id": 3}]
     mock_conn.compute.flavors.return_value = [{"name": "flv1", "id": 4}]
@@ -486,16 +521,19 @@ def test_get_openstack_resources(mock_openstack):
     mock_instance = NonCallableMock()
     res = get_openstack_resources(mock_instance)
 
+    mock_hv.select_all.assert_called_once()
+    mock_hv.run.assert_called_once_with(mock_instance)
+    mock_hv.group_by.assert_called_once_with('id')
+
     mock_openstack.connect.assert_called_once_with(cloud=mock_instance)
     mock_conn.compute.services.assert_called_once()
     mock_conn.compute.aggregates.assert_called_once()
-    mock_conn.list_hypervisors.assert_called_once()
     mock_conn.compute.flavors.assert_called_once_with(get_extra_specs=True)
 
     assert res == {
         "compute_services": [{"name": "svc1", "id": 3}],
         "aggregates": [{"name": "ag1", "id": 2}],
-        "hypervisors": [{"name": "hv1", "id": 1}],
+        "hypervisors": [{"name": "hv1", "id": 1}, {"name": "hv2", "id": 2}],
         "flavors": [{"name": "flv1", "id": 4}],
     }
 
@@ -537,10 +575,10 @@ def test_get_all_hv_info_for_aggregate_with_invalid_data(
     """
     mock_aggregate = {
         "hosts": [
-            # hv4 has service but not found in list of hvs
-            "hv4",
-            # hv5 has no service and not in list of hvs
-            "hv5",
+            # hvFoo has service but not found in list of hvs
+            "hvFoo",
+            # hvBar has no service and not in list of hvs
+            "hvBar",
         ]
     }
     assert not (
