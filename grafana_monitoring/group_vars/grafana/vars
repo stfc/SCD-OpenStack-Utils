@@ -1,7 +1,6 @@
 # Variables used for the Grafana configuration
 
-env: "production"  # Environment you are building in development or production
-domain: "grafana.nubes.rl.ac.uk"  # Domain of the Grafana instance. E.g. grafana.nubes.rl.ac.uk
+domain: ""  # Domain of the Grafana instance. E.g. grafana.nubes.rl.ac.uk
 grafana_dashboards_branch: "main"  # Branch to pull the dashboards from
 
 # Secret variables links

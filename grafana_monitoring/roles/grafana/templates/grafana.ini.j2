@@ -26,7 +26,7 @@ log_level = critical
 [security]
 admin_password="{{ grafana_admin_password }}"
 
-{% if env == "staging" %}
+{% if domain.startswith("dev") %}
 [users]
 auto_assign_org_role=Editor
 {% endif %}
