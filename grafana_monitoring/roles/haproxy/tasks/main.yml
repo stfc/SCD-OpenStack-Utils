@@ -14,17 +14,15 @@
     group: haproxy
     mode: '0644'
 
-- name: Copy certificate
+- name: Check if certificate exists
   become: true
-  ansible.builtin.copy:
-    src: "{{ domain }}.crt"
-    dest: "/etc/haproxy/{{ domain }}.crt"
-    owner: root
-    group: haproxy
-    mode: '0644'
+  ansible.builtin.stat:
+    path: /etc/haproxy/{{ domain }}.crt
+  register: certificate_file
 
 - name: Make sure haproxy.service is running
   become: true
   ansible.builtin.systemd_service:
     state: restarted
     name: haproxy.service
+  when: certificate_file.stat.exists

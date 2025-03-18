@@ -7,6 +7,9 @@ An Ansible playbook to deploy our staging / production Grafana instances. It ins
 To replace the Aquilon configuration...
 
 ## How?
+
+#### Note: You will need to have a floating IP with DNS and ports 80, 443 open. You must set up a load balancer and add the VM as a member to both pools beforehand.
+
 1. Clone this repository
     ```shell
     git clone https://github.com/stfc/SCD-OpenStack-Utils
@@ -23,16 +26,13 @@ To replace the Aquilon configuration...
     https://<your-domain>:443/login/generic_oauth
     ```
 4. Fill in the staging or production inventory with the credentials
-5. (Optional): Change the `grafana` group inventory hosts to whatever IP they are running on
-6. Copy your SSL certificate with name format `<your-domain>.crt` to `roles/haproxy/files/` and make sure the key is prepended to the top.
-7. Run the ansible playbook
+5. Change the `grafana` group inventory hosts to whatever IP the machine will be running on.
+6. Run the ansible playbook
     ```shell
-    ansible-playbook site.yaml --inventory staging/production
+    ansible-playbook site.yaml --inventory <staging | production>
     ```
-8. If you need to make changes to either the Grafana or HAProxy config you can run each role separately with their tags
+7. If you need to make changes to any of the services' config you can run each role separately with their tags
     ```shell
-    ansible-playbook site.yaml --inventory staging/production --tags grafana
-    # or
-    ansible-playbook site.yaml --inventory staging/production --tags haproxy
+    ansible-playbook site.yaml --inventory <staging | production> --tags <grafana | haproxy | certbot>
     ```
    
