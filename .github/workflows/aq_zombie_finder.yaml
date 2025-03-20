@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "aq_zombie_finder/**"
+      - ".github/workflows/aq_zombie_finder.yaml"
   pull_request:
     paths:
       - "aq_zombie_finder/**"

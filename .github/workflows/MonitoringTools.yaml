@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "MonitoringTools/**"
+      - ".github/workflows/MonitoringTools.yaml"
   pull_request:
     paths:
       - "MonitoringTools/**"
