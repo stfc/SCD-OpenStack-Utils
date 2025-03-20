@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "dns_entry_checker/**"
+      - ".github/workflows/dns_entry_checker.yaml"
   pull_request:
     paths:
       - "dns_entry_checker/**"

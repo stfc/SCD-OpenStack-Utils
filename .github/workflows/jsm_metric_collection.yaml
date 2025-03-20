@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "jsm_metric_collection/**"
+      - ".github/workflows/jsm_metric_collection.yaml"
   pull_request:
     paths:
       - "jsm_metric_collection/**"

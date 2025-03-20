@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "prometheus_query_to_csv/**"
+      - ".github/workflows/prometheus_query_to_csv.yaml"
   pull_request:
     paths:
       - "prometheus_query_to_csv/**"

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - ".github/workflows/Openstack-Rally-Tester.yaml"
+      - "OpenStack-Rally-Tester/**"
   pull_request:
     paths:
       - ".github/workflows/Openstack-Rally-Tester.yaml"

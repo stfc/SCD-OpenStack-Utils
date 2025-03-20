@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "iriscasttools/**"
+      - ".github/workflows/iriscast_package_build.yaml"
   pull_request:
     paths:
       - "iriscasttools/**"

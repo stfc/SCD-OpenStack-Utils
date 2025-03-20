@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "word_cloud_generator/**"
+      - ".github/workflows/word_cloud_generator.yaml"
   pull_request:
     paths:
       - "word_cloud_generator/**"
