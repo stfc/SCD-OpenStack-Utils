@@ -24,7 +24,7 @@ To replace the Aquilon configuration...
 3. By default, the hosts file includes both the dev and prod grafana instance domains.
 If you want to run the playbook on only one of these instances you need to uncomment the corresponding host in the inventory.
    ```ini
-   # Contents of: ./hosts
+   # Contents of: ./hosts.ini
    [grafana]
    # grafana.nubes.rl.ac.uk
    # dev-grafana.nubes.rl.ac.uk
