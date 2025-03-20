@@ -32,17 +32,17 @@
 - name: Check if certificate exists
   become: true
   ansible.builtin.stat:
-    path: /etc/haproxy/{{ domain }}.crt
+    path: /etc/haproxy/{{ inventory_hostname }}.crt
   register: certificate_file
 
 - name: Generate the certificate for the first time
   become: true
-  ansible.builtin.shell: "certbot certonly --standalone --non-interactive --agree-tos --domains {{ domain }} -m cloud-support@stfc.ac.uk"
+  ansible.builtin.shell: "certbot certonly --standalone --non-interactive --agree-tos --domains {{ inventory_hostname }} -m cloud-support@stfc.ac.uk"
   when: not certificate_file.stat.exists
 
 - name: Copy certificate for the first time
   become: true
-  ansible.builtin.shell: "cat /etc/letsencrypt/live/{{ domain }}/privkey.pem /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt"
+  ansible.builtin.shell: "cat /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem > /etc/haproxy/{{ inventory_hostname }}.crt"
   when: not certificate_file.stat.exists
 
 - name: Create a cron job for the renewal of certificates
@@ -71,7 +71,7 @@
     minute: "1"
     hour: "0,12"
     day: "*"
-    job: "cat /etc/letsencrypt/live/{{ domain }}/privkey.pem /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt"
+    job: "cat /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem > /etc/haproxy/{{ inventory_hostname }}.crt"
 
 - name: Create a cron job to restart HAProxy to pick up new certificate
   become: true

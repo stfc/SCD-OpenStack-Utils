@@ -1,7 +1,7 @@
 [server]
 # Configure server settings
-domain = {{ domain }}
-root_url = https://{{ domain }}:443/
+domain = {{ inventory_hostname }}
+root_url = https://{{ inventory_hostname }}:443/
 http_addr = 127.0.0.1
 protocol = http
 http_port = 3000
@@ -26,7 +26,7 @@ log_level = critical
 [security]
 admin_password="{{ grafana_admin_password }}"
 
-{% if domain.startswith("dev") %}
+{% if inventory_hostname.startswith("dev") %}
 [users]
 auto_assign_org_role=Editor
 {% endif %}

@@ -21,18 +21,20 @@ To replace the Aquilon configuration...
     source ansible/bin/activate
     pip install ansible
     ```
-3. Make an IRIS IAM client with the redirect URI of:
-    ```
-    https://<your-domain>:443/login/generic_oauth
-    ```
-4. Fill in the staging or production inventory with the credentials
-5. Change the `grafana` group inventory hosts to whatever IP the machine will be running on.
-6. Run the ansible playbook
+3. By default, the hosts file includes both the dev and prod grafana instance domains.
+If you want to run the playbook on only one of these instances you need to uncomment the corresponding host in the inventory.
+   ```ini
+   # Contents of: ./hosts.ini
+   [grafana]
+   # grafana.nubes.rl.ac.uk
+   # dev-grafana.nubes.rl.ac.uk
+   ```
+3. Run the ansible playbook
     ```shell
-    ansible-playbook site.yaml --inventory <staging | production>
+    ansible-playbook site.yaml --inventory hosts
     ```
-7. If you need to make changes to any of the services' config you can run each role separately with their tags
+4. If you need to make changes to any of the services' config you can run each role separately with their tags
     ```shell
-    ansible-playbook site.yaml --inventory <staging | production> --tags <grafana | haproxy | certbot>
+    ansible-playbook site.yaml --inventory hosts --tags <grafana | haproxy | certbot>
     ```
    

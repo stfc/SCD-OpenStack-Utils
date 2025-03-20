@@ -15,9 +15,9 @@ frontend stats
   stats uri /
   stats refresh 10s
 
-frontend {{ domain }}
+frontend {{ inventory_hostname }}
   bind :80
-  bind :443 ssl crt /etc/haproxy/{{ domain }}.crt
+  bind :443 ssl crt /etc/haproxy/{{ inventory_hostname }}.crt
   http-request redirect scheme https code 301 unless { ssl_fc }
   default_backend localhost
 

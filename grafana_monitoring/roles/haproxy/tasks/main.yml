@@ -17,7 +17,7 @@
 - name: Check if certificate exists
   become: true
   ansible.builtin.stat:
-    path: /etc/haproxy/{{ domain }}.crt
+    path: /etc/haproxy/{{ inventory_hostname }}.crt
   register: certificate_file
 
 - name: Make sure haproxy.service is running
