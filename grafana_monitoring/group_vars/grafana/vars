@@ -1,6 +1,5 @@
 # Variables used for the Grafana configuration
 
-domain: ""  # Domain of the Grafana instance. E.g. grafana.nubes.rl.ac.uk
 grafana_dashboards_branch: "main"  # Branch to pull the dashboards from
 
 # Secret variables links
