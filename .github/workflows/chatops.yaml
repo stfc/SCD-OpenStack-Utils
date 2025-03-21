@@ -1,0 +1,36 @@
+name: ChatOps checks
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "chatops_deployment/*"
+      - ".github/workflows/chatops.yaml"
+  pull_request:
+    paths:
+      - "chatops_deployment/*"
+      - ".github/workflows/chatops.yaml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Terraform
+        run: |
+          sudo snap install terraform --classic
+          cd chatops_deployment/terraform
+          terraform validate
+          cd ../..
+
+      - name: Check Ansible
+        run: |
+          pip install ansible-lint
+          ansible-lint chatops_deployment/ansible
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './chatops_deployment'
