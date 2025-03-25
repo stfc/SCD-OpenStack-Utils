@@ -60,3 +60,14 @@ datasources:
       version: Flux
     secureJsonData:
       token: {{ weekly_reports_token_dw }}
+
+  - name: Meerkat DB
+    type: prometheus
+    uid: "meerkat-db"
+    access: proxy
+    url: https://meerkatdb.nubes.rl.ac.uk:8247
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: {{ meerkat_db_username }}
+    secureJsonData:
+      basicAuthPassword: {{ meerkat_db_password }}
