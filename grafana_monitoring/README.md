@@ -31,10 +31,10 @@ If you want to run the playbook on only one of these instances you need to uncom
    ```
 3. Run the ansible playbook
     ```shell
-    ansible-playbook site.yaml --inventory hosts
+    ansible-playbook site.yaml --inventory hosts.ini --ask-vault-pass
     ```
 4. If you need to make changes to any of the services' config you can run each role separately with their tags
     ```shell
-    ansible-playbook site.yaml --inventory hosts --tags <grafana | haproxy | certbot>
+    ansible-playbook site.yaml --inventory hosts.ini --ask-vault-pass --tags <grafana | haproxy | certbot>
     ```
    
