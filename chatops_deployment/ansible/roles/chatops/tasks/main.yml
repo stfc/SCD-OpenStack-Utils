@@ -1,0 +1,43 @@
+---
+- name: Install docker
+  ansible.builtin.apt:
+    name: docker.io
+    update_cache: true
+
+- name: Create chatops directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/chatops
+    state: directory
+    mode: '0775'
+
+- name: Copy config.yml file
+  become: true
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/chatops/config.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy secrets.yml file
+  become: true
+  ansible.builtin.template:
+    src: secrets.yml.j2
+    dest: /etc/chatops/secrets.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Start container
+  become: true
+  community.docker.docker_container:
+    image: harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:{{ chatops_version }}
+    name: chatops
+    pull: always
+    state: started
+    ports:
+      - "3000:3000"
+    volumes:
+      - /etc/chatops/config.yml:/usr/src/app/cloud_chatops/config/config.yml
+      - /etc/chatops/secrets.yml:/usr/src/app/cloud_chatops/config/secrets.yml

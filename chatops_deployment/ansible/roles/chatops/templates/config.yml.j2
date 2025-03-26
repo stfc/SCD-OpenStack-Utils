@@ -1,0 +1,16 @@
+---
+app:
+  users:
+    {{ chatops_users }}
+
+
+github:
+  enabled: true
+  repositories:
+    {{ chatops_github_repos }}
+
+gitlab:
+  enabled: true
+  domain: {{ chatops_gitlab_domain }}
+  projects:
+    {{ chatops_gitlab_projects }}
