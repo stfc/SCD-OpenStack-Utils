@@ -1,0 +1,32 @@
+chatops_version: 7.0.0
+chatops_github_repos:
+  stfc:
+    - cloud-deployed-apps
+    - st2-cloud-pack
+    - cloud-grafana-dashboards
+    - cloud-pe-jupyterhub
+    - cloud-ops-tools
+    - cloud-docker-images
+    - cloud-capi-values
+    - cloud-image-builders
+    - cloud-docs
+    - cloud-openstack-horizon
+    - ansible-harbor
+    - terraform-openstack
+    - cloud-rundeck-jobs
+    - openstack-guide
+    - ansible-jupyter
+    - SCD-Openstack-Utils
+    - check-version-action
+    - cloud-helm-charts
+    - openstack-query-library
+chatops_gitlab_domain: gitlab.stfc.ac.uk
+chatops_gitlab_projects:
+  stfc-cloud:
+    - stfc-cloud-kayobe
+chatops_users: "{{ vault_chatops_users }}"
+chatops_slack_bot_token: "{{ vault_chatops_slack_bot_token }}"
+chatops_slack_signing_secret: "{{ vault_chatops_slack_signing_secret }}"
+chatops_scheduled_reminder_token: "{{ vault_chatops_scheduled_reminder_token }}"
+chatops_github_token: "{{ vault_chatops_github_token }}"
+chatops_gitlab_token_token: "{{ vault_chatops_gitlab_token_token }}"

@@ -5,3 +5,8 @@
   roles:
     - role: loadbalancer
 
+- name: Configure ChatOps
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: chatops
