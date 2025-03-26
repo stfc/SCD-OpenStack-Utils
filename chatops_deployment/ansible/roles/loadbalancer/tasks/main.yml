@@ -1,0 +1,6 @@
+---
+- name: Set up HAProxy
+  import_tasks: haproxy.yml
+
+- name: Set up Certbot
+  import_tasks: certbot.yml
