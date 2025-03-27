@@ -1,0 +1,77 @@
+---
+- name: Check clouds.yaml and fail if it does not exist
+  block:
+    - name: Check clouds.yaml
+      ansible.builtin.stat:
+        path: '~/.config/openstack/clouds.yaml'
+      register: clouds_yaml_state
+
+    - name: Fail if clouds.yaml does not exist
+      ansible.builtin.fail:
+        msg: "Could not find a clouds.yaml in ~/.config/openstack/clouds.yaml"
+      when: not clouds_yaml_state.stat.exists
+
+- name: Check public and private keys
+  block:
+    - name: Check Bastion public key is valid
+      ansible.builtin.shell: "ssh-keygen -l -f '../terraform/bastion-key.pub'"
+      ignore_errors: true
+      register: public_key_state
+
+    - name: Check Bastion private key is valid
+      ansible.builtin.shell: "ssh-keygen -l -f '../ansible/bastion-key'"
+      ignore_errors: true
+      register: private_key_state
+
+    - name: Generate an SSH key pair and copy to directories
+      block:
+        - name: Generate key
+          community.crypto.openssh_keypair:
+            path: /tmp/bastion-key
+            force: true
+            passphrase: "{{ bastion_key_passphrase }}"
+            size: 4096
+            type: rsa
+
+        - name: Move private key
+          ansible.builtin.copy:
+            src: /tmp/bastion-key
+            dest: './bastion-key'
+            mode: '0700'
+
+        - name: Move public key
+          ansible.builtin.copy:
+            src: /tmp/bastion-key.pub
+            dest: '../terraform/bastion-key.pub'
+
+        - name: Delete keys in /tmp
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /tmp/bastion-key
+            - /tmp/bastion-key.pub
+
+      when: public_key_state.rc != 0 or private_key_state.rc != 0
+
+- name: Install Terraform
+  community.general.snap:
+    name: terraform
+    classic: true
+
+- name: Deploy infrastructure
+  community.general.terraform:
+    project_path: '../terraform'
+    state: present
+    complex_vars: true
+    variables:
+      deployment: "{{ terraform_deployment }}"
+      external_network_id: "{{ terraform_external_network_id }}"
+      floating_ip: "{{ terraform_floating_ip }}"
+    force_init: true
+  register: terraform_output
+
+- name: Write ansible inventory file from Terraform outputs
+  ansible.builtin.template:
+    src: hosts.ini.j2
+    dest: "{{ playbook_dir }}/hosts.ini"

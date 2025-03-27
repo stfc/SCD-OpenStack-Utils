@@ -1,0 +1,7 @@
+---
+- name: Deploy infrastructure
+  hosts: localhost
+  tasks:
+    - include_role:
+        name: terraform
+        tasks_from: deploy
