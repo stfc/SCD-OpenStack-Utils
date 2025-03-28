@@ -1,0 +1,67 @@
+---
+- name: Refresh inventory to grab latest changes
+  ansible.builtin.meta: refresh_inventory
+
+- name: Add ssh key to agent
+  block:
+    - name: Install expect
+      become: true
+      ansible.builtin.apt:
+        name: expect
+        update_cache: true
+
+    - name: Add key to ssh-agent
+      ansible.builtin.command: |
+        expect << EOF
+          spawn ssh-add bastion-key
+          expect "Enter passphrase for bastion-key:"
+          send "{{ bastion_key_passphrase }}\r"
+          expect eof
+        EOF
+      register: _
+      changed_when: _.rc == 0
+
+- name: Remove FIP known hosts
+  ansible.builtin.command: 'ssh-keygen -R "{{ terraform_floating_ip }}"'
+  register: _
+  changed_when: _.rc == 0
+
+- name: Remove private VM known host entries
+  ansible.builtin.command: 'ssh-keygen -R {{ item }}'
+  loop: "{{ groups['private'] }}"
+  register: _
+  changed_when: _.rc == 0
+
+- name: Add FIP fingerprint to known hosts
+  ansible.builtin.command: 'ssh-keyscan "{{ terraform_floating_ip }}" >> ~/.ssh/known_hosts'
+  register: _
+  changed_when: _.rc == 0
+
+- name: Get private VM fingerprints and retrieve to local host
+  delegate_to: "{{ terraform_floating_ip }}"
+  block:
+    - name: Add private VM fingerprints to known hosts on LB
+      ansible.builtin.command: 'ssh-keyscan "{{ item }}" >> ~/.ssh/known_hosts'
+      loop: "{{ groups['private'] }}"
+      register: _
+      changed_when: _.rc == 0
+
+    - name: Retrieve known hosts from LB
+      ansible.builtin.fetch:
+        src: '~/.ssh/known_hosts'
+        dest: 'private_known_hosts.tmp'
+        flat: true
+      register: _
+      changed_when: _.rc == 0
+
+- name: Append fetched known hosts to localhost
+  ansible.builtin.command: 'cat private_known_hosts.tmp >> ~/.ssh/known_hosts'
+  register: _
+  changed_when: _.rc == 0
+
+- name: Remove private_known_hosts.tmp
+  ansible.builtin.file:
+    path: 'private_known_hosts.tmp'
+    state: absent
+  register: _
+  changed_when: _.rc == 0
