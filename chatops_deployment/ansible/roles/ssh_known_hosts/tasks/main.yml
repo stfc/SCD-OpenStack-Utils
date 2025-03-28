@@ -1,0 +1,6 @@
+---
+- name: Remove FIP known hosts
+  ansible.builtin.shell: 'ssh-keygen -R "{{ terraform_floating_ip }}"'
+
+- name: Add FIP fingerprint to known hosts
+  ansible.builtin.shell: 'ssh-keyscan "{{ terraform_floating_ip }}" >> ~/.ssh/known_hosts'

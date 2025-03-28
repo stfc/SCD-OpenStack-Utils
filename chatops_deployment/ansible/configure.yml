@@ -1,4 +1,9 @@
 ---
+- name: Add known hosts
+  hosts: localhost
+  roles:
+    - role: ssh_known_hosts
+
 - name: Configure load balancer
   hosts: loadbalancer
   remote_user: ubuntu
