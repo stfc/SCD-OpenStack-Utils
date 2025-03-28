@@ -5,3 +5,4 @@ variable "prometheus_secgroup" {}
 variable "loadbalancer_secgroup" {}
 variable "private_network" {}
 variable "floating_ip" {}
+variable "private_subnet" {}

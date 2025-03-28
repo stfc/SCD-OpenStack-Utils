@@ -28,6 +28,7 @@ resource "openstack_compute_instance_v2" "grafana" {
   network {
     name = var.private_network.name
   }
+  depends_on = [var.private_subnet]
 }
 
 resource "openstack_compute_instance_v2" "prometheus" {
@@ -40,6 +41,7 @@ resource "openstack_compute_instance_v2" "prometheus" {
   network {
     name = var.private_network.name
   }
+  depends_on = [var.private_subnet]
 }
 
 resource "openstack_compute_instance_v2" "chatops" {
@@ -53,6 +55,7 @@ resource "openstack_compute_instance_v2" "chatops" {
   network {
     name = var.private_network.name
   }
+  depends_on = [var.private_subnet]
 }
 
 resource "openstack_compute_instance_v2" "loadbalancer" {
@@ -65,6 +68,7 @@ resource "openstack_compute_instance_v2" "loadbalancer" {
   network {
     name = var.private_network.name
   }
+  depends_on = [var.private_subnet]
 }
 
 data "openstack_networking_port_v2" "loadbalancer_port" {
