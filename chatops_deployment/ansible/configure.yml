@@ -15,14 +15,10 @@
       tags:
         - chatops
 
-# - name: Configure Grafana
-#   hosts: grafana
-#   remote_user: ubuntu
-#   roles:
-#     - role: grafana
-#
-# - name: Configure Prometheus
-#   hosts: prometheus
-#   remote_user: ubuntu
-#   roles:
-#     - role: prometheus
+- name: Configure Grafana
+  hosts: grafana
+  remote_user: ubuntu
+  roles:
+    - grafana
+  tags:
+    - grafana

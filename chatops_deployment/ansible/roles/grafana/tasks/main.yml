@@ -33,14 +33,13 @@
   become: true
   ansible.builtin.apt:
     name: grafana
-    state: latest
     update_cache: true
 
 - name: Copy datasource file template
   become: true
   ansible.builtin.template:
-    src: cloud_datasource.yaml.j2
-    dest: /etc/grafana/provisioning/datasources/cloud_datasource.yaml
+    src: datasource.yml.j2
+    dest: /etc/grafana/provisioning/datasources/datasource.yml
     owner: root
     group: grafana
     mode: '0644'
@@ -54,27 +53,28 @@
     group: grafana
     mode: '0644'
 
-- name: Copy dashboards script template
+- name: Copy dashboard file
   become: true
-  ansible.builtin.template:
-    src: provision_dashboards.sh.j2
-    dest: /usr/local/sbin/provision_dashboards.sh
+  ansible.builtin.copy:
+    src: dashboard.yml
+    dest: /etc/grafana/provisioning/dashboards/dashboard.yml
     owner: root
-    group: root
-    mode: '0774'
+    group: grafana
+    mode: '0644'
 
-- name: Create a cron job for the dashboards script
+- name: Copy dashboards
   become: true
-  become_user: root
-  ansible.builtin.cron:
-    name: "reset grafana dashboards"
-    minute: "*"
-    hour: "*"
-    job: "/usr/local/sbin/provision_dashboards.sh"
-
-- name: Run the dashboards script once before Grafana restarts
-  become: true
-  ansible.builtin.shell: /usr/local/sbin/provision_dashboards.sh
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/grafana/provisioning/dashboards/{{ item }}"
+    owner: root
+    group: grafana
+    mode: '0777'
+  loop:
+    - chatops.json
+    - haproxy.json
+    - alerts.json
+    - status.json
 
 - name: Make sure grafana-server.service is running
   become: true
