@@ -1,0 +1,19 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'webhook-receiver'
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 3h
+  group_by: ['...']
+
+receivers:
+  - name: "webhook-receiver"
+    webhook_configs:
+      - url: "https://chatops.dev-cloud-chatops.nubes.rl.ac.uk/alerts"  # Replace with your actual webhook URL
+        send_resolved: true  # Sends a notification when an alert is resolved
+        http_config:
+          authorization:
+            type: "token"
+            credentials: "{{ chatops_scheduled_reminder_token }}"

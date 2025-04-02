@@ -1,0 +1,87 @@
+---
+- name: Create alertmanager group
+  become: true
+  ansible.builtin.group:
+    name: alertmanager
+    state: present
+
+- name: Add ubuntu to alertmanager group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    group: alertmanager
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a alertmanager user
+  become: true
+  ansible.builtin.user:
+    name: alertmanager
+    create_home: false
+    group: alertmanager
+    system: true
+
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/alertmanager
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download alertmanager binaries
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/alertmanager/releases/download/v0.28.1/alertmanager-0.28.1.linux-amd64.tar.gz
+        dest: /tmp/alertmanager-0.28.1.linux-amd64.tar.gz
+        mode: "0774"
+
+    - name: Extract alertmanager
+      ansible.builtin.unarchive:
+        src: /tmp/alertmanager-0.28.1.linux-amd64.tar.gz
+        dest: /tmp/alertmanager-0.28.1.linux-amd64
+        remote_src: true
+        creates: /tmp/alertmanager-0.28.1.linux-amd64
+
+    - name: Create alertmanager directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/alertmanager
+        state: directory
+        owner: alertmanager
+        group: alertmanager
+        mode: "0770"
+
+    - name: Move alertmanager binaries
+      ansible.builtin.shell: "cp -r /tmp/alertmanager-0.28.1.linux-amd64/* /opt/alertmanager"
+      register: _
+      changed_when: _.rc == 0
+
+- name: Copy alertmanager service file
+  become: true
+  ansible.builtin.copy:
+    src: alertmanager.service
+    dest: /etc/systemd/system/alertmanager.service
+    owner: alertmanager
+    group: alertmanager
+    mode: "0774"
+
+- name: Template alertmanager config
+  become: true
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/opt/alertmanager/{{ item[:-3] }}"
+    owner: alertmanager
+    group: alertmanager
+    mode: "0770"
+  loop:
+    - alertmanager.yml.j2
+    - web.yml.j2
+
+- name: Start alertmanager service
+  become: true
+  ansible.builtin.systemd_service:
+    name: alertmanager.service
+    state: restarted
+    daemon_reload: true
+    enabled: true

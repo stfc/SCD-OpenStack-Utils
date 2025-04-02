@@ -30,3 +30,11 @@
     - prometheus
   tags:
     - prometheus
+
+- name: Configure Alert Manager
+  hosts: prometheus
+  remote_user: ubuntu
+  roles:
+    - alertmanager
+  tags:
+    - alertmanager
