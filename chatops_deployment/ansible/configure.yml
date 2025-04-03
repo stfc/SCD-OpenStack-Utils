@@ -15,6 +15,14 @@
       tags:
         - chatops
 
+- name: Configure CAdvisor
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: cadvisor
+      tags:
+        - cadvisor
+
 - name: Set up systemd exporters
   hosts: all
   remote_user: ubuntu
