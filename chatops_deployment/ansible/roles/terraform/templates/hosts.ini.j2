@@ -18,6 +18,7 @@
 
 [prometheus:vars]
 loadbalancer_private_ip="{{ terraform_output.outputs.loadbalancer_private_ip.value }}"
+prometheus_device="{{ terraform_output.outputs.prometheus_device.value }}"
 
 [elastic]
 {% for ip in terraform_output.outputs.elastic_host_ips.value %}
