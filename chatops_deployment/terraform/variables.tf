@@ -13,6 +13,11 @@ variable "external_network_id" {
   description = "ID of the external network in your project."
 }
 
+variable "prometheus_volume_id" {
+  type        = string
+  description = "ID of the prometheus volume in your project."
+}
+
 variable "elasticsearch_volume_id" {
   type        = string
   description = "ID of the elasticsearch volume in your project."
