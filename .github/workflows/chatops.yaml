@@ -30,7 +30,8 @@ jobs:
       - name: Check Ansible
         run: |
           pip install ansible-lint
-          ansible-lint chatops_deployment/ansible
+          cd chatops_deployment
+          ansible-lint --project-dir ansible
 
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
