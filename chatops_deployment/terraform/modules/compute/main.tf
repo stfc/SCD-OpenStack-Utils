@@ -57,6 +57,11 @@ resource "openstack_compute_instance_v2" "elastic" {
   depends_on = [var.private_subnet]
 }
 
+resource "openstack_compute_volume_attach_v2" "prometheus_volume" {
+  instance_id = openstack_compute_instance_v2.prometheus.id
+  volume_id = var.prometheus_volume_id
+}
+
 resource "openstack_compute_volume_attach_v2" "elasticsearch_volume" {
   instance_id = openstack_compute_instance_v2.elastic.id
   volume_id = var.elasticsearch_volume_id

@@ -89,6 +89,33 @@
     group: prometheus
     mode: "0774"
 
+- name: Create prometheus data directory
+  become: true
+  ansible.builtin.file:
+    path: /var/prometheus/data
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0774'
+
+- name: Attach data volume
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/prometheus/data
+    src: "{{ prometheus_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions on volume
+  become: true
+  ansible.builtin.file:
+    path: /var/prometheus/data
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0774'
+
 - name: Copy prometheus service file
   become: true
   ansible.builtin.copy:

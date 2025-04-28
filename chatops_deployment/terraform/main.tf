@@ -30,5 +30,6 @@ module "compute" {
   private_subnet        = module.networking.private_subnet
   floating_ip           = var.floating_ip
   deployment            = var.deployment
+  prometheus_volume_id = var.prometheus_volume_id
   elasticsearch_volume_id = var.elasticsearch_volume_id
 }
