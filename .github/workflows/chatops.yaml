@@ -22,6 +22,7 @@ jobs:
         run: |
           sudo snap install terraform --classic
           cd chatops_deployment/terraform
+          touch bastion-key.pub
           terraform init
           terraform validate
           cd ../..
