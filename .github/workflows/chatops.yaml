@@ -5,11 +5,11 @@ on:
     branches:
       - master
     paths:
-      - "chatops_deployment/*"
+      - "chatops_deployment/**"
       - ".github/workflows/chatops.yaml"
   pull_request:
     paths:
-      - "chatops_deployment/*"
+      - "chatops_deployment/**"
       - ".github/workflows/chatops.yaml"
 
 jobs:
