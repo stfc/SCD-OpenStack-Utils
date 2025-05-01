@@ -5,11 +5,11 @@ on:
     branches:
       - master
     paths:
-      - "chatops_deployment/*"
+      - "chatops_deployment/**"
       - ".github/workflows/chatops.yaml"
   pull_request:
     paths:
-      - "chatops_deployment/*"
+      - "chatops_deployment/**"
       - ".github/workflows/chatops.yaml"
 
 jobs:
@@ -22,13 +22,16 @@ jobs:
         run: |
           sudo snap install terraform --classic
           cd chatops_deployment/terraform
+          touch bastion-key.pub
+          terraform init
           terraform validate
           cd ../..
 
       - name: Check Ansible
         run: |
           pip install ansible-lint
-          ansible-lint chatops_deployment/ansible
+          cd chatops_deployment
+          ansible-lint --project-dir ansible
 
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
