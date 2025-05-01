@@ -4,7 +4,7 @@
   ansible.builtin.apt:
     name: haproxy
     update_cache: true
-    state: latest
+    state: latest # noqa: package-latest
 
 - name: Copy config file template
   become: true

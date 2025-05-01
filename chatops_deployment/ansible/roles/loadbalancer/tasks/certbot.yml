@@ -5,7 +5,7 @@
       - python3-venv
       - libaugeas0
     update_cache: true
-    state: latest
+    state: latest # noqa: package-latest
 
 - name: Install certbot
   become: true
@@ -13,7 +13,7 @@
     name: certbot
     virtualenv: /opt/certbot
     virtualenv_command: python3 -m venv
-    state: latest
+    state: latest # noqa: package-latest
 
 - name: Create a symbolic link for certbot
   become: true

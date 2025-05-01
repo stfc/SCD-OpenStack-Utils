@@ -4,7 +4,7 @@
   ansible.builtin.apt:
     name: docker.io
     update_cache: true
-    state: latest
+    state: latest # noqa: package-latest
 
 - name: Create chatops directory
   become: true
