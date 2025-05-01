@@ -1,0 +1,6 @@
+---
+- name: Set up HAProxy
+  ansible.builtin.import_tasks: haproxy.yml
+
+- name: Set up Certbot
+  ansible.builtin.import_tasks: certbot.yml

@@ -29,6 +29,7 @@ jobs:
 
       - name: Check Ansible
         run: |
+          pip install ansible
           pip install ansible-lint
           cd chatops_deployment
           ansible-lint --project-dir ansible

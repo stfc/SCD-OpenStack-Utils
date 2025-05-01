@@ -1,0 +1,101 @@
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - python3-venv
+      - libaugeas0
+    update_cache: true
+    state: latest # noqa: package-latest
+
+- name: Install certbot
+  become: true
+  ansible.builtin.pip:
+    name: certbot
+    virtualenv: /opt/certbot
+    virtualenv_command: python3 -m venv
+    state: latest # noqa: package-latest
+
+- name: Create a symbolic link for certbot
+  become: true
+  ansible.builtin.file:
+    src: /opt/certbot/bin/certbot
+    dest: /usr/bin/certbot
+    owner: root
+    group: root
+    state: link
+
+- name: Stop HAProxy
+  become: true
+  ansible.builtin.systemd_service:
+    state: stopped
+    name: haproxy.service
+
+- name: Check if certificate exists
+  become: true
+  ansible.builtin.stat:
+    path: /etc/haproxy/{{ domain }}.crt
+  register: certificate_file
+
+- name: Generate the certificate for the first time
+  become: true
+  ansible.builtin.shell: |
+    certbot certonly --standalone --non-interactive --agree-tos --expand --domains \
+    {{ domain }},chatops.{{ domain }},prometheus.{{ domain }},grafana.{{ domain }},alertmanager.{{ domain }} \
+    -m cloud-support@stfc.ac.uk
+  register: generate_cert
+  changed_when: generate_cert.rc == 0
+  when: not certificate_file.stat.exists
+
+- name: Copy certificate for the first time
+  become: true
+  ansible.builtin.shell: |
+    cat /etc/letsencrypt/live/{{ domain }}/privkey.pem \
+    /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt
+  register: copy_cert
+  changed_when: copy_cert.rc == 0
+  when: not certificate_file.stat.exists
+
+- name: Create a cron job for the renewal of certificates
+  become: true
+  become_user: root
+  ansible.builtin.cron:
+    name: "Renew Let's Encrypt certificates"
+    minute: "0"
+    hour: "0,12"
+    day: "*"
+    job: "/opt/certbot/bin/python -c 'import random; import time; time.sleep(random.random() * 3600)' && sudo certbot renew -q"
+
+- name: Create a cron job for the upgrade of certbot
+  become: true
+  become_user: root
+  ansible.builtin.cron:
+    name: "Upgrade Certbot"
+    month: "*"
+    job: "sudo /opt/certbot/bin/pip install --upgrade certbot"
+
+- name: Create a cron job to copy certificate to haproxy directory
+  become: true
+  become_user: root
+  ansible.builtin.cron:
+    name: "Copy certificate"
+    minute: "1"
+    hour: "0,12"
+    day: "*"
+    job: "cat /etc/letsencrypt/live/{{ domain }}/privkey.pem /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt"
+
+- name: Create a cron job to restart HAProxy to pick up new certificate
+  become: true
+  become_user: root
+  ansible.builtin.cron:
+    name: "Restart HAProxy to pick up new certificate"
+    minute: "3"
+    hour: "0,12"
+    day: "*"
+    job: "systemctl restart haproxy.service"
+
+- name: Restart HAProxy
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: haproxy.service
+  when: copy_cert.rc == 0

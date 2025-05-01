@@ -1,0 +1,16 @@
+---
+app:
+  users:
+    {{ chatops_users | to_nice_yaml  | indent(4) }}
+
+
+github:
+  enabled: true
+  repositories:
+    {{ chatops_github_repos | to_nice_yaml | indent(6) }}
+
+gitlab:
+  enabled: true
+  domain: {{ chatops_gitlab_domain | to_nice_yaml }}
+  projects:
+    {{ chatops_gitlab_projects | to_nice_yaml | indent(6) }}

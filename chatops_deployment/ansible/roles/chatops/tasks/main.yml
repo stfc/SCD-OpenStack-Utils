@@ -1,0 +1,56 @@
+---
+- name: Install docker
+  become: true
+  ansible.builtin.apt:
+    name: docker.io
+    update_cache: true
+    state: latest # noqa: package-latest
+
+- name: Create chatops directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/chatops
+    state: directory
+    mode: '0775'
+    owner: ubuntu
+    group: ubuntu
+    recurse: true
+
+- name: Copy config.yml file
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/chatops/config.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy secrets.yml file
+  ansible.builtin.template:
+    src: secrets.yml.j2
+    dest: /etc/chatops/secrets.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Add ubuntu to docker group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    groups: docker
+    append: true
+
+- name: Reset ssh connection to allow user changes to affect ansible user
+  ansible.builtin.meta: reset_connection
+
+- name: Start ChatOps container
+  community.docker.docker_container:
+    image: harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:7.0.0
+    name: chatops
+    pull: always
+    state: started
+    ports:
+      - "3000:3000"
+    volumes:
+      - /etc/chatops/config.yml:/usr/src/app/cloud_chatops/config/config.yml
+      - /etc/chatops/secrets.yml:/usr/src/app/cloud_chatops/secrets/secrets.yml
+    network_mode: host

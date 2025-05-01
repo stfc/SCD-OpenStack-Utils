@@ -1,0 +1,29 @@
+---
+- name: Install HAProxy
+  become: true
+  ansible.builtin.apt:
+    name: haproxy
+    update_cache: true
+    state: latest # noqa: package-latest
+
+- name: Copy config file template
+  become: true
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: haproxy
+    mode: '0644'
+
+- name: Check if certificate exists
+  become: true
+  ansible.builtin.stat:
+    path: /etc/haproxy/{{ domain }}.crt
+  register: certificate_file
+
+- name: Make sure haproxy.service is running
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: haproxy.service
+  when: certificate_file.stat.exists
