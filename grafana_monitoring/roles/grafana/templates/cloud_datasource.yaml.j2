@@ -7,7 +7,6 @@ datasources:
     uid: "openstack_grafana"
     user: {{ prod_influx_username }}
     url: "http://influx1.nubes.rl.ac.uk:8086"
-    #database: "cloud" # this is a deprecated field but works for v10
     jsonData:
       dbName : "cloud"
       httpMode: POST
@@ -71,3 +70,17 @@ datasources:
     basicAuthUser: {{ meerkat_db_username }}
     secureJsonData:
       basicAuthPassword: {{ meerkat_db_password }}
+
+  - name: DevCloudInfluxDB
+    type: influxdb
+    access: proxy
+    uid: "dev_openstack_grafana"
+    user: {{ dev_influx_username }}
+    url: "http://172.16.110.169:8086"
+    jsonData:
+      dbName : "cloud"
+      httpMode: POST
+      timeInterval: "60"
+      maxSeries: 200
+    secureJsonData:
+      password: {{ dev_influx_password }}
