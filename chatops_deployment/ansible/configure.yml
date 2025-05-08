@@ -1,0 +1,28 @@
+---
+- name: Configure load balancer
+  hosts: loadbalancer
+  remote_user: ubuntu
+  roles:
+    - role: loadbalancer
+      tags:
+        - loadbalancer
+
+- name: Configure ChatOps
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: chatops
+      tags:
+        - chatops
+
+# - name: Configure Grafana
+#   hosts: grafana
+#   remote_user: ubuntu
+#   roles:
+#     - role: grafana
+#
+# - name: Configure Prometheus
+#   hosts: prometheus
+#   remote_user: ubuntu
+#   roles:
+#     - role: prometheus

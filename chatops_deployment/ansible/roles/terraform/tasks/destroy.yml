@@ -1,0 +1,48 @@
+---
+- name: Create / check the bastion public key file exists
+  ansible.builtin.file:
+    path: '../terraform/bastion-key.pub'
+    state: touch
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+    mode: "0774"
+
+- name: Destroy infrastructure
+  community.general.terraform:
+    project_path: '../terraform'
+    state: absent
+    complex_vars: true
+    variables:
+      deployment: "{{ terraform_deployment }}"
+      external_network_id: "{{ terraform_external_network_id }}"
+      floating_ip: "{{ terraform_floating_ip }}"
+
+- name: Remove generated files
+  block:
+    - name: Delete hosts.ini file
+      ansible.builtin.file:
+        path: hosts.ini
+        state: absent
+
+    - name: Touch hosts.ini file
+      ansible.builtin.file:
+        path: hosts.ini
+        state: touch
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+        mode: "0774"
+
+    - name: Delete terraform.tfvars file
+      ansible.builtin.file:
+        path: '../terraform/terraform.tfvars'
+        state: absent
+
+    - name: Remove private key file
+      ansible.builtin.file:
+        path: bastion-key
+        state: absent
+
+    - name: Remove public key file
+      ansible.builtin.file:
+        path: '../terraform/bastion-key.pub'
+        state: absent

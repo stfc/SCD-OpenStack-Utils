@@ -25,7 +25,8 @@ module "compute" {
   chatops_secgroup      = module.networking.chatops_secgroup
   prometheus_secgroup   = module.networking.prometheus_secgroup
   loadbalancer_secgroup = module.networking.loadbalancer_secgroup
-  deployment            = var.deployment
   private_network       = module.networking.private_network
+  private_subnet        = module.networking.private_subnet
   floating_ip           = var.floating_ip
+  deployment            = var.deployment
 }

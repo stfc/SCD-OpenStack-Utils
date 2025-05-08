@@ -1,0 +1,26 @@
+[chatops]
+{% for ip in terraform_output.outputs.chatops_host_ips.value %}
+{{ ip }}
+{% endfor %}
+
+[grafana]
+{% for ip in terraform_output.outputs.grafana_host_ips.value %}
+{{ ip }}
+{% endfor %}
+
+[loadbalancer]
+{{ terraform_floating_ip }} ansible_user=ubuntu
+
+[prometheus]
+{% for ip in terraform_output.outputs.prometheus_host_ips.value %}
+{{ ip }}
+{% endfor %}
+
+[private]
+[private:children]
+prometheus
+grafana
+chatops
+[private:vars]
+ansible_ssh_common_args='-o ProxyCommand="ssh -p 22 -W %h:%p -q ubuntu@{{ terraform_floating_ip }}"'
+ansible_ssh_private_key_file="./bastion-key"

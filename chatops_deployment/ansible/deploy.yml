@@ -1,0 +1,15 @@
+---
+- name: Deploy infrastructure
+  hosts: localhost
+  tasks:
+    - name: Include Terraform deploy play
+      ansible.builtin.include_role:
+        name: terraform
+        tasks_from: deploy
+
+- name: Add known hosts of bastion host and private VMs
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: ssh_known_hosts
+      tags: known_hosts

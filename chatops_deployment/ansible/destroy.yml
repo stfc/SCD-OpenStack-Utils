@@ -1,0 +1,8 @@
+---
+- name: Destroy infrastructure
+  hosts: localhost
+  tasks:
+    - name: Include Terraform destroy play
+      ansible.builtin.include_role:
+        name: terraform
+        tasks_from: destroy
