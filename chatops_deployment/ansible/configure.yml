@@ -10,7 +10,6 @@
 
 - name: Set up filebeats
   hosts: all
-  remote_user: ubuntu
   roles:
     - role: filebeat
       tags:
