@@ -1,0 +1,8 @@
+- type: filestream
+  id: systemd-exporter
+  enabled: true
+  paths:
+    - /opt/systemd-exporter/systemd-exporter.log
+  fields:
+    service.name: systemd-exporter
+  fields_under_root: true
