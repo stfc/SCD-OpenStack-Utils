@@ -131,3 +131,12 @@
   loop:
     - key
     - crt
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: elastic.filebeat.yml
+    dest: /var/filebeat/elastic.filebeat.yml
+    owner: root
+    group: root
+    mode: '0640'
