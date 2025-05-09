@@ -1,0 +1,31 @@
+output.logstash:
+  hosts: ["{{ groups.elastic | map('extract', hostvars, 'ansible_ssh_host') | list | first }}:5044"]
+  ssl:
+    enabled: true
+    certificate_authorities: ["/etc/filebeat/logstash.crt"]
+
+filebeat.config.inputs:
+  enabled: true
+  path: /var/filebeat/*.filebeat.yml
+  reload.enabled: true
+  reload.period: 10s
+
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0640
+
+filebeat.inputs:
+  - type: filestream
+    id: filebeat
+    enabled: true
+    paths:
+      - /etc/filebeat/filebeat.log
+      - /etc/filebeat/logs/*.ndjson

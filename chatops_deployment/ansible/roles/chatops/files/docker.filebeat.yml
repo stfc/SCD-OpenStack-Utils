@@ -1,0 +1,18 @@
+---
+- type: filestream
+  id: docker
+  prospector.scanner.symlinks: true
+  paths:
+    - "/var/lib/docker/containers/*/*.log"
+  parsers:
+    - container:
+        stream: all
+        format: docker
+    - multiline:
+        type: pattern
+        pattern: "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}\\]"
+        negate: true
+        match: after
+  fields:
+    service.name: chatops
+  fields_under_root: true
