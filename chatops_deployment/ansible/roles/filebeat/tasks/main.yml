@@ -1,0 +1,67 @@
+---
+- name: Create Filebeat directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/filebeat
+    state: directory
+    mode: "0774"
+    owner: root
+    group: root
+
+- name: Download and extract Filebeat
+  become: true
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/opt/filebeat/filebeat"
+    mode: "0774"
+  notify:
+    - Move Filebeat binaries
+
+- name: Copy filebeat service file
+  become: true
+  ansible.builtin.copy:
+    src: filebeat.service
+    dest: /etc/systemd/system/filebeat.service
+    owner: root
+    group: root
+    mode: "0740"
+  notify:
+    - Start Filebeat
+
+- name: Flush Handlers to move binaries. We this as it overwrites the config file
+  ansible.builtin.meta: flush_handlers
+
+- name: Template filebeat config
+  become: true
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: "/opt/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0640"
+  notify:
+    - Restart Filebeat
+
+- name: Copy Logstash SSL certificate
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/logstash.crt"
+    dest: "/opt/filebeat"
+    owner: root
+    group: root
+    mode: "0400"
+  notify:
+    - Restart Filebeat
+
+- name: Create filebeat external config directory
+  become: true
+  ansible.builtin.file:
+    path: /var/filebeat
+    state: directory
+    owner: root
+    group: root
+    mode: "0770"

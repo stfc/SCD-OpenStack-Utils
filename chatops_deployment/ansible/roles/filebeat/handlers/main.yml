@@ -1,0 +1,24 @@
+---
+- name: Move Filebeat binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64/"
+    dest: "/opt/filebeat"
+    mode: preserve
+    owner: root
+    group: root
+    remote_src: true
+
+- name: Start Filebeat
+  become: true
+  ansible.builtin.systemd_service:
+    name: filebeat.service
+    state: started
+    daemon_reload: true
+    enabled: true
+
+- name: Restart Filebeat
+  become: true
+  ansible.builtin.systemd_service:
+    name: filebeat.service
+    state: restarted

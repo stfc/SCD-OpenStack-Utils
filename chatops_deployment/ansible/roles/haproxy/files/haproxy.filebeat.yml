@@ -1,0 +1,8 @@
+- type: filestream
+  id: haproxy
+  enabled: true
+  paths:
+    - /var/log/haproxy.log
+  fields:
+    service.name: haproxy
+  fields_under_root: true

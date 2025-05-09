@@ -3,3 +3,4 @@ ansible_user: ubuntu
 domain: "dev-cloud-chatops.nubes.rl.ac.uk"
 chatops_custom_api_token: "{{ vault_chatops_custom_api_token }}"
 systemd_exporter_version: "0.7.0"
+filebeat_version: "9.0.0"

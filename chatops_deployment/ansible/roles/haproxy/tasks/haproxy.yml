@@ -27,3 +27,12 @@
     state: restarted
     name: haproxy.service
   when: certificate_file.stat.exists
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: haproxy.filebeat.yml
+    dest: /var/filebeat/haproxy.filebeat.yml
+    owner: root
+    group: root
+    mode: '0640'

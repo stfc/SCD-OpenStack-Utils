@@ -1,4 +1,11 @@
 ---
+- name: Set up filebeats
+  hosts: all
+  roles:
+    - role: filebeat
+      tags:
+        - filebeat
+
 - name: Configure load balancer
   hosts: haproxy
   roles:
