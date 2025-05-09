@@ -1,0 +1,16 @@
+[Unit]
+Description=Filebeat service
+Documentation=https://www.elastic.co/docs
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Restart=on-failure
+ExecStart=/opt/filebeat/filebeat \
+-c /opt/filebeat/filebeat.yml
+StandardOutput=append:/opt/filebeat/filebeat.log
+StandardError=append:/opt/filebeat/filebeat.log
+
+[Install]
+WantedBy=multi-user.target

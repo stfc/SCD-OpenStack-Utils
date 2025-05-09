@@ -1,0 +1,56 @@
+---
+- name: Download and extract Filebeat
+  become: true
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64"
+    mode: "0774"
+
+- name: Move Filebeat binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64/"
+    dest: "/opt/filebeat"
+    mode: preserve
+    owner: root
+    group: root
+    remote_src: true
+
+- name: Copy filebeat service file
+  become: true
+  ansible.builtin.copy:
+    src: filebeat.service
+    dest: /etc/systemd/system/filebeat.service
+    owner: root
+    group: root
+    mode: "0740"
+
+- name: Template filebeat config
+  become: true
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: "/opt/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0740"
+
+- name: Start filebeat service
+  become: true
+  ansible.builtin.systemd_service:
+    name: filebeat.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Create filebeat external config directory
+  become: true
+  ansible.builtin.file:
+    path: /var/filebeat
+    state: directory
+    owner: root
+    group: root
+    mode: "0770"

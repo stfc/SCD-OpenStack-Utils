@@ -1,0 +1,8 @@
+- type: filestream
+  id: prometheus
+  enabled: true
+  paths:
+    - /opt/prometheus/prometheus.log
+  fields:
+    service.name: prometheus
+  fields_under_root: true
