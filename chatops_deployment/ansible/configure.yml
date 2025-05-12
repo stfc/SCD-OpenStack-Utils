@@ -22,3 +22,11 @@
     - grafana
   tags:
     - grafana
+
+- name: Configure Prometheus
+  hosts: prometheus
+  remote_user: ubuntu
+  roles:
+    - prometheus
+  tags:
+    - prometheus

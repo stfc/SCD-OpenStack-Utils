@@ -16,11 +16,20 @@
 {{ ip }}
 {% endfor %}
 
+[prometheus:vars]
+loadbalancer_private_ip="{{ terraform_output.outputs.loadbalancer_private_ip.value }}"
+
+[monitoring]
+[monitoring:children]
+prometheus
+grafana
+
 [private]
 [private:children]
 prometheus
 grafana
 chatops
+
 [private:vars]
 ansible_ssh_common_args='-o ProxyCommand="ssh -p 22 -W %h:%p -q ubuntu@{{ terraform_floating_ip }}"'
 ansible_ssh_private_key_file="./bastion-key"

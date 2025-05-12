@@ -114,3 +114,13 @@ resource "openstack_networking_secgroup_rule_v2" "loadbalancer_https" {
   remote_ip_prefix  = "0.0.0.0/0"
   security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
 }
+
+resource "openstack_networking_secgroup_rule_v2" "loadbalancer_prometheus" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 8405
+  port_range_max    = 8405
+  remote_ip_prefix  = "192.168.100.0/22"
+  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
+}
