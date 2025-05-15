@@ -27,6 +27,5 @@ chatops_gitlab_projects:
 chatops_users: "{{ vault_chatops_users }}"
 chatops_slack_bot_token: "{{ vault_chatops_slack_bot_token }}"
 chatops_slack_signing_secret: "{{ vault_chatops_slack_signing_secret }}"
-chatops_scheduled_reminder_token: "{{ vault_chatops_scheduled_reminder_token }}"
 chatops_github_token: "{{ vault_chatops_github_token }}"
 chatops_gitlab_token_token: "{{ vault_chatops_gitlab_token_token }}"

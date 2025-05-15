@@ -15,14 +15,26 @@
       tags:
         - chatops
 
-# - name: Configure Grafana
-#   hosts: grafana
-#   remote_user: ubuntu
-#   roles:
-#     - role: grafana
-#
-# - name: Configure Prometheus
-#   hosts: prometheus
-#   remote_user: ubuntu
-#   roles:
-#     - role: prometheus
+- name: Configure Grafana
+  hosts: grafana
+  remote_user: ubuntu
+  roles:
+    - grafana
+  tags:
+    - grafana
+
+- name: Configure Prometheus
+  hosts: prometheus
+  remote_user: ubuntu
+  roles:
+    - prometheus
+  tags:
+    - prometheus
+
+- name: Configure Alert Manager
+  hosts: prometheus
+  remote_user: ubuntu
+  roles:
+    - alertmanager
+  tags:
+    - alertmanager

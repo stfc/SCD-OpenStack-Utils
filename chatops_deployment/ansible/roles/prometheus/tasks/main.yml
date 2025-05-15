@@ -1,0 +1,127 @@
+---
+- name: Create prometheus group
+  become: true
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+
+- name: Add ubuntu to prometheus group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    group: prometheus
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a prometheus user
+  become: true
+  ansible.builtin.user:
+    name: prometheus
+    create_home: false
+    group: prometheus
+    system: true
+
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/prometheus
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download prometheus binaries
+      ansible.builtin.get_url:
+        url: >
+          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/
+          prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0774"
+
+    - name: Extract prometheus
+      ansible.builtin.unarchive:
+        src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
+
+    - name: Create prometheus directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/prometheus
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: "0774"
+
+    - name: Move prometheus binaries
+      ansible.builtin.shell: "cp -r /tmp/prometheus-{{ prometheus_version }}.linux-amd64/* /opt/prometheus"
+      register: _
+      changed_when: _.rc == 0
+
+- name: Create prometheus data directory
+  become: true
+  ansible.builtin.file:
+    path: /var/prometheus/data
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0774"
+
+- name: Attach data volume
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/prometheus/data
+    src: "{{ prometheus_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions on volume
+  become: true
+  ansible.builtin.file:
+    path: /var/prometheus/data
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0774"
+
+- name: Copy prometheus service file
+  become: true
+  ansible.builtin.copy:
+    src: prometheus.service
+    dest: /etc/systemd/system/prometheus.service
+    owner: prometheus
+    group: prometheus
+    mode: "0774"
+
+- name: Copy prometheus rules file
+  become: true
+  ansible.builtin.copy:
+    src: rules.yml
+    dest: /opt/prometheus/rules.yml
+    owner: prometheus
+    group: prometheus
+    mode: "0774"
+
+- name: Template prometheus config
+  become: true
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/opt/prometheus/{{ item[:-3] }}"
+    owner: prometheus
+    group: prometheus
+    mode: "0774"
+  loop:
+    - prometheus.yml.j2
+    - web.yml.j2
+
+- name: Start prometheus service
+  become: true
+  ansible.builtin.systemd_service:
+    name: prometheus.service
+    state: restarted
+    daemon_reload: true
+    enabled: true

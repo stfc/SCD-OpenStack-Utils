@@ -1,0 +1,11 @@
+groups:
+  - name: ChatOps rules
+    rules:
+      - alert: ChatOpsInstanceDown
+        expr: time() - container_last_seen{name="chatops"} > 30
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "ChatOps container is detected down on {{ $labels.instance }}"
+          description: "Container has been not running for more than 10 seconds."

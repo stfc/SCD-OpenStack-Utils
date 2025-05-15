@@ -1,0 +1,2 @@
+domain: "dev-cloud-chatops.nubes.rl.ac.uk"
+chatops_custom_api_token: "{{ vault_chatops_custom_api_token }}"

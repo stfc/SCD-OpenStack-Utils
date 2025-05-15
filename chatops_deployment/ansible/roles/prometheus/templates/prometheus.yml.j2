@@ -1,0 +1,49 @@
+global:
+  scrape_interval:     15s
+  external_labels:
+    monitor: 'chatops-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    basic_auth:
+      username: "{{ prometheus_username }}"
+      password: "{{ prometheus_password }}"
+
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['localhost:9093']
+    basic_auth:
+      username: "{{ alertmanager_username }}"
+      password: "{{ alertmanager_password }}"
+
+  - job_name: 'load-balancer-metrics'
+    static_configs:
+      - targets: ['{{ loadbalancer_private_ip }}:8405']
+
+  - job_name: 'chatops_cadvisor'
+    static_configs:
+      {% for host in groups['chatops'] %}
+      - targets: ['{{ host }}:8080']
+      {% endfor %}
+
+  - job_name: 'systemd_exporter'
+    static_configs:
+      {% for host in groups['private'] %}
+      - targets: ['{{ host }}:9558']
+      {% endfor %}
+      - targets: ['{{ loadbalancer_private_ip }}:9558']
+
+rule_files:
+  - '/opt/prometheus/rules.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - 'localhost:9093'
+      scheme: https
+      basic_auth:
+        username: "{{ alertmanager_username }}"
+        password: "{{ alertmanager_password }}"

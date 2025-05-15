@@ -90,6 +90,16 @@ resource "openstack_networking_secgroup_rule_v2" "prometheus" {
   security_group_id = openstack_networking_secgroup_v2.prometheus.id
 }
 
+resource "openstack_networking_secgroup_rule_v2" "alertmanager" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 9093
+  port_range_max    = 9093
+  remote_ip_prefix  = "192.168.100.0/22"
+  security_group_id = openstack_networking_secgroup_v2.prometheus.id
+}
+
 resource "openstack_networking_secgroup_v2" "loadbalancer" {
   name        = "loadbalancer-${var.deployment}"
   description = "Load balancer host security group."
@@ -112,5 +122,15 @@ resource "openstack_networking_secgroup_rule_v2" "loadbalancer_https" {
   port_range_min    = 443
   port_range_max    = 443
   remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
+}
+
+resource "openstack_networking_secgroup_rule_v2" "loadbalancer_prometheus" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 8405
+  port_range_max    = 8405
+  remote_ip_prefix  = "192.168.100.0/22"
   security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
 }
