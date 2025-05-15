@@ -33,16 +33,17 @@
   block:
     - name: Download alertmanager binaries
       ansible.builtin.get_url:
-        url: >
-          https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/
+        url: "
+          https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/\
           alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
+        "
         dest: /tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
         mode: "0774"
 
     - name: Extract alertmanager
       ansible.builtin.unarchive:
         src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
-        dest: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
+        dest: /tmp
         remote_src: true
         creates: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
 

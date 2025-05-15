@@ -33,9 +33,10 @@
   block:
     - name: Download prometheus binaries
       ansible.builtin.get_url:
-        url: >
-          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/
+        url: "
+          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/\
           prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        "
         dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
         owner: ubuntu
         group: ubuntu
