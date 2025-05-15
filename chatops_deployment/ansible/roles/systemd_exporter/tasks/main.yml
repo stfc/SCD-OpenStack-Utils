@@ -1,0 +1,63 @@
+---
+- name: Create systemd-exporter group
+  become: true
+  ansible.builtin.group:
+    name: systemd-exporter
+    state: present
+
+- name: Add ubuntu to systemd-exporter group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    groups: systemd-exporter
+    append: true
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a systemd-exporter user
+  become: true
+  ansible.builtin.user:
+    name: systemd-exporter
+    create_home: false
+    group: systemd-exporter
+    system: true
+
+- name: Download and extract systemd-exporter
+  become: true
+  ansible.builtin.unarchive:
+    src: "
+      https://github.com/prometheus-community/systemd_exporter/releases/download/\
+      v{{ systemd_exporter_version }}/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64"
+    mode: "0774"
+
+- name: Move systemd-exporter binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64/"
+    dest: "/opt/systemd-exporter"
+    mode: preserve
+    owner: systemd-exporter
+    group: systemd-exporter
+    remote_src: true
+
+- name: Copy systemd-exporter service file
+  become: true
+  ansible.builtin.copy:
+    src: systemd-exporter.service
+    dest: /etc/systemd/system/systemd-exporter.service
+    owner: systemd-exporter
+    group: systemd-exporter
+    mode: "0774"
+
+- name: Start systemd-exporter service
+  become: true
+  ansible.builtin.systemd_service:
+    name: systemd-exporter.service
+    state: restarted
+    daemon_reload: true
+    enabled: true

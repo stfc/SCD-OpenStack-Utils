@@ -1,0 +1,16 @@
+[Unit]
+Description=Systemd Exporter Service
+Documentation=https://github.com/prometheus-community/systemd_exporter
+After=network-online.target
+
+[Service]
+User=systemd-exporter
+Group=systemd-exporter
+Restart=on-failure
+ExecStart=/opt/systemd-exporter/systemd_exporter \
+--web.telemetry-path="/"
+StandardOutput=append:/opt/systemd-exporter/systemd-exporter.log
+StandardError=append:/opt/systemd-exporter/systemd-exporter.log
+
+[Install]
+WantedBy=multi-user.target
