@@ -15,6 +15,14 @@
       tags:
         - chatops
 
+- name: Set up systemd exporters
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - role: systemd_exporter
+      tags:
+        - systemd_exporter
+
 - name: Configure Grafana
   hosts: grafana
   remote_user: ubuntu
