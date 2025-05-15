@@ -32,18 +32,20 @@
   block:
     - name: Download prometheus binaries
       ansible.builtin.get_url:
-        url: https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
-        dest: /tmp/prometheus-3.2.1.linux-amd64.tar.gz
+        url: >
+          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/
+          prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
         owner: ubuntu
         group: ubuntu
         mode: "0774"
 
     - name: Extract prometheus
       ansible.builtin.unarchive:
-        src: /tmp/prometheus-3.2.1.linux-amd64.tar.gz
+        src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
         dest: /tmp
         remote_src: true
-        creates: /tmp/prometheus-3.2.1.linux-amd64
+        creates: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
 
     - name: Create prometheus directory
       become: true
@@ -55,7 +57,7 @@
         mode: "0774"
 
     - name: Move prometheus binaries
-      ansible.builtin.shell: "cp -r /tmp/prometheus-3.2.1.linux-amd64/* /opt/prometheus"
+      ansible.builtin.shell: "cp -r /tmp/prometheus-{{ prometheus_version }}.linux-amd64/* /opt/prometheus"
       register: _
       changed_when: _.rc == 0
 

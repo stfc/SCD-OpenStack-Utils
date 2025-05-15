@@ -32,16 +32,18 @@
   block:
     - name: Download alertmanager binaries
       ansible.builtin.get_url:
-        url: https://github.com/prometheus/alertmanager/releases/download/v0.28.1/alertmanager-0.28.1.linux-amd64.tar.gz
-        dest: /tmp/alertmanager-0.28.1.linux-amd64.tar.gz
+        url: >
+          https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/
+          alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
+        dest: /tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
         mode: "0774"
 
     - name: Extract alertmanager
       ansible.builtin.unarchive:
-        src: /tmp/alertmanager-0.28.1.linux-amd64.tar.gz
-        dest: /tmp/alertmanager-0.28.1.linux-amd64
+        src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+        dest: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
         remote_src: true
-        creates: /tmp/alertmanager-0.28.1.linux-amd64
+        creates: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
 
     - name: Create alertmanager directory
       become: true
@@ -53,7 +55,7 @@
         mode: "0770"
 
     - name: Move alertmanager binaries
-      ansible.builtin.shell: "cp -r /tmp/alertmanager-0.28.1.linux-amd64/* /opt/alertmanager"
+      ansible.builtin.shell: "cp -r /tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/* /opt/alertmanager"
       register: _
       changed_when: _.rc == 0
 
