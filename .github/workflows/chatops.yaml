@@ -1,4 +1,4 @@
-name: ChatOps checks
+name: Linting
 
 on:
   push:
