@@ -44,7 +44,7 @@
 
 - name: Start ChatOps container
   community.docker.docker_container:
-    image: harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:7.0.0
+    image: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:{{ chatops_version }}"
     name: chatops
     pull: always
     state: started
