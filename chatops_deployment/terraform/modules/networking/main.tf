@@ -160,42 +160,17 @@ resource "openstack_networking_secgroup_rule_v2" "loadbalancer_prometheus" {
   security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
 }
 
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_prometheus" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.prometheus.id
+resource "openstack_networking_secgroup_v2" "systemd_exporter" {
+  name        = "systemd_exporter-${var.deployment}"
+  description = "Systemd exporter security group."
 }
 
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_chatops" {
+resource "openstack_networking_secgroup_rule_v2" "systemd_exporter" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
   port_range_min    = 9558
   port_range_max    = 9558
   remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.chatops.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_grafana" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.grafana.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_loadbalancer" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
+  security_group_id = openstack_networking_secgroup_v2.systemd_exporter.id
 }
