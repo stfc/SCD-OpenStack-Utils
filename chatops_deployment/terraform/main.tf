@@ -26,6 +26,7 @@ module "compute" {
   prometheus_secgroup   = module.networking.prometheus_secgroup
   elasticsearch_secgroup   = module.networking.elasticsearch_secgroup
   loadbalancer_secgroup = module.networking.loadbalancer_secgroup
+  systemd_exporter_secgroup = module.networking.systemd_exporter_secgroup
   private_network       = module.networking.private_network
   private_subnet        = module.networking.private_subnet
   floating_ip           = var.floating_ip
