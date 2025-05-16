@@ -1,3 +1,4 @@
+---
 - type: filestream
   id: docker
   prospector.scanner.symlinks: true
@@ -9,7 +10,7 @@
         format: docker
     - multiline:
         type: pattern
-        pattern: '^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}\]'
+        pattern: "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}\\]"
         negate: true
         match: after
   fields:

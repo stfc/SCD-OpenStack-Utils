@@ -1,20 +1,20 @@
 ---
 - name: Install ElasticSearch
-  import_tasks: elasticsearch.yml
+  ansible.builtin.import_tasks: elasticsearch.yml
   tags:
     - elasticsearch
 
 - name: Set Elasticsearch passwords
-  import_tasks: elasticsearch_passwords.yml
+  ansible.builtin.import_tasks: elasticsearch_passwords.yml
   tags:
     - elasticsearch
 
 - name: Install Kibana
-  import_tasks: kibana.yml
+  ansible.builtin.import_tasks: kibana.yml
   tags:
     - kibana
 
 - name: Install Logstash
-  import_tasks: logstash.yml
+  ansible.builtin.import_tasks: logstash.yml
   tags:
     - logstash
