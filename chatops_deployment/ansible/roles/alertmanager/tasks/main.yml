@@ -77,4 +77,4 @@
     dest: /var/filebeat/alertmanager.filebeat.yml
     owner: root
     group: root
-    mode: '0640'
+    mode: "0640"

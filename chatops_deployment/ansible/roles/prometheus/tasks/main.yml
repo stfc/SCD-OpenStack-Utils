@@ -106,4 +106,4 @@
     dest: /var/filebeat/prometheus.filebeat.yml
     owner: root
     group: root
-    mode: '0640'
+    mode: "0640"

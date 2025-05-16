@@ -1,3 +1,4 @@
+---
 - type: filestream
   id: grafana
   enabled: true
