@@ -12,3 +12,17 @@ xpack.security.transport.ssl:
   enabled: false
 http.host: 127.0.0.1
 http.port: 9200
+
+
+# xpack.security.authc.token.enabled: true
+# xpack.security.authc.realms.oidc.iris_iam:
+#   order: 2
+#   rp.client_id: "{{ elastic_iris_client_id }}"
+#   rp.response_type: id_token token
+#   rp.redirect_uri: "https://kibana.{{ domain }}/api/security/oidc/callback"
+#   op.issuer: "https://iris-iam.stfc.ac.uk/"
+#   op.authorization_endpoint: "https://iris-iam.stfc.ac.uk/authorize"
+#   op.token_endpoint: "https://iris-iam.stfc.ac.uk/token"
+#   op.jwkset_path: "https://iris-iam.stfc.ac.uk/jwk"
+#   op.userinfo_endpoint: "https://iris-iam.stfc.ac.uk/userinfo"
+#   claims.principal: preffered_username
