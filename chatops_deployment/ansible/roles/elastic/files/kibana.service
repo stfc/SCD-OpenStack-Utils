@@ -1,0 +1,15 @@
+[Unit]
+Description=Kibana Server
+Documentation=https://www.elastic.co/docs
+After=network-online.target
+
+[Service]
+User=elastic
+Group=elastic
+Restart=on-failure
+ExecStart=/opt/kibana/bin/kibana
+StandardOutput=append:/var/log/kibana/kibana.log
+StandardError=append:/var/log/kibana/kibana.log
+
+[Install]
+WantedBy=multi-user.target
