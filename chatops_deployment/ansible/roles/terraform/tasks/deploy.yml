@@ -3,7 +3,7 @@
   block:
     - name: Check clouds.yaml
       ansible.builtin.stat:
-        path: '~/.config/openstack/clouds.yaml'
+        path: "~/.config/openstack/clouds.yaml"
       register: clouds_yaml_state
 
     - name: Fail if clouds.yaml does not exist
@@ -39,11 +39,10 @@
             group: "{{ ansible_env.USER }}"
             mode: "0700"
 
-
         - name: Move private key
           ansible.builtin.copy:
             src: /tmp/bastion-key
-            dest: './bastion-key'
+            dest: "./bastion-key"
             owner: "{{ ansible_env.USER }}"
             group: "{{ ansible_env.USER }}"
             mode: "0700"
@@ -51,7 +50,7 @@
         - name: Move public key
           ansible.builtin.copy:
             src: /tmp/bastion-key.pub
-            dest: '../terraform/bastion-key.pub'
+            dest: "../terraform/bastion-key.pub"
             owner: "{{ ansible_env.USER }}"
             group: "{{ ansible_env.USER }}"
             mode: "0774"
@@ -63,7 +62,6 @@
           loop:
             - /tmp/bastion-key
             - /tmp/bastion-key.pub
-
 
 - name: Install Terraform
   community.general.snap:
@@ -80,7 +78,7 @@
 
 - name: Deploy infrastructure
   community.general.terraform:
-    project_path: '../terraform'
+    project_path: "../terraform"
     state: present
     force_init: true
   register: terraform_output

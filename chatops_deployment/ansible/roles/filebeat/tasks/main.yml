@@ -1,0 +1,80 @@
+---
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/filebeat
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download filebeat binaries
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-9.0.0-linux-x86_64.tar.gz
+        dest: /tmp/filebeat-9.0.0-linux-x86_64.tar.gz
+        mode: "0774"
+
+    - name: Extract filebeat
+      ansible.builtin.unarchive:
+        src: /tmp/filebeat-9.0.0-linux-x86_64.tar.gz
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/filebeat-9.0.0-linux-x86_64
+
+    - name: Create filebeat directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/filebeat
+        state: directory
+        owner: root
+        group: root
+        mode: "0774"
+
+    - name: Move filebeat binaries
+      become: true
+      ansible.builtin.shell: "cp -r /tmp/filebeat-9.0.0-linux-x86_64/* /opt/filebeat"
+      register: _
+      changed_when: _.rc == 0
+
+    - name: Change permissions on binary files
+      become: true
+      ansible.builtin.file:
+        path: /opt/filebeat
+        state: directory
+        owner: root
+        group: root
+        recurse: true
+
+- name: Copy filebeat service file
+  become: true
+  ansible.builtin.copy:
+    src: filebeat.service
+    dest: /etc/systemd/system/filebeat.service
+    owner: root
+    group: root
+    mode: "0740"
+
+- name: Template filebeat config
+  become: true
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: "/opt/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0740"
+
+- name: Start filebeat service
+  become: true
+  ansible.builtin.systemd_service:
+    name: filebeat.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Create filebeat external config directory
+  become: true
+  ansible.builtin.file:
+    path: /var/filebeat
+    state: directory
+    owner: root
+    group: root
+    mode: "0770"

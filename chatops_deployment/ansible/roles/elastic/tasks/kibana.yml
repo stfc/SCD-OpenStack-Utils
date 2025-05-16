@@ -1,0 +1,83 @@
+---
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/kibana
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download kibana binaries
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-linux-x86_64.tar.gz
+        dest: /tmp/kibana-{{ kibana_version }}-linux-x86_64.tar.gz
+        mode: "0774"
+
+    - name: Extract kibana
+      ansible.builtin.unarchive:
+        src: /tmp/kibana-{{ kibana_version }}-linux-x86_64.tar.gz
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/kibana-{{ kibana_version }}
+
+    - name: Create kibana directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/kibana
+        state: directory
+        owner: elastic
+        group: elastic
+        mode: "0774"
+
+    - name: Move kibana binaries
+      ansible.builtin.shell: "cp -r /tmp/kibana-{{ kibana_version }}/* /opt/kibana"
+      register: _
+      changed_when: _.rc == 0
+
+    - name: Change permissions on binary files
+      become: true
+      ansible.builtin.file:
+        path: /opt/kibana
+        state: directory
+        owner: elastic
+        group: elastic
+        recurse: true
+
+- name: Copy kibana service file
+  become: true
+  ansible.builtin.copy:
+    src: kibana.service
+    dest: /etc/systemd/system/kibana.service
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Template kibana config
+  become: true
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "/opt/kibana/config/kibana.yml"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/kibana/{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  loop:
+    - kibana.key
+    - kibana.crt
+    - elasticsearch.crt
+
+- name: Start kibana service
+  become: true
+  ansible.builtin.systemd_service:
+    name: kibana.service
+    state: restarted
+    daemon_reload: true
+    enabled: true

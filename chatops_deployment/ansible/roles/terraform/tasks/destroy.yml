@@ -1,7 +1,7 @@
 ---
 - name: Create / check the bastion public key file exists
   ansible.builtin.file:
-    path: '../terraform/bastion-key.pub'
+    path: "../terraform/bastion-key.pub"
     state: touch
     owner: "{{ ansible_env.USER }}"
     group: "{{ ansible_env.USER }}"
@@ -9,7 +9,7 @@
 
 - name: Destroy infrastructure
   community.general.terraform:
-    project_path: '../terraform'
+    project_path: "../terraform"
     state: absent
     complex_vars: true
     variables:
@@ -34,7 +34,7 @@
 
     - name: Delete terraform.tfvars file
       ansible.builtin.file:
-        path: '../terraform/terraform.tfvars'
+        path: "../terraform/terraform.tfvars"
         state: absent
 
     - name: Remove private key file
@@ -44,5 +44,5 @@
 
     - name: Remove public key file
       ansible.builtin.file:
-        path: '../terraform/bastion-key.pub'
+        path: "../terraform/bastion-key.pub"
         state: absent

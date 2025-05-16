@@ -1,0 +1,171 @@
+---
+- name: Create elastic group
+  become: true
+  ansible.builtin.group:
+    name: elastic
+    state: present
+
+- name: Add ubuntu to elastic group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    groups: elastic
+    append: true
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a elastic user
+  become: true
+  ansible.builtin.user:
+    name: elastic
+    create_home: false
+    group: elastic
+    system: true
+
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/elasticsearch
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download elasticsearch binaries
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz
+        dest: /tmp/elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz
+        mode: "0774"
+
+    - name: Extract elasticsearch
+      ansible.builtin.unarchive:
+        src: /tmp/elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/elasticsearch-{{ elasticsearch_version }}
+
+    - name: Create elasticsearch directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/elasticsearch
+        state: directory
+        owner: elastic
+        group: elastic
+        mode: "0770"
+
+    - name: Move elasticsearch binaries
+      ansible.builtin.shell: "cp -r /tmp/elasticsearch-{{ elasticsearch_version }}/* /opt/elasticsearch"
+      register: _
+      changed_when: _.rc == 0
+
+    - name: Change permissions on binary files
+      become: true
+      ansible.builtin.file:
+        path: /opt/elasticsearch
+        state: directory
+        owner: elastic
+        group: elastic
+        recurse: true
+
+- name: Create elasticsearch log directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/elasticsearch
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Create elasticsearch data directory
+  become: true
+  ansible.builtin.file:
+    path: /var/elasticsearch/data
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Attach data volume
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/elasticsearch/data
+    src: "{{ elasticsearch_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions on volume
+  become: true
+  ansible.builtin.file:
+    path: /var/elasticsearch/data
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Copy elasticsearch service file
+  become: true
+  ansible.builtin.copy:
+    src: elasticsearch.service
+    dest: /etc/systemd/system/elasticsearch.service
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Template elasticsearch config
+  become: true
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: "/opt/elasticsearch/config/elasticsearch.yml"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+
+# - name: Enable ansible to change to an unprivileged user
+#   set_fact:
+#     ansible_shell_allow_world_readable_temp: true
+# - name: Enable ansible to change to an unprivileged user
+#   set_fact:
+#     ansible_shell_allow_world_readable_temp: true
+#  - name: Add IRIS Client secret to elastic keystore
+#   become: true
+#   become_user: elastic
+#   ansible.builtin.shell: |
+#     /opt/elasticsearch/bin/elasticsearch-keystore create && \
+#     echo "{{ elastic_iris_client_secret }}" | /opt/elasticsearch/bin/elasticsearch-keystore add \
+#     --stdin xpack.security.authc.realms.oidc.iris_iam.rp.client_secret
+#   register: elastic_keystore
+#   changed_when: elastic_keystore.rc == 0
+#
+# - name: Disable ansible to change to an unprivileged user
+#   set_fact:
+#     ansible_shell_allow_world_readable_temp: false
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/elasticsearch.{{ item }}"
+    dest: "/opt/elasticsearch/config/elasticsearch.{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  loop:
+    - key
+    - crt
+
+- name: Start elasticsearch service
+  become: true
+  ansible.builtin.systemd_service:
+    name: elasticsearch.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: elastic.filebeat.yml
+    dest: /var/filebeat/elastic.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"

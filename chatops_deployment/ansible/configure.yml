@@ -1,4 +1,12 @@
 ---
+- name: Set up filebeats
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - role: filebeat
+      tags:
+        - filebeat
+
 - name: Configure load balancer
   hosts: loadbalancer
   remote_user: ubuntu
@@ -14,6 +22,22 @@
     - role: chatops
       tags:
         - chatops
+
+- name: Configure CAdvisor
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: cadvisor
+      tags:
+        - cadvisor
+
+- name: Set up systemd exporters
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - role: systemd_exporter
+      tags:
+        - systemd_exporter
 
 - name: Configure Grafana
   hosts: grafana
@@ -38,3 +62,9 @@
     - alertmanager
   tags:
     - alertmanager
+
+- name: Configure Elastic Stack
+  hosts: elastic
+  remote_user: ubuntu
+  roles:
+    - elastic

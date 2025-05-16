@@ -87,3 +87,12 @@
     state: restarted
     daemon_reload: true
     enabled: true
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: alertmanager.filebeat.yml
+    dest: /var/filebeat/alertmanager.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"
