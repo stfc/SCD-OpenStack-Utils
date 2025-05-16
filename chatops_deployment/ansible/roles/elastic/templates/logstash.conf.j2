@@ -28,8 +28,10 @@ filter {
 
 output {
   elasticsearch {
-  hosts => ["http://127.0.0.1:9200"]
+  hosts => ["https://127.0.0.1:9200"]
   user => "elastic"
   password => "{{ elastic_password }}"
+  ssl_enabled => true
+  ssl_certificate_authorities => "/opt/logstash/elasticsearch.crt"
   }
 }

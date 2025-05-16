@@ -1,6 +1,11 @@
 server.host: {{ inventory_hostname }}
 server.port: 5601
 server.publicBaseUrl: https://kibana.{{ domain }}:443
-elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.hosts: ["https://localhost:9200"]
 elasticsearch.username: kibana_system
 elasticsearch.password: "{{ kibana_system_password }}"
+server.ssl:
+  enabled: true
+  key: /opt/kibana/kibana.key
+  certificate: /opt/kibana/kibana.crt
+elasticsearch.ssl.certificateAuthorities: /opt/kibana/elasticsearch.crt
