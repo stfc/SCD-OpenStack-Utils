@@ -96,7 +96,7 @@
     state: directory
     owner: prometheus
     group: prometheus
-    mode: '0774'
+    mode: "0774"
 
 - name: Attach data volume
   become: true
@@ -114,7 +114,7 @@
     state: directory
     owner: prometheus
     group: prometheus
-    mode: '0774'
+    mode: "0774"
 
 - name: Copy prometheus service file
   become: true
@@ -174,4 +174,4 @@
     dest: /var/filebeat/prometheus.filebeat.yml
     owner: root
     group: root
-    mode: '0640'
+    mode: "0640"

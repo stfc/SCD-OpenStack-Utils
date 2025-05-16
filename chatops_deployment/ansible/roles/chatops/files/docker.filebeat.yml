@@ -1,3 +1,4 @@
+---
 - type: filestream
   id: docker
   prospector.scanner.symlinks: true

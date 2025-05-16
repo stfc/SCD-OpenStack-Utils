@@ -74,7 +74,7 @@
     state: directory
     owner: elastic
     group: elastic
-    mode: '0774'
+    mode: "0774"
 
 - name: Create elasticsearch data directory
   become: true
@@ -83,7 +83,7 @@
     state: directory
     owner: elastic
     group: elastic
-    mode: '0774'
+    mode: "0774"
 
 - name: Attach data volume
   become: true
@@ -101,7 +101,7 @@
     state: directory
     owner: elastic
     group: elastic
-    mode: '0774'
+    mode: "0774"
 
 - name: Copy elasticsearch service file
   become: true
@@ -180,4 +180,4 @@
     dest: /var/filebeat/elastic.filebeat.yml
     owner: root
     group: root
-    mode: '0640'
+    mode: "0640"

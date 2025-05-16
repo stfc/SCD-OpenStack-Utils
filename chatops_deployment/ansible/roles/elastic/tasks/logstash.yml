@@ -51,7 +51,7 @@
     dest: /etc/systemd/system/logstash.service
     owner: elastic
     group: elastic
-    mode: '0774'
+    mode: "0774"
 
 - name: Template logstash config
   become: true
