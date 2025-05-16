@@ -1,0 +1,59 @@
+---
+- name: Extract Kibana
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-linux-x86_64.tar.gz
+      "
+    dest: /tmp
+    remote_src: true
+    creates: /tmp/kibana-{{ kibana_version }}
+    mode: "0774"
+
+- name: Move Kibana binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/kibana-{{ kibana_version }}/"
+    dest: "/opt/kibana"
+    mode: preserve
+    owner: elastic
+    group: elastic
+    remote_src: true
+
+- name: Copy kibana service file
+  become: true
+  ansible.builtin.copy:
+    src: kibana.service
+    dest: /etc/systemd/system/kibana.service
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Template kibana config
+  become: true
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "/opt/kibana/config/kibana.yml"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/kibana/{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  loop:
+    - kibana.key
+    - kibana.crt
+    - elasticsearch.crt
+
+- name: Start kibana service
+  become: true
+  ansible.builtin.systemd_service:
+    name: kibana.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
