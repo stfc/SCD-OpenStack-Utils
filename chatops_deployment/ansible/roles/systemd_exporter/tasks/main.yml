@@ -87,4 +87,4 @@
     dest: /var/filebeat/systemd-exporter.filebeat.yml
     owner: root
     group: root
-    mode: '0640'
+    mode: "0640"
