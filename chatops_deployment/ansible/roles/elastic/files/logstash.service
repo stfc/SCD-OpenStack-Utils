@@ -1,0 +1,16 @@
+[Unit]
+Description=Logstash Server
+Documentation=https://www.elastic.co/docs
+After=network-online.target
+
+[Service]
+User=elastic
+Group=elastic
+Restart=on-failure
+ExecStart=/opt/logstash/bin/logstash \
+  -f /opt/logstash/config/logstash.conf
+StandardOutput=append:/var/log/logstash/logstash.log
+StandardError=append:/var/log/logstash/logstash.log
+
+[Install]
+WantedBy=multi-user.target

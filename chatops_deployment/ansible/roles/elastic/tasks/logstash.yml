@@ -1,0 +1,70 @@
+---
+- name: Create Logstash directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/logstash
+    state: directory
+    mode: "0774"
+    owner: elastic
+    group: elastic
+
+- name: Extract Logstash
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/logstash/logstash-{{ logstash_version }}-linux-x86_64.tar.gz
+      "
+    dest: /tmp
+    remote_src: true
+    creates: /opt/logstash/bin/logstash
+    mode: "0774"
+  notify:
+    - Move Logstash binaries
+
+- name: Flush Handlers to move binaries. We need this for the "config" directory
+  ansible.builtin.meta: flush_handlers
+
+- name: Copy logstash service file
+  become: true
+  ansible.builtin.copy:
+    src: logstash.service
+    dest: /etc/systemd/system/logstash.service
+    owner: elastic
+    group: elastic
+    mode: '0774'
+  notify:
+    - Start Logstash
+
+- name: Create logstash log directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/logstash
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Template logstash config
+  become: true
+  ansible.builtin.template:
+    src: logstash.conf.j2
+    dest: "/opt/logstash/config/logstash.conf"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+  notify:
+    - Restart Logstash
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/logstash/{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  notify:
+    - Restart Logstash
+  loop:
+    - logstash.key
+    - logstash.crt
+    - elasticsearch.crt

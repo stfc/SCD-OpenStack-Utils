@@ -46,3 +46,27 @@
   ansible.builtin.systemd_service:
     name: kibana.service
     state: restarted
+
+- name: Move Logstash binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/logstash-{{ logstash_version }}/"
+    dest: "/opt/logstash"
+    mode: preserve
+    owner: elastic
+    group: elastic
+    remote_src: true
+
+- name: Start Logstash
+  become: true
+  ansible.builtin.systemd_service:
+    name: logstash.service
+    state: started
+    daemon_reload: true
+    enabled: true
+
+- name: Restart Logstash
+  become: true
+  ansible.builtin.systemd_service:
+    name: logstash.service
+    state: restarted
