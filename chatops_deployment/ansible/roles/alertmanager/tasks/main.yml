@@ -9,7 +9,8 @@
   become: true
   ansible.builtin.user:
     name: ubuntu
-    group: alertmanager
+    groups: alertmanager
+    append: true
 
 - name: Reset connection for group changes
   ansible.builtin.meta: reset_connection
