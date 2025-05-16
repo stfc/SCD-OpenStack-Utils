@@ -44,6 +44,24 @@ resource "openstack_compute_instance_v2" "prometheus" {
   depends_on = [var.private_subnet]
 }
 
+resource "openstack_compute_instance_v2" "elastic" {
+  name            = "elasticsearch-host-${var.deployment}"
+  image_name      = "ubuntu-jammy-22.04-nogui"
+  flavor_name     = "l3.tiny"
+  key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
+  security_groups = ["default", var.elasticsearch_secgroup.name]
+
+  network {
+    name = var.private_network.name
+  }
+  depends_on = [var.private_subnet]
+}
+
+resource "openstack_compute_volume_attach_v2" "elasticsearch_volume" {
+  instance_id = openstack_compute_instance_v2.elastic.id
+  volume_id = var.elasticsearch_volume_id
+}
+
 resource "openstack_compute_instance_v2" "chatops" {
   name            = "chatops-host-${var.deployment}"
   image_name      = "ubuntu-jammy-22.04-nogui"
