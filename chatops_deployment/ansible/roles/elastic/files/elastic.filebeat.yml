@@ -7,3 +7,12 @@
   fields:
     service.name: elasticsearch
   fields_under_root: true
+
+- type: filestream
+  id: kibana
+  enabled: true
+  paths:
+    - /opt/kibana/logs/*.log
+  fields:
+    service.name: kibana
+  fields_under_root: true

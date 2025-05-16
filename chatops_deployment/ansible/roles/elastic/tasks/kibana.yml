@@ -1,0 +1,70 @@
+---
+- name: Create Kibana directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/kibana
+    state: directory
+    mode: "0774"
+    owner: elastic
+    group: elastic
+
+- name: Extract Kibana
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-linux-x86_64.tar.gz
+      "
+    dest: /tmp
+    remote_src: true
+    creates: /opt/kibana/bin/kibana
+    mode: "0774"
+  notify:
+    - Move Kibana binaries
+
+- name: Flush Handlers to move binaries. We need this for the "config" directory
+  ansible.builtin.meta: flush_handlers
+
+- name: Copy kibana service file
+  become: true
+  ansible.builtin.copy:
+    src: kibana.service
+    dest: /etc/systemd/system/kibana.service
+    owner: elastic
+    group: elastic
+    mode: "0774"
+  notify:
+    - Start Kibana
+
+- name: Create kibana log directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/kibana
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+
+- name: Template kibana config
+  become: true
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "/opt/kibana/config/kibana.yml"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+  notify:
+    - Restart Kibana
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/kibana/{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  notify:
+    - Restart Kibana
+  loop:
+    - kibana.key
+    - kibana.crt
+    - elasticsearch.crt

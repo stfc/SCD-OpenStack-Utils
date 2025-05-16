@@ -3,3 +3,8 @@
   ansible.builtin.import_tasks: elasticsearch.yml
   tags:
     - elasticsearch
+
+- name: Install Kibana
+  ansible.builtin.import_tasks: kibana.yml
+  tags:
+    - kibana
