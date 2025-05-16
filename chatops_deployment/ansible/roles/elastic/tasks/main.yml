@@ -4,3 +4,7 @@
   tags:
     - elasticsearch
 
+- name: Install Kibana
+  import_tasks: kibana.yml
+  tags:
+    - kibana
