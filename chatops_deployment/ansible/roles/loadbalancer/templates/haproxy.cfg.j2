@@ -47,10 +47,12 @@ acl grafana hdr_sub(host) -i grafana.{{ domain }}
 acl prometheus hdr_sub(host) -i prometheus.{{ domain }}
 acl alertmanager hdr_sub(host) -i alertmanager.{{ domain }}
 acl chatops_sub hdr_sub(host) -i chatops.{{ domain }}
+acl kibana hdr_sub(host) -i kibana.{{ domain }}
 acl chatops hdr_sub(host) -i {{ domain }}
 
 use_backend GRAFANA if grafana
 use_backend PROMETHEUS if prometheus
+use_backend KIBANA if kibana
 use_backend ALERTMANAGER if alertmanager
 use_backend CHATOPS if chatops || chatops_sub
 
@@ -88,4 +90,9 @@ server chatops_{{ loop.index }} {{ address }}:3000 check backup
 {% else %}
 server chatops_{{ loop.index }} {{ address }}:3000 check
 {% endif %}
+{% endfor %}
+
+backend KIBANA
+{% for address in groups['elastic'] %}
+server elastic_{{ loop.index }} {{ address }}:5601 check
 {% endfor %}
