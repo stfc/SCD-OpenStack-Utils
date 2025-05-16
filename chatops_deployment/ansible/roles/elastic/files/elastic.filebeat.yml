@@ -15,3 +15,12 @@
   fields:
     service.name: kibana
   fields_under_root: true
+
+- type: filestream
+  id: logstash
+  enabled: true
+  paths:
+    - /opt/logstash/logs/*.log
+  fields:
+    service.name: logstash
+  fields_under_root: true
