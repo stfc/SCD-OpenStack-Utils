@@ -54,3 +54,9 @@
     - alertmanager
   tags:
     - alertmanager
+
+- name: Configure Elastic Stack
+  hosts: elastic
+  remote_user: ubuntu
+  roles:
+    - elastic

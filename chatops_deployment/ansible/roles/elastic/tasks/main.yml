@@ -1,0 +1,11 @@
+---
+- name: Install ElasticSearch
+  import_tasks: elasticsearch.yml
+  tags:
+    - elasticsearch
+
+- name: Set Elasticsearch passwords
+  import_tasks: elasticsearch_passwords.yml
+  tags:
+    - elasticsearch
+
