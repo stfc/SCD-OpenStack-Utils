@@ -3,8 +3,10 @@
 domain = grafana.{{ domain }}
 root_url = https://grafana.{{ domain }}:443/
 http_addr = {{ inventory_hostname }}
-protocol = http
+protocol = https
 http_port = 3000
+cert_file = /etc/grafana/grafana.crt
+cert_key = /etc/grafana/grafana.key
 
 [auth.generic_oauth]
 # Configure Iris IAM log in

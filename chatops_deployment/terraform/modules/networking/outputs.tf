@@ -10,8 +10,16 @@ output "prometheus_secgroup" {
   value = openstack_networking_secgroup_v2.prometheus
 }
 
+output "elasticsearch_secgroup" {
+  value = openstack_networking_secgroup_v2.elasticsearch
+}
+
 output "loadbalancer_secgroup" {
   value = openstack_networking_secgroup_v2.loadbalancer
+}
+
+output "systemd_exporter_secgroup" {
+  value = openstack_networking_secgroup_v2.systemd_exporter
 }
 
 output "private_network" {

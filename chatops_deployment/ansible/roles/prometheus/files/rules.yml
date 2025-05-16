@@ -1,3 +1,4 @@
+---
 groups:
   - name: ChatOps rules
     rules:
@@ -8,4 +9,13 @@ groups:
           severity: critical
         annotations:
           summary: "ChatOps container is detected down on {{ $labels.instance }}"
-          description: "Container has been not running for more than 10 seconds."
+          description: "Container has been not running for more than 30 seconds."
+
+      - alert: SystemdServiceDown
+        expr: systemd_unit_state{name=~"grafana-server.service|haproxy.service",state=~"failed|inactive"} == 1
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Systemd service {{ $labels.name }} on host {{ $labels.instance }} is in state {{ $labels.state }}."
+          description: "Systemd service has been in failed state for 30s."

@@ -1,11 +1,28 @@
 ---
-- name: Configure load balancer
-  hosts: loadbalancer
+- name: Temporary work around for EGI services down 08/05/2025
+  hosts: all
+  tasks:
+    - name: Remove EGI repository from apt
+      become: true
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/repository_egi_eu_sw_production_cas_1_current.list
+        state: absent
+
+- name: Set up filebeats
+  hosts: all
   remote_user: ubuntu
   roles:
-    - role: loadbalancer
+    - role: filebeat
       tags:
-        - loadbalancer
+        - filebeat
+
+- name: Configure load balancer
+  hosts: haproxy
+  remote_user: ubuntu
+  roles:
+    - role: haproxy
+      tags:
+        - haproxy
 
 - name: Configure ChatOps
   hosts: chatops
@@ -14,6 +31,22 @@
     - role: chatops
       tags:
         - chatops
+
+- name: Configure CAdvisor
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: cadvisor
+      tags:
+        - cadvisor
+
+- name: Set up systemd exporters
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - role: systemd_exporter
+      tags:
+        - systemd_exporter
 
 - name: Configure Grafana
   hosts: grafana
@@ -38,3 +71,9 @@
     - alertmanager
   tags:
     - alertmanager
+
+- name: Configure Elastic Stack
+  hosts: elastic
+  remote_user: ubuntu
+  roles:
+    - elastic

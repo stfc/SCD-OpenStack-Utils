@@ -22,7 +22,7 @@ resource "openstack_compute_instance_v2" "grafana" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.grafana_secgroup.name]
+  security_groups = ["default", var.grafana_secgroup.name, var.systemd_exporter_secgroup.name]
   count           = 2
 
   network {
@@ -36,7 +36,7 @@ resource "openstack_compute_instance_v2" "prometheus" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.prometheus_secgroup.name]
+  security_groups = ["default", var.prometheus_secgroup.name, var.systemd_exporter_secgroup.name]
 
   network {
     name = var.private_network.name
@@ -44,12 +44,35 @@ resource "openstack_compute_instance_v2" "prometheus" {
   depends_on = [var.private_subnet]
 }
 
+resource "openstack_compute_instance_v2" "elastic" {
+  name            = "elasticsearch-host-${var.deployment}"
+  image_name      = "ubuntu-jammy-22.04-nogui"
+  flavor_name     = "l3.tiny"
+  key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
+  security_groups = ["default", var.elasticsearch_secgroup.name, var.systemd_exporter_secgroup.name]
+
+  network {
+    name = var.private_network.name
+  }
+  depends_on = [var.private_subnet]
+}
+
+resource "openstack_compute_volume_attach_v2" "prometheus_volume" {
+  instance_id = openstack_compute_instance_v2.prometheus.id
+  volume_id = var.prometheus_volume_id
+}
+
+resource "openstack_compute_volume_attach_v2" "elasticsearch_volume" {
+  instance_id = openstack_compute_instance_v2.elastic.id
+  volume_id = var.elasticsearch_volume_id
+}
+
 resource "openstack_compute_instance_v2" "chatops" {
   name            = "chatops-host-${var.deployment}"
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.chatops_secgroup.name]
+  security_groups = ["default", var.chatops_secgroup.name, var.systemd_exporter_secgroup.name]
   count           = 3
 
   network {
@@ -63,7 +86,7 @@ resource "openstack_compute_instance_v2" "loadbalancer" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.loadbalancer_secgroup.name]
+  security_groups = ["default", var.loadbalancer_secgroup.name, var.systemd_exporter_secgroup.name]
 
   network {
     name = var.private_network.name

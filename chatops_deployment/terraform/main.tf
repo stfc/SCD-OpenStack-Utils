@@ -24,9 +24,13 @@ module "compute" {
   grafana_secgroup      = module.networking.grafana_secgroup
   chatops_secgroup      = module.networking.chatops_secgroup
   prometheus_secgroup   = module.networking.prometheus_secgroup
+  elasticsearch_secgroup   = module.networking.elasticsearch_secgroup
   loadbalancer_secgroup = module.networking.loadbalancer_secgroup
+  systemd_exporter_secgroup = module.networking.systemd_exporter_secgroup
   private_network       = module.networking.private_network
   private_subnet        = module.networking.private_subnet
   floating_ip           = var.floating_ip
   deployment            = var.deployment
+  prometheus_volume_id = var.prometheus_volume_id
+  elasticsearch_volume_id = var.elasticsearch_volume_id
 }

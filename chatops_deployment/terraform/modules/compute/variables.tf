@@ -2,7 +2,11 @@ variable "deployment" {}
 variable "grafana_secgroup" {}
 variable "chatops_secgroup" {}
 variable "prometheus_secgroup" {}
+variable "elasticsearch_secgroup" {}
 variable "loadbalancer_secgroup" {}
+variable "systemd_exporter_secgroup" {}
 variable "private_network" {}
 variable "floating_ip" {}
 variable "private_subnet" {}
+variable "prometheus_volume_id" {}
+variable "elasticsearch_volume_id" {}
