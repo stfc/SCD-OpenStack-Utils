@@ -8,7 +8,7 @@
     mode: "0700"
 
 - name: Loop over play
-  include_tasks: ssl.yml
+  ansible.builtin.include_tasks: ssl.yml
   loop:
     - kibana
     - logstash
