@@ -17,12 +17,12 @@
         - filebeat
 
 - name: Configure load balancer
-  hosts: loadbalancer
+  hosts: haproxy
   remote_user: ubuntu
   roles:
-    - role: loadbalancer
+    - role: haproxy
       tags:
-        - loadbalancer
+        - haproxy
 
 - name: Configure ChatOps
   hosts: chatops
