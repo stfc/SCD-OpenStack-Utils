@@ -1,0 +1,84 @@
+---
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: /opt/logstash
+  register: stat_binaries
+
+- name: Download and extract binaries
+  when: not stat_binaries.stat.exists
+  block:
+    - name: Download logstash binaries
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/downloads/logstash/logstash-{{ logstash_version }}-linux-x86_64.tar.gz
+        dest: /tmp/logstash-{{ logstash_version }}-linux-x86_64.tar.gz
+        mode: "0774"
+
+    - name: Extract logstash
+      ansible.builtin.unarchive:
+        src: /tmp/logstash-{{ logstash_version }}-linux-x86_64.tar.gz
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/logstash-{{ logstash_version }}
+
+    - name: Create logstash directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/logstash
+        state: directory
+        owner: elastic
+        group: elastic
+        mode: "0774"
+
+    - name: Move logstash binaries
+      become: true
+      ansible.builtin.shell: "cp -r /tmp/logstash-{{ logstash_version }}/* /opt/logstash"
+      register: _
+      changed_when: _.rc == 0
+
+    - name: Change permissions on binary files
+      become: true
+      ansible.builtin.file:
+        path: /opt/logstash
+        state: directory
+        owner: elastic
+        group: elastic
+        recurse: true
+
+- name: Copy logstash service file
+  become: true
+  ansible.builtin.copy:
+    src: logstash.service
+    dest: /etc/systemd/system/logstash.service
+    owner: elastic
+    group: elastic
+    mode: '0774'
+
+- name: Template logstash config
+  become: true
+  ansible.builtin.template:
+    src: logstash.conf.j2
+    dest: "/opt/logstash/config/logstash.conf"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/logstash/{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  loop:
+    - logstash.key
+    - logstash.crt
+    - elasticsearch.crt
+
+- name: Start logstash service
+  become: true
+  ansible.builtin.systemd_service:
+    name: logstash.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
