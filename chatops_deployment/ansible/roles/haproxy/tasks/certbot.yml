@@ -1,3 +1,4 @@
+---
 - name: Install prerequisite packages
   become: true
   ansible.builtin.apt:
