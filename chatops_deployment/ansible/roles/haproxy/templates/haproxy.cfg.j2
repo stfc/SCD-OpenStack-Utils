@@ -40,8 +40,10 @@ bind *:443 ssl crt /etc/haproxy/{{ domain }}.crt
 stats enable
 stats uri /stats
 stats refresh 10s
-http-request add-header X-Forwarded-Proto  https
+http-request add-header X-Forwarded-Proto https
+http-request add-header X-Forwarded-Port 443
 redirect scheme https if !{ ssl_fc }
+option forwardfor
 
 acl grafana hdr_sub(host) -i grafana.{{ domain }}
 acl prometheus hdr_sub(host) -i prometheus.{{ domain }}
@@ -66,21 +68,21 @@ backend GRAFANA
 balance source
 {% for address in groups['grafana'] %}
 {% if loop.first %}
-server grafana_{{ loop.index }} {{ address }}:3000 check
+server grafana_{{ loop.index }} {{ address }}:3000 check ssl verify required ca-file /etc/haproxy/ssl/grafana.crt
 {% else %}
-server grafana_{{ loop.index }} {{ address }}:3000 check backup
+server grafana_{{ loop.index }} {{ address }}:3000 check backup ssl verify required ca-file /etc/haproxy/ssl/grafana.crt
 {% endif %}
 {% endfor %}
 
 backend PROMETHEUS
 balance source
 {% for address in groups['prometheus'] %}
-server prometheus_{{ loop.index }} {{ address }}:9090 check
+server prometheus_{{ loop.index }} {{ address }}:9090 check ssl verify required ca-file /etc/haproxy/ssl/prometheus.crt
 {% endfor %}
 
 backend ALERTMANAGER
 {% for address in groups['prometheus'] %}
-server alertmanager_{{ loop.index }} {{ address }}:9093 check
+server alertmanager_{{ loop.index }} {{ address }}:9093 check ssl verify required ca-file /etc/haproxy/ssl/alertmanager.crt
 {% endfor %}
 
 backend CHATOPS
@@ -94,5 +96,5 @@ server chatops_{{ loop.index }} {{ address }}:3000 check
 
 backend KIBANA
 {% for address in groups['elastic'] %}
-server elastic_{{ loop.index }} {{ address }}:5601 check
+server elastic_{{ loop.index }} {{ address }}:5601 check ssl verify required ca-file /etc/haproxy/ssl/kibana.crt
 {% endfor %}

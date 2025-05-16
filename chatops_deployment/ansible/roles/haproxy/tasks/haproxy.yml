@@ -21,6 +21,31 @@
     path: /etc/haproxy/{{ domain }}.crt
   register: certificate_file
 
+- name: Create SSL directory to store self signed certificates
+  become: true
+  ansible.builtin.file:
+    path: /etc/haproxy/ssl
+    state: directory
+    owner: root
+    group: haproxy
+    mode: "0774"
+
+- name: Copy service self signed certificates
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}.crt"
+    dest: "/etc/haproxy/ssl/{{ item }}.crt"
+    owner: root
+    group: haproxy
+    mode: "0440"
+  loop:
+    - grafana
+    - kibana
+    - elasticsearch
+    - prometheus
+    - alertmanager
+    - chatops
+
 - name: Make sure haproxy.service is running
   become: true
   ansible.builtin.systemd_service:
