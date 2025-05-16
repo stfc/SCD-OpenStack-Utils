@@ -8,7 +8,7 @@
 {{ ip }}
 {% endfor %}
 
-[loadbalancer]
+[haproxy]
 {{ terraform_floating_ip }} ansible_user=ubuntu
 
 [prometheus]

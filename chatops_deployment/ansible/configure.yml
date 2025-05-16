@@ -1,10 +1,10 @@
 ---
 - name: Configure load balancer
-  hosts: loadbalancer
+  hosts: haproxy
   roles:
-    - role: loadbalancer
+    - role: haproxy
       tags:
-        - loadbalancer
+        - haproxy
 
 - name: Configure ChatOps
   hosts: chatops
