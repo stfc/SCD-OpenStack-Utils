@@ -1,0 +1,29 @@
+- type: filestream
+  id: elasticsearch
+  enabled: true
+  paths:
+    - /opt/elasticsearch/elasticsearch.log
+    - /var/log/elasticsearch/*.log
+  fields:
+    service.name: elasticsearch
+  fields_under_root: true
+
+- type: filestream
+  id: kibana
+  enabled: true
+  paths:
+    - /opt/kibana/kibana.log
+    - /opt/kibana/logs/*.log
+  fields:
+    service.name: kibana
+  fields_under_root: true
+
+- type: filestream
+  id: logstash
+  enabled: true
+  paths:
+    - /opt/logstash/logstash.log
+    - /opt/logstash/logs/*.log
+  fields:
+    service.name: logstash
+  fields_under_root: true
