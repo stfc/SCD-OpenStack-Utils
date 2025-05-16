@@ -4,6 +4,15 @@ server.publicBaseUrl: https://kibana.{{ domain }}:443
 elasticsearch.hosts: ["https://localhost:9200"]
 elasticsearch.username: kibana_system
 elasticsearch.password: "{{ kibana_system_password }}"
+
+# xpack.security.authc.providers:
+#   oidc.iris_iam:
+#     order: 1
+#     realm: "iris_iam"
+#     description: "Log in with IRIS IAM"
+#   basic.basic1:
+#     order: 0
+
 server.ssl:
   enabled: true
   key: /opt/kibana/kibana.key
