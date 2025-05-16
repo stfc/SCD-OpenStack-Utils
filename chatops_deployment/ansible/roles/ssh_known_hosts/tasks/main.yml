@@ -11,7 +11,9 @@
         update_cache: true
 
     - name: Add key to ssh-agent
-      ansible.builtin.command: |
+      # noqa: command-instead-of-shell
+      # We must use shell here as here-docs don't work with command
+      ansible.builtin.shell: |
         expect << EOF
           spawn ssh-add bastion-key
           expect "Enter passphrase for bastion-key:"
@@ -21,47 +23,64 @@
       register: _
       changed_when: _.rc == 0
 
-- name: Remove FIP known hosts
-  ansible.builtin.command: 'ssh-keygen -R "{{ terraform_floating_ip }}"'
-  register: _
-  changed_when: _.rc == 0
+- name: Remove FIP from known hosts
+  ansible.builtin.known_hosts:
+    name: "{{ terraform_floating_ip }}"
+    state: absent
 
-- name: Remove private VM known host entries
-  ansible.builtin.command: "ssh-keygen -R {{ item }}"
+- name: Remove private VM IPs from known hosts
+  ansible.builtin.known_hosts:
+    name: "{{ item }}"
+    state: absent
   loop: "{{ groups['private'] }}"
-  register: _
-  changed_when: _.rc == 0
+
+- name: Wait for VMs to be ready
+  ansible.builtin.wait_for:
+    timeout: 10
 
 - name: Add FIP fingerprint to known hosts
-  ansible.builtin.command: 'ssh-keyscan "{{ terraform_floating_ip }}" >> ~/.ssh/known_hosts'
-  register: _
-  changed_when: _.rc == 0
+  ansible.builtin.known_hosts:
+    name: "{{ terraform_floating_ip }}"
+    state: present
+    key: "{{ lookup('ansible.builtin.pipe', 'ssh-keyscan {{ terraform_floating_ip }}') }}"
 
-- name: Get private VM fingerprints and retrieve to local host
+- name: Get private VMs' fingerprints and retrieve to local host
   delegate_to: "{{ terraform_floating_ip }}"
   block:
-    - name: Add private VM fingerprints to known hosts on LB
-      ansible.builtin.command: 'ssh-keyscan "{{ item }}" >> ~/.ssh/known_hosts'
+    - name: Add private VMs' fingerprints to known hosts on LB
+      # noqa: command-instead-of-shell
+      # We can't use the known_hosts module here as lookups cannot be delegated
+      # We can't use command as it doesn't support here-docs
+      ansible.builtin.shell: 'ssh-keyscan "{{ item }}" >> /tmp/known_hosts'
       loop: "{{ groups['private'] }}"
       register: _
       changed_when: _.rc == 0
 
     - name: Retrieve known hosts from LB
       ansible.builtin.fetch:
-        src: "~/.ssh/known_hosts"
-        dest: "private_known_hosts.tmp"
+        src: "/tmp/known_hosts"
+        dest: "private_vm_known_hosts.tmp"
         flat: true
       register: _
-      changed_when: _.rc == 0
+      changed_when: _.failed != false
 
-- name: Append fetched known hosts to localhost
-  ansible.builtin.command: "cat private_known_hosts.tmp >> ~/.ssh/known_hosts"
-  register: _
-  changed_when: _.rc == 0
+    - name: Remove temporary known_hosts to ensure it's clean each run
+      ansible.builtin.file:
+        path: "/tmp/known_hosts"
+        state: absent
+      register: _
+      changed_when: _.failed != false
+
+- name: Append fetched known hosts to the local known hosts
+  ansible.builtin.lineinfile:
+    path: "~/.ssh/known_hosts"
+    line: "{{ item }}"
+    state: present
+  loop: "{{ lookup('ansible.builtin.file', 'private_vm_known_hosts.tmp').splitlines() }}"
 
 - name: Remove private_known_hosts.tmp
   ansible.builtin.file:
-    path: "private_known_hosts.tmp"
+    path: "private_vm_known_hosts.tmp"
     state: absent
   register: _
-  changed_when: _.rc == 0
+  changed_when: _.failed != false
