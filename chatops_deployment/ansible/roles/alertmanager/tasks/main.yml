@@ -74,6 +74,18 @@
     group: alertmanager
     mode: "0774"
 
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/alertmanager.{{ item }}"
+    dest: "/opt/alertmanager/alertmanager.{{ item }}"
+    owner: alertmanager
+    group: alertmanager
+    mode: "0440"
+  loop:
+    - key
+    - crt
+
 - name: Start alertmanager service
   become: true
   ansible.builtin.systemd_service:

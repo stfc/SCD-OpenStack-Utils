@@ -5,7 +5,9 @@ cluster.name: chatops-elasticsearch
 xpack.security.enabled: true
 xpack.security.enrollment.enabled: true
 xpack.security.http.ssl:
-  enabled: false
+  enabled: true
+  key: /opt/elasticsearch/config/elasticsearch.key
+  certificate: /opt/elasticsearch/config/elasticsearch.crt
 xpack.security.transport.ssl:
   enabled: false
 http.host: 127.0.0.1
