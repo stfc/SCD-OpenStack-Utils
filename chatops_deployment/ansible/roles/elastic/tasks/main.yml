@@ -8,3 +8,8 @@
   import_tasks: kibana.yml
   tags:
     - kibana
+
+- name: Install Logstash
+  import_tasks: logstash.yml
+  tags:
+    - logstash
