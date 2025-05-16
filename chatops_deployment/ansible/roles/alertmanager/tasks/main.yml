@@ -68,6 +68,17 @@
     group: alertmanager
     mode: "0770"
 
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/alertmanager.{{ item }}"
+    dest: "/opt/alertmanager/alertmanager.{{ item }}"
+    owner: alertmanager
+    group: alertmanager
+  loop:
+    mode: "0440"
+    - crt
+    - key
 - name: Copy filebeat external config
   become: true
   ansible.builtin.copy:
