@@ -1,0 +1,63 @@
+---
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    update_cache: true
+
+- name: Create key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Elasticsearch key and repository to apt
+  become: true
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /etc/apt/keyrings/elasticsearch.asc
+        mode: "0755"
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/9.x/apt stable main"
+        state: present
+
+- name: Install Logstash
+  become: true
+  ansible.builtin.apt:
+    name: logstash
+    state: latest # noqa: package-latest
+    update_cache: true
+
+- name: Template logstash config
+  become: true
+  ansible.builtin.template:
+    src: logstash.conf.j2
+    dest: "/etc/logstash/logstash.conf"
+    owner: root
+    group: logstash
+    mode: "0770"
+  notify:
+    - Restart Logstash
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/{{ item }}"
+    dest: "/etc/logstash/{{ item }}"
+    owner: root
+    group: logstash
+    mode: "0440"
+  notify:
+    - Restart Logstash
+  loop:
+    - logstash.key
+    - logstash.crt
+    - elasticsearch.crt
