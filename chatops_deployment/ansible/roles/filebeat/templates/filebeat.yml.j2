@@ -1,5 +1,5 @@
 output.logstash:
-  hosts: ["{{ groups['elastic'][0] }}:5044"]
+  hosts: ["{{ groups.elastic | map('extract', hostvars, 'ansible_ssh_host') | list | first }}:5044"]
   ssl:
     enabled: true
     certificate_authorities: ["/opt/filebeat/logstash.crt"]

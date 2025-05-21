@@ -2,7 +2,7 @@
 # Configure server settings
 domain = grafana.{{ domain }}
 root_url = https://grafana.{{ domain }}:443/
-http_addr = {{ inventory_hostname }}
+http_addr = {{ ansible_ssh_host }}
 protocol = https
 http_port = 3000
 cert_file = /etc/grafana/grafana.crt
