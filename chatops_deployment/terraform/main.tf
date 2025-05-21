@@ -33,4 +33,5 @@ module "compute" {
   deployment            = var.deployment
   prometheus_volume_id = var.prometheus_volume_id
   elasticsearch_volume_id = var.elasticsearch_volume_id
+  environment = var.environment
 }
