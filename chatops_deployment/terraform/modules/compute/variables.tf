@@ -10,3 +10,4 @@ variable "floating_ip" {}
 variable "private_subnet" {}
 variable "prometheus_volume_id" {}
 variable "elasticsearch_volume_id" {}
+variable "environment" {}

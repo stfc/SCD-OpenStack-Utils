@@ -1,7 +1,7 @@
 ---
-- name: Create SSL directory
+- name: Create ssl directory
   ansible.builtin.file:
-    path: ./SSL
+    path: ./{{ env }}_ssl
     state: directory
     owner: "{{ ansible_env.USER }}"
     group: "{{ ansible_env.USER }}"

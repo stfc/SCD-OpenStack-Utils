@@ -1,0 +1,19 @@
+plugin: openstack.cloud.openstack
+
+all_projects: false
+expand_hostvars: true
+fail_on_errors: true
+only_clouds:
+  - "openstack"
+strict: true
+clouds_yaml_path: "~/.config/openstack/clouds.yaml"
+replace_invalid_groups: true
+only_ipv4: true
+legacy_groups: false
+inventory_hostname: "name"
+groups:
+  chatops: "(openstack.metadata.service | default('') == 'chatops') and (openstack.metadata.env | default('') == 'dev')"
+  grafana: "(openstack.metadata.service | default('') == 'grafana') and (openstack.metadata.env | default('') == 'dev')"
+  prometheus: "(openstack.metadata.service | default('') == 'prometheus') and (openstack.metadata.env | default('') == 'dev')"
+  elastic: "(openstack.metadata.service | default('') == 'elastic') and (openstack.metadata.env | default('') == 'dev')"
+  haproxy: "(openstack.metadata.service | default('') == 'haproxy') and (openstack.metadata.env | default('') == 'dev')"

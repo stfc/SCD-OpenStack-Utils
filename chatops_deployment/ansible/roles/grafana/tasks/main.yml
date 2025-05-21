@@ -79,7 +79,7 @@
 - name: Copy certificate and key
   become: true
   ansible.builtin.copy:
-    src: "./SSL/grafana.{{ item }}"
+    src: "./{{ env }}_ssl/grafana.{{ item }}"
     dest: "/etc/grafana/grafana.{{ item }}"
     owner: root
     group: grafana

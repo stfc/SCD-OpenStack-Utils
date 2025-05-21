@@ -71,7 +71,7 @@
 - name: Copy certificate and key
   become: true
   ansible.builtin.copy:
-    src: "./SSL/alertmanager.{{ item }}"
+    src: "./{{ env }}_ssl/alertmanager.{{ item }}"
     dest: "/opt/alertmanager/alertmanager.{{ item }}"
     owner: alertmanager
     group: alertmanager
