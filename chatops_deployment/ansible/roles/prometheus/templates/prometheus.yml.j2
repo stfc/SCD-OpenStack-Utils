@@ -30,13 +30,13 @@ scrape_configs:
 
   - job_name: 'chatops_cadvisor'
     static_configs:
-      {% for host in groups['chatops'] %}
+      {% for host in (groups.chatops | map('extract', hostvars, 'ansible_ssh_host')) %}
       - targets: ['{{ host }}:8080']
       {% endfor %}
 
   - job_name: 'systemd_exporter'
     static_configs:
-      {% for host in groups['private'] %}
+      {% for host in (groups.private | map('extract', hostvars, 'ansible_ssh_host')) %}
       - targets: ['{{ host }}:9558']
       {% endfor %}
       - targets: ['{{ ansible_local.terraform.vars.loadbalancer_private_ip }}:9558']
