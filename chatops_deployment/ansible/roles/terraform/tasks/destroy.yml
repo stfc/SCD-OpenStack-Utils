@@ -1,7 +1,7 @@
 ---
 - name: Create / check the bastion public key file exists
   ansible.builtin.file:
-    path: "../terraform/bastion-key.pub"
+    path: "../terraform/{{ env }}-bastion-key.pub"
     state: touch
     owner: "{{ ansible_env.USER }}"
     group: "{{ ansible_env.USER }}"
@@ -12,6 +12,7 @@
     project_path: "../terraform"
     state: absent
     complex_vars: true
+    workspace: "{{ env }}"
     variables:
       deployment: "{{ terraform_deployment }}"
       external_network_id: "{{ terraform_external_network_id }}"
@@ -19,19 +20,6 @@
 
 - name: Remove generated files
   block:
-    - name: Delete hosts.ini file
-      ansible.builtin.file:
-        path: hosts.ini
-        state: absent
-
-    - name: Touch hosts.ini file
-      ansible.builtin.file:
-        path: hosts.ini
-        state: touch
-        owner: "{{ ansible_env.USER }}"
-        group: "{{ ansible_env.USER }}"
-        mode: "0774"
-
     - name: Delete terraform.tfvars file
       ansible.builtin.file:
         path: "../terraform/terraform.tfvars"
@@ -47,7 +35,7 @@
         path: "../terraform/bastion-key.pub"
         state: absent
 
-    - name: Remove SSL directory
+    - name: Remove ssl directory
       ansible.builtin.file:
-        path: "./SSL"
+        path: "./{{ env }}_ssl"
         state: absent
