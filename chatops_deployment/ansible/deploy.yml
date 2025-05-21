@@ -14,6 +14,33 @@
     - role: ssh_known_hosts
       tags: known_hosts
 
+- name: Copy facts to hosts
+  hosts: prometheus, elastic
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Create facts directory
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0774"
+
+    - name: Copy facts file to host
+      ansible.builtin.copy:
+        src: terraform.fact
+        dest: /etc/ansible/facts.d/terraform.fact
+        owner: ubuntu
+        group: ubuntu
+        mode: "preserve"
+
+    - name: Remove local facts file
+      delegate_to: 127.0.0.1
+      ansible.builtin.file:
+        path: terraform.fact
+        state: absent
+
 - name: Create certificates
   hosts: localhost
   roles:
