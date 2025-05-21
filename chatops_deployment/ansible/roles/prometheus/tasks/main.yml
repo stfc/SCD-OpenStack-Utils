@@ -40,7 +40,7 @@
   ansible.posix.mount:
     boot: true
     path: /var/prometheus/data
-    src: "{{ prometheus_device }}"
+    src: "{{ ansible_local.terraform.vars.prometheus_device }}"
     state: mounted
     fstype: ext4
 
