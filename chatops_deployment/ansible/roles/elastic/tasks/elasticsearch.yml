@@ -50,7 +50,7 @@
   ansible.posix.mount:
     boot: true
     path: /var/elasticsearch/data
-    src: "{{ elasticsearch_device }}"
+    src: "{{ ansible_local.terraform.vars.elasticsearch_device }}"
     state: mounted
     fstype: ext4
 

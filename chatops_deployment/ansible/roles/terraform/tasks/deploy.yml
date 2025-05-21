@@ -83,10 +83,11 @@
     force_init: true
   register: terraform_output
 
-- name: Write ansible inventory file from Terraform outputs
+- name: Write Terraform device vars to file
+  become: true
   ansible.builtin.template:
-    src: hosts.ini.j2
-    dest: "{{ playbook_dir }}/hosts.ini"
+    src: terraform.fact.j2
+    dest: terraform.fact
+    mode: "0664"
     owner: "{{ ansible_env.USER }}"
     group: "{{ ansible_env.USER }}"
-    mode: "0774"
