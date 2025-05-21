@@ -4,15 +4,15 @@
     host_ips: |
       {% filter from_yaml %}
       {% if service == "kibana" %}
-      - {{ groups['elastic'][0] }}
-      {% elif service == "promtheus" or service == "alertmanager" %}
-      - {{ groups['prometheus'][0] }}
+      - {{ groups.elastic | map('extract', hostvars, 'ansible_ssh_host') | list | first }}
+      {% elif service == "prometheus" or service == "alertmanager" %}
+      - {{ groups.prometheus | map('extract', hostvars, 'ansible_ssh_host') | list | first }}
       {% elif service == "grafana" %}
-      {% for host in groups['grafana'] %}
+      {% for host in (groups.grafana | map('extract', hostvars, 'ansible_ssh_host')) %}
       - {{ host }}
       {% endfor %}
       {% elif service == "logstash" %}
-      - {{ groups['elastic'][0] }}
+      - {{ groups.elastic | map('extract', hostvars, 'ansible_ssh_host') | list | first }}
       {% endif %}
       {% endfilter %}
 

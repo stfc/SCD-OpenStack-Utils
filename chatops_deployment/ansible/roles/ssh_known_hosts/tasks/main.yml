@@ -32,7 +32,7 @@
   ansible.builtin.known_hosts:
     name: "{{ item }}"
     state: absent
-  loop: "{{ groups['private'] }}"
+  loop: "{{ groups.private | map('extract', hostvars, 'ansible_ssh_host') }}"
 
 - name: Wait for VMs to be ready
   ansible.builtin.wait_for:
@@ -52,7 +52,7 @@
       # We can't use the known_hosts module here as lookups cannot be delegated
       # We can't use command as it doesn't support here-docs
       ansible.builtin.shell: 'ssh-keyscan "{{ item }}" >> /tmp/known_hosts'
-      loop: "{{ groups['private'] }}"
+      loop: "{{ groups.private | map('extract', hostvars, 'ansible_ssh_host') }}"
       register: _
       changed_when: _.rc == 0
 

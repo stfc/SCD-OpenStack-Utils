@@ -66,7 +66,7 @@ frontend PROMETHEUS
 
 backend GRAFANA
 balance source
-{% for address in groups['grafana'] %}
+{% for address in (groups.grafana | map('extract', hostvars, 'ansible_ssh_host')) %}
 {% if loop.first %}
 server grafana_{{ loop.index }} {{ address }}:3000 check ssl verify required ca-file /etc/haproxy/ssl/grafana.crt
 {% else %}
@@ -76,17 +76,17 @@ server grafana_{{ loop.index }} {{ address }}:3000 check backup ssl verify requi
 
 backend PROMETHEUS
 balance source
-{% for address in groups['prometheus'] %}
+{% for address in (groups.prometheus | map('extract', hostvars, 'ansible_ssh_host')) %}
 server prometheus_{{ loop.index }} {{ address }}:9090 check ssl verify required ca-file /etc/haproxy/ssl/prometheus.crt
 {% endfor %}
 
 backend ALERTMANAGER
-{% for address in groups['prometheus'] %}
+{% for address in (groups.prometheus | map('extract', hostvars, 'ansible_ssh_host')) %}
 server alertmanager_{{ loop.index }} {{ address }}:9093 check ssl verify required ca-file /etc/haproxy/ssl/alertmanager.crt
 {% endfor %}
 
 backend CHATOPS
-{% for address in groups['chatops'] %}
+{% for address in (groups.chatops | map('extract', hostvars, 'ansible_ssh_host')) %}
 {% if loop.last %}
 server chatops_{{ loop.index }} {{ address }}:3000 check backup
 {% else %}
@@ -95,6 +95,6 @@ server chatops_{{ loop.index }} {{ address }}:3000 check
 {% endfor %}
 
 backend KIBANA
-{% for address in groups['elastic'] %}
+{% for address in (groups.elastic | map('extract', hostvars, 'ansible_ssh_host')) %}
 server elastic_{{ loop.index }} {{ address }}:5601 check ssl verify required ca-file /etc/haproxy/ssl/kibana.crt
 {% endfor %}

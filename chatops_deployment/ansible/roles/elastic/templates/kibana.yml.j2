@@ -1,4 +1,4 @@
-server.host: {{ inventory_hostname }}
+server.host: {{ ansible_ssh_host }}
 server.port: 5601
 server.publicBaseUrl: https://kibana.{{ domain }}:443
 elasticsearch.hosts: ["https://localhost:9200"]
