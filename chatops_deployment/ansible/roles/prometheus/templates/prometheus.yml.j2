@@ -26,7 +26,7 @@ scrape_configs:
 
   - job_name: 'load-balancer-metrics'
     static_configs:
-      - targets: ['{{ loadbalancer_private_ip }}:8405']
+      - targets: ['{{ ansible_local.terraform.vars.loadbalancer_private_ip }}:8405']
 
   - job_name: 'chatops_cadvisor'
     static_configs:
@@ -39,7 +39,7 @@ scrape_configs:
       {% for host in groups['private'] %}
       - targets: ['{{ host }}:9558']
       {% endfor %}
-      - targets: ['{{ loadbalancer_private_ip }}:9558']
+      - targets: ['{{ ansible_local.terraform.vars.loadbalancer_private_ip }}:9558']
 
 rule_files:
   - '/opt/prometheus/rules.yml'

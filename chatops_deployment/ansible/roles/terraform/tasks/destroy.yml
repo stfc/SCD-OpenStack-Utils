@@ -51,3 +51,8 @@
       ansible.builtin.file:
         path: "./SSL"
         state: absent
+
+    - name: Remove terraform fact file
+      ansible.builtin.file:
+        path: "terraform.fact"
+        state: absent
