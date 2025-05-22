@@ -22,55 +22,29 @@
     group: prometheus
     system: true
 
-- name: Check if binaries exist
-  ansible.builtin.stat:
-    path: /opt/prometheus
-  register: stat_binaries
-
-- name: Download and extract binaries
-  when: not stat_binaries.stat.exists
-  block:
-    - name: Download prometheus binaries
-      ansible.builtin.get_url:
-        url: >
-          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/
-          prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
-        dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
-        owner: ubuntu
-        group: ubuntu
-        mode: "0774"
-
-    - name: Extract prometheus
-      ansible.builtin.unarchive:
-        src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
-        dest: /tmp
-        remote_src: true
-        creates: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
-
-    - name: Create prometheus directory
-      become: true
-      ansible.builtin.file:
-        path: /opt/prometheus
-        state: directory
-        owner: prometheus
-        group: prometheus
-        mode: "0774"
-
-    - name: Move prometheus binaries
-      ansible.builtin.shell: "cp -r /tmp/prometheus-{{ prometheus_version }}.linux-amd64/* /opt/prometheus"
-      register: _
-      changed_when: _.rc == 0
-
-- name: Create prometheus data directory
+- name: Download and extract Prometheus
   become: true
-  ansible.builtin.file:
-    path: /var/prometheus/data
-    state: directory
-    owner: prometheus
-    group: prometheus
+  ansible.builtin.unarchive:
+    src: "
+      https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/\
+      prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
     mode: "0774"
 
-- name: Attach data volume
+- name: Move Prometheus binaries
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/"
+    dest: "/opt/prometheus"
+    mode: preserve
+    owner: prometheus
+    group: prometheus
+    remote_src: true
+
+- name: Attach volume to Prometheus data directory
   become: true
   ansible.posix.mount:
     boot: true
