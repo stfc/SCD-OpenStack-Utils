@@ -54,6 +54,15 @@
     group: systemd-exporter
     mode: "0774"
 
+- name: Create systemd-exporter logging directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/systemd-exporter
+    state: directory
+    mode: "0774"
+    owner: systemd-exporter
+    group: systemd-exporter
+
 - name: Start systemd-exporter service
   become: true
   ansible.builtin.systemd_service:

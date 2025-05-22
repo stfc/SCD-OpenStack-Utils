@@ -7,10 +7,9 @@ After=network-online.target
 User=systemd-exporter
 Group=systemd-exporter
 Restart=on-failure
-ExecStart=/opt/systemd-exporter/systemd_exporter \
---web.telemetry-path="/"
-StandardOutput=append:/opt/systemd-exporter/systemd-exporter.log
-StandardError=append:/opt/systemd-exporter/systemd-exporter.log
+ExecStart=/opt/systemd-exporter/systemd_exporter --web.telemetry-path="/"
+StandardOutput=append:/var/log/systemd-exporter/systemd-exporter.log
+StandardError=append:/var/log/systemd-exporter/systemd-exporter.log
 
 [Install]
 WantedBy=multi-user.target
