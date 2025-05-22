@@ -1,7 +1,6 @@
 ---
 - name: Configure load balancer
   hosts: loadbalancer
-  remote_user: ubuntu
   roles:
     - role: loadbalancer
       tags:
@@ -9,15 +8,20 @@
 
 - name: Configure ChatOps
   hosts: chatops
-  remote_user: ubuntu
   roles:
     - role: chatops
       tags:
         - chatops
 
+- name: Set up systemd exporters
+  hosts: all
+  roles:
+    - role: systemd_exporter
+      tags:
+        - systemd_exporter
+
 - name: Configure Grafana
   hosts: grafana
-  remote_user: ubuntu
   roles:
     - grafana
   tags:
@@ -25,7 +29,6 @@
 
 - name: Configure Prometheus
   hosts: prometheus
-  remote_user: ubuntu
   roles:
     - prometheus
   tags:
@@ -33,7 +36,6 @@
 
 - name: Configure Alert Manager
   hosts: prometheus
-  remote_user: ubuntu
   roles:
     - alertmanager
   tags:
