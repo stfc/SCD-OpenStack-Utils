@@ -79,6 +79,14 @@
   loop:
     - alertmanager.yml.j2
     - web.yml.j2
+    -
+- name: Create Alertmanager log directory
+  ansible.builtin.file:
+    path: /var/log/alertmanager
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: "0774"
 
 - name: Start alertmanager service
   become: true
