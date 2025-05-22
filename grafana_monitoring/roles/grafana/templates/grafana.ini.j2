@@ -28,5 +28,5 @@ admin_password="{{ grafana_admin_password }}"
 
 {% if inventory_hostname.startswith("dev") %}
 [users]
-auto_assign_org_role=Editor
+auto_assign_org_role=Admin
 {% endif %}
