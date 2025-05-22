@@ -3,3 +3,7 @@
 plan
 terraform.tfstate
 terraform.tfstate.backup
+ansible/dev_ssl/*
+ansible/prod_ssl/*
+ansible/dev-bastion-key
+ansible/prod-bastion-key
