@@ -64,6 +64,7 @@
     - web.yml.j2
 
 - name: Create Alertmanager log directory
+  become: true
   ansible.builtin.file:
     path: /var/log/alertmanager
     state: directory
