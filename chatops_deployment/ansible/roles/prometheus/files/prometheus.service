@@ -12,8 +12,8 @@ ExecStart=/opt/prometheus/prometheus \
   --storage.tsdb.path=/opt/prometheus/data \
   --storage.tsdb.retention.time=30d \
   --web.config.file=/opt/prometheus/web.yml
-StandardOutput=append:/opt/prometheus/prometheus.log
-StandardError=append:/opt/prometheus/prometheus.log
+StandardOutput=append:/var/log/prometheus/prometheus.log
+StandardError=append:/var/log/prometheus/prometheus.log
 
 [Install]
 WantedBy=multi-user.target

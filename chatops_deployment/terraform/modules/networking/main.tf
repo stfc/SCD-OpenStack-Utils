@@ -65,12 +65,12 @@ resource "openstack_networking_secgroup_rule_v2" "chatops" {
   security_group_id = openstack_networking_secgroup_v2.chatops.id
 }
 
-resource "openstack_networking_secgroup_rule_v2" "docker_metrics" {
+resource "openstack_networking_secgroup_rule_v2" "cadvisor" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
-  port_range_min    = 9323
-  port_range_max    = 9323
+  port_range_min    = 8080
+  port_range_max    = 8080
   remote_ip_prefix  = "192.168.100.0/22"
   security_group_id = openstack_networking_secgroup_v2.chatops.id
 }
@@ -88,6 +88,31 @@ resource "openstack_networking_secgroup_rule_v2" "prometheus" {
   port_range_max    = 9090
   remote_ip_prefix  = "192.168.100.0/22"
   security_group_id = openstack_networking_secgroup_v2.prometheus.id
+}
+
+resource "openstack_networking_secgroup_v2" "elasticsearch" {
+  name        = "elasticsearch-${var.deployment}"
+  description = "ElasticSearch host security group."
+}
+
+resource "openstack_networking_secgroup_rule_v2" "logstash" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 5044
+  port_range_max    = 5044
+  remote_ip_prefix  = "192.168.100.0/22"
+  security_group_id = openstack_networking_secgroup_v2.elasticsearch.id
+}
+
+resource "openstack_networking_secgroup_rule_v2" "kibana" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 5601
+  port_range_max    = 5601
+  remote_ip_prefix  = "192.168.100.0/22"
+  security_group_id = openstack_networking_secgroup_v2.elasticsearch.id
 }
 
 resource "openstack_networking_secgroup_rule_v2" "alertmanager" {
