@@ -3,5 +3,4 @@ terraform_deployment: chatops-2025-04-22
 terraform_external_network_id: 5283f642-8bd8-48b6-8608-fa3006ff4539
 terraform_prometheus_volume_id: 2d47f4ed-2af4-4c21-b825-fa6e383c6aff
 terraform_elasticsearch_volume_id: 3a4c7ddd-13ec-4beb-80a9-589c86a36f08
-terraform_environment: "dev"
 bastion_key_passphrase: "{{ vault_bastion_key_passphrase }}"
