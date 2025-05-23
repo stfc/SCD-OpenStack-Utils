@@ -41,7 +41,7 @@
 - name: Copy Logstash SSL certificate
   become: true
   ansible.builtin.copy:
-    src: "./SSL/logstash.crt"
+    src: "./{{ env }}_ssl/logstash.crt"
     dest: "/opt/filebeat"
     owner: root
     group: root

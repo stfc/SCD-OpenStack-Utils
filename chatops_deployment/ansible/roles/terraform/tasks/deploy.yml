@@ -15,13 +15,13 @@
   block:
     # We can ignore this warning as this command doesn't change anything when it runs.
     - name: Check Bastion public key is valid # noqa: no-changed-when
-      ansible.builtin.command: "ssh-keygen -l -f '../terraform/bastion-key.pub'"
+      ansible.builtin.command: "ssh-keygen -l -f '../terraform/{{ env }}-bastion-key.pub'"
       ignore_errors: true
       register: public_key_state
 
     # We can ignore this warning as this command doesn't change anything when it runs.
     - name: Check Bastion private key is valid # noqa: no-changed-when
-      ansible.builtin.command: "ssh-keygen -l -f '../ansible/bastion-key'"
+      ansible.builtin.command: "ssh-keygen -l -f '../ansible/{{ env }}-bastion-key'"
       ignore_errors: true
       register: private_key_state
 
@@ -30,7 +30,7 @@
       block:
         - name: Generate key
           community.crypto.openssh_keypair:
-            path: /tmp/bastion-key
+            path: "/tmp/{{ env }}-bastion-key"
             force: true
             passphrase: "{{ bastion_key_passphrase }}"
             size: 4096
@@ -41,16 +41,16 @@
 
         - name: Move private key
           ansible.builtin.copy:
-            src: /tmp/bastion-key
-            dest: "./bastion-key"
+            src: "/tmp/{{ env }}-bastion-key"
+            dest: "./{{ env }}-bastion-key"
             owner: "{{ ansible_env.USER }}"
             group: "{{ ansible_env.USER }}"
             mode: "0700"
 
         - name: Move public key
           ansible.builtin.copy:
-            src: /tmp/bastion-key.pub
-            dest: "../terraform/bastion-key.pub"
+            src: "/tmp/{{ env }}-bastion-key.pub"
+            dest: "../terraform/{{ env }}-bastion-key.pub"
             owner: "{{ ansible_env.USER }}"
             group: "{{ ansible_env.USER }}"
             mode: "0774"
@@ -60,8 +60,8 @@
             path: "{{ item }}"
             state: absent
           loop:
-            - /tmp/bastion-key
-            - /tmp/bastion-key.pub
+            - "/tmp/{{ env }}-bastion-key"
+            - "/tmp/{{ env }}-bastion-key.pub"
 
 - name: Install Terraform
   community.general.snap:
@@ -81,6 +81,7 @@
     project_path: "../terraform"
     state: present
     force_init: true
+    workspace: "{{ env }}"
   register: terraform_output
 
 - name: Write Terraform device vars to file

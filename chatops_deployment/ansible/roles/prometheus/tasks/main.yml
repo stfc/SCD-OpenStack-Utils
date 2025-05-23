@@ -103,7 +103,7 @@
 - name: Copy certificate and key
   become: true
   ansible.builtin.copy:
-    src: "./SSL/{{ item }}"
+    src: "./{{ env }}_ssl/{{ item }}"
     dest: "/opt/prometheus/{{ item }}"
     owner: prometheus
     group: prometheus
