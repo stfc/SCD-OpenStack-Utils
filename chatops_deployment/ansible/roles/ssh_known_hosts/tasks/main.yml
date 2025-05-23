@@ -45,6 +45,7 @@
     key: "{{ lookup('ansible.builtin.pipe', 'ssh-keyscan {{ terraform_floating_ip }}') }}"
 
 - name: Get private VMs' fingerprints and retrieve to local host
+  remote_user: ubuntu
   delegate_to: "{{ terraform_floating_ip }}"
   block:
     - name: Add private VMs' fingerprints to known hosts on LB
