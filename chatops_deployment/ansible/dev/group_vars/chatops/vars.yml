@@ -1,5 +1,5 @@
 ---
-chatops_version: 8.0.1
+chatops_image: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:8.0.1"
 chatops_github_repos:
   stfc:
     - cloud-deployed-apps
