@@ -1,7 +1,7 @@
 ---
 - name: Create / check the bastion public key file exists
   ansible.builtin.file:
-    path: "../terraform/bastion-key.pub"
+    path: "../terraform/{{ env }}-bastion-key.pub"
     state: touch
     owner: "{{ ansible_env.USER }}"
     group: "{{ ansible_env.USER }}"
@@ -12,6 +12,7 @@
     project_path: "../terraform"
     state: absent
     complex_vars: true
+    workspace: "{{ env }}"
     variables:
       deployment: "{{ terraform_deployment }}"
       external_network_id: "{{ terraform_external_network_id }}"
@@ -47,9 +48,9 @@
         path: "../terraform/bastion-key.pub"
         state: absent
 
-    - name: Remove SSL directory
+    - name: Remove ssl directory
       ansible.builtin.file:
-        path: "./SSL"
+        path: "./{{ env }}_ssl"
         state: absent
 
     - name: Remove terraform fact file
