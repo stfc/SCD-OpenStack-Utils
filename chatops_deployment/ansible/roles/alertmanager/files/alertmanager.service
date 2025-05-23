@@ -13,8 +13,8 @@ ExecStart=/opt/alertmanager/alertmanager \
   --storage.path=/opt/alertmanager/data \
   --web.config.file=/opt/alertmanager/web.yml
 Restart=always
-StandardOutput=append:/opt/alertmanager/alertmanager.log
-StandardError=append:/opt/alertmanager/alertmanager.log
+StandardOutput=append:/var/log/alertmanager/alertmanager.log
+StandardError=append:/var/log/alertmanager/alertmanager.log
 
 
 [Install]

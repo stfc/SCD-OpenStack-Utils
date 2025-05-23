@@ -1,0 +1,63 @@
+---
+- name: Install HAProxy
+  become: true
+  ansible.builtin.apt:
+    name: haproxy
+    update_cache: true
+    state: latest # noqa: package-latest
+
+- name: Copy config file template
+  become: true
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: haproxy
+    mode: "0644"
+
+- name: Check if certificate exists
+  become: true
+  ansible.builtin.stat:
+    path: /etc/haproxy/{{ domain }}.crt
+  register: certificate_file
+
+- name: Create ssl directory to store self signed certificates
+  become: true
+  ansible.builtin.file:
+    path: /etc/haproxy/ssl
+    state: directory
+    owner: root
+    group: haproxy
+    mode: "0774"
+
+- name: Copy service self signed certificates
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/{{ item }}.crt"
+    dest: "/etc/haproxy/ssl/{{ item }}.crt"
+    owner: root
+    group: haproxy
+    mode: "0440"
+  loop:
+    - grafana
+    - kibana
+    - elasticsearch
+    - prometheus
+    - alertmanager
+    - chatops
+
+- name: Make sure haproxy.service is running
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: haproxy.service
+  when: certificate_file.stat.exists
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: haproxy.filebeat.yml
+    dest: /var/filebeat/haproxy.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"

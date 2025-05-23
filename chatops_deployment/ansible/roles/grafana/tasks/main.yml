@@ -13,7 +13,7 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Add Grafana key and repository to apt
   become: true
@@ -22,7 +22,7 @@
       ansible.builtin.get_url:
         url: https://apt.grafana.com/gpg.key
         dest: /etc/apt/keyrings/grafana.asc
-        mode: '0755'
+        mode: "0755"
 
     - name: Add repository
       ansible.builtin.apt_repository:
@@ -42,7 +42,7 @@
     dest: /etc/grafana/provisioning/datasources/datasource.yml
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy config file template
   become: true
@@ -51,7 +51,7 @@
     dest: /etc/grafana/grafana.ini
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy dashboard file
   become: true
@@ -60,7 +60,7 @@
     dest: /etc/grafana/provisioning/dashboards/dashboard.yml
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy dashboards
   become: true
@@ -69,15 +69,36 @@
     dest: "/etc/grafana/provisioning/dashboards/{{ item }}"
     owner: root
     group: grafana
-    mode: '0777'
+    mode: "0777"
   loop:
     - chatops.json
     - haproxy.json
     - alerts.json
     - status.json
 
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/grafana.{{ item }}"
+    dest: "/etc/grafana/grafana.{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0440"
+  loop:
+    - key
+    - crt
+
 - name: Make sure grafana-server.service is running
   become: true
   ansible.builtin.systemd_service:
     state: restarted
     name: grafana-server.service
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: grafana.filebeat.yml
+    dest: /var/filebeat/grafana.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"

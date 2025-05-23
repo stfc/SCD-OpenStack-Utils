@@ -1,20 +1,50 @@
 ---
-- name: Configure load balancer
-  hosts: loadbalancer
+- name: Temporary work around for EGI services down 08/05/2025
+  hosts: private, haproxy
+  gather_facts: false
+  tasks:
+    - name: Remove EGI repository from apt
+      become: true
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/repository_egi_eu_sw_production_cas_1_current.list
+        state: absent
+
+- name: Set up filebeat
+  hosts: private, haproxy
+  gather_facts: false
   roles:
-    - role: loadbalancer
+    - role: filebeat
       tags:
-        - loadbalancer
+        - filebeat
+
+- name: Configure load balancer
+  hosts: haproxy
+  gather_facts: false
+  roles:
+    - role: haproxy
+      tags:
+        - haproxy
 
 - name: Configure ChatOps
   hosts: chatops
+  gather_facts: false
   roles:
     - role: chatops
       tags:
         - chatops
 
+- name: Configure CAdvisor
+  hosts: chatops
+  gather_facts: false
+  remote_user: ubuntu
+  roles:
+    - role: cadvisor
+      tags:
+        - cadvisor
+
 - name: Set up systemd exporters
-  hosts: all
+  hosts: private, haproxy
+  gather_facts: false
   roles:
     - role: systemd_exporter
       tags:
@@ -22,6 +52,7 @@
 
 - name: Configure Grafana
   hosts: grafana
+  gather_facts: false
   roles:
     - grafana
   tags:
@@ -29,6 +60,7 @@
 
 - name: Configure Prometheus
   hosts: prometheus
+  gather_facts: true
   roles:
     - prometheus
   tags:
@@ -36,7 +68,15 @@
 
 - name: Configure Alert Manager
   hosts: prometheus
+  gather_facts: false
   roles:
     - alertmanager
   tags:
     - alertmanager
+
+- name: Configure Elastic Stack
+  hosts: elastic
+  gather_facts: true
+  remote_user: ubuntu
+  roles:
+    - elastic
