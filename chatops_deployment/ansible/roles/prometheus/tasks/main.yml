@@ -31,11 +31,13 @@
     "
     dest: /tmp
     remote_src: true
-    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
+    creates: "/opt/prometheus"
     mode: "0774"
+    register: unarchive_result
 
 - name: Move Prometheus binaries
   become: true
+  when: unarchive_result.changed
   ansible.builtin.copy:
     src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/"
     dest: "/opt/prometheus"

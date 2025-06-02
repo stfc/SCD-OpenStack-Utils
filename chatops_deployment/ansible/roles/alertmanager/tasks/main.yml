@@ -31,11 +31,13 @@
       "
     dest: /tmp
     remote_src: true
-    creates: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
+    creates: "/opt/alertmanager"
     mode: "0774"
+    register: unarchive_result
 
 - name: Move Alertmanager binaries
   become: true
+  when: unarchive_result.changed
   ansible.builtin.copy:
     src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/"
     dest: "/opt/alertmanager"
