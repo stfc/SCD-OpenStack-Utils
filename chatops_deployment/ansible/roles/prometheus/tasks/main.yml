@@ -98,7 +98,7 @@
     state: directory
     owner: prometheus
     group: prometheus
-    mode: "0774"
+    mode: "0770"
 
 - name: Start prometheus service
   become: true

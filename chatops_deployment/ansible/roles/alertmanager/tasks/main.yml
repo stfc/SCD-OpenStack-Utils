@@ -71,7 +71,7 @@
     state: directory
     owner: alertmanager
     group: alertmanager
-    mode: "0774"
+    mode: "0770"
 
 - name: Start alertmanager service
   become: true
