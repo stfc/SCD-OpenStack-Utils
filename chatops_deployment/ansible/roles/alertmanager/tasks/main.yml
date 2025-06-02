@@ -33,18 +33,9 @@
     remote_src: true
     creates: "/opt/alertmanager"
     mode: "0774"
-    register: unarchive_result
-
-- name: Move Alertmanager binaries
-  become: true
-  when: unarchive_result.changed
-  ansible.builtin.copy:
-    src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/"
-    dest: "/opt/alertmanager"
-    mode: preserve
-    owner: alertmanager
-    group: alertmanager
-    remote_src: true
+    notify:
+      - Move Alertmanager binaries
+      - Start Alertmanager
 
 - name: Copy alertmanager service file
   become: true
@@ -54,6 +45,8 @@
     owner: alertmanager
     group: alertmanager
     mode: "0774"
+    notify:
+      - Restart Alertmanager
 
 - name: Template alertmanager config
   become: true
@@ -63,10 +56,12 @@
     owner: alertmanager
     group: alertmanager
     mode: "0770"
+    notify:
+      - Restart Alertmanager
   loop:
     - alertmanager.yml.j2
     - web.yml.j2
-    -
+
 - name: Create Alertmanager log directory
   ansible.builtin.file:
     path: /var/log/alertmanager
@@ -74,11 +69,3 @@
     owner: alertmanager
     group: alertmanager
     mode: "0770"
-
-- name: Start alertmanager service
-  become: true
-  ansible.builtin.systemd_service:
-    name: alertmanager.service
-    state: restarted
-    daemon_reload: true
-    enabled: true
