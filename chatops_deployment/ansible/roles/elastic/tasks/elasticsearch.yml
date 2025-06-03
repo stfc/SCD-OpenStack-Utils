@@ -1,0 +1,113 @@
+---
+- name: Create elastic group
+  become: true
+  ansible.builtin.group:
+    name: elastic
+    state: present
+
+- name: Add ubuntu to elastic group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    groups: elastic
+    append: true
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a elastic user
+  become: true
+  ansible.builtin.user:
+    name: elastic
+    create_home: false
+    group: elastic
+    system: true
+
+- name: Create Elasticsearch directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/elasticsearch
+    state: directory
+    mode: "0774"
+    owner: elastic
+    group: elastic
+
+- name: Extract elasticsearch
+  ansible.builtin.unarchive:
+    src: "
+      https://artifacts.elastic.co/downloads/elasticsearch/\
+      elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz
+      "
+    dest: /tmp
+    remote_src: true
+    creates: /opt/elasticsearch/bin/elasticsearch
+    mode: "0774"
+  notify:
+    - Move Elasticsearch binaries
+
+- name: Flush Handlers to move binaries. We need this for the "config" directory
+  ansible.builtin.meta: flush_handlers
+
+- name: Create elasticsearch log directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/elasticsearch
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: '0774'
+
+- name: Attach data volume to Elasticsearch data directory
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/elasticsearch/data
+    src: "{{ elasticsearch_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions on volume
+  become: true
+  ansible.builtin.file:
+    path: /var/elasticsearch/data
+    state: directory
+    owner: elastic
+    group: elastic
+    mode: "0774"
+    recurse: true
+
+- name: Copy elasticsearch service file
+  become: true
+  ansible.builtin.copy:
+    src: elasticsearch.service
+    dest: /etc/systemd/system/elasticsearch.service
+    owner: elastic
+    group: elastic
+    mode: "0774"
+  notify:
+    - Start Elasticsearch
+
+- name: Template elasticsearch config
+  become: true
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: "/opt/elasticsearch/config/elasticsearch.yml"
+    owner: elastic
+    group: elastic
+    mode: "0770"
+  notify:
+    - Restart Elasticsearch
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/elasticsearch.{{ item }}"
+    dest: "/opt/elasticsearch/config/elasticsearch.{{ item }}"
+    owner: elastic
+    group: elastic
+    mode: "0440"
+  notify:
+    - Restart Elasticsearch
+  loop:
+    - key
+    - crt

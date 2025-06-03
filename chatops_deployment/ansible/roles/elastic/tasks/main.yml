@@ -1,0 +1,5 @@
+---
+- name: Install ElasticSearch
+  ansible.builtin.import_tasks: elasticsearch.yml
+  tags:
+    - elasticsearch
