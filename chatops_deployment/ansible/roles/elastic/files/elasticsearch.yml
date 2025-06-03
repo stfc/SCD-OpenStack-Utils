@@ -1,0 +1,14 @@
+path:
+    data: /var/elasticsearch/data
+    logs: /var/log/elasticsearch
+cluster.name: chatops-elasticsearch
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: true
+xpack.security.http.ssl:
+  enabled: true
+  key: /etc/elasticsearch/certs/elasticsearch.key
+  certificate: /etc/elasticsearch/certs/elasticsearch.crt
+xpack.security.transport.ssl:
+  enabled: false
+http.host: 127.0.0.1
+http.port: 9200
