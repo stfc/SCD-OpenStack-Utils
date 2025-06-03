@@ -1,0 +1,15 @@
+[Unit]
+Description=ElasticSearch Server
+Documentation=https://www.elastic.co/docs
+After=network-online.target
+
+[Service]
+User=elastic
+Group=elastic
+Restart=on-failure
+ExecStart=/opt/elasticsearch/bin/elasticsearch
+StandardOutput=append:/var/log/elasticsearch/elasticsearch.log
+StandardError=append:/var/log/elasticsearch/elasticsearch.log
+
+[Install]
+WantedBy=multi-user.target
