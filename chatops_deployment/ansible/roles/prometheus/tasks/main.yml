@@ -22,55 +22,22 @@
     group: prometheus
     system: true
 
-- name: Check if binaries exist
-  ansible.builtin.stat:
-    path: /opt/prometheus
-  register: stat_binaries
-
-- name: Download and extract binaries
-  when: not stat_binaries.stat.exists
-  block:
-    - name: Download prometheus binaries
-      ansible.builtin.get_url:
-        url: >
-          https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/
-          prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
-        dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
-        owner: ubuntu
-        group: ubuntu
-        mode: "0774"
-
-    - name: Extract prometheus
-      ansible.builtin.unarchive:
-        src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
-        dest: /tmp
-        remote_src: true
-        creates: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
-
-    - name: Create prometheus directory
-      become: true
-      ansible.builtin.file:
-        path: /opt/prometheus
-        state: directory
-        owner: prometheus
-        group: prometheus
-        mode: "0774"
-
-    - name: Move prometheus binaries
-      ansible.builtin.shell: "cp -r /tmp/prometheus-{{ prometheus_version }}.linux-amd64/* /opt/prometheus"
-      register: _
-      changed_when: _.rc == 0
-
-- name: Create prometheus data directory
+- name: Download and extract Prometheus
   become: true
-  ansible.builtin.file:
-    path: /var/prometheus/data
-    state: directory
-    owner: prometheus
-    group: prometheus
+  ansible.builtin.unarchive:
+    src: "
+      https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/\
+      prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/opt/prometheus"
     mode: "0774"
+    notify:
+      - Move Prometheus binaries
+      - Start Prometheus
 
-- name: Attach data volume
+- name: Attach volume to Prometheus data directory
   become: true
   ansible.posix.mount:
     boot: true
@@ -96,6 +63,8 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
+    notify:
+      - Start Prometheus
 
 - name: Copy prometheus rules file
   become: true
@@ -105,6 +74,8 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
+    notify:
+      - Restart Prometheus
 
 - name: Template prometheus config
   become: true
@@ -114,14 +85,16 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
+    notify:
+      - Restart Prometheus
   loop:
     - prometheus.yml.j2
     - web.yml.j2
 
-- name: Start prometheus service
-  become: true
-  ansible.builtin.systemd_service:
-    name: prometheus.service
-    state: restarted
-    daemon_reload: true
-    enabled: true
+- name: Create Prometheus log directory
+  ansible.builtin.file:
+    path: /var/log/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0770"

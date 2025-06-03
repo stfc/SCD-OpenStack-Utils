@@ -22,42 +22,20 @@
     group: alertmanager
     system: true
 
-- name: Check if binaries exist
-  ansible.builtin.stat:
-    path: /opt/alertmanager
-  register: stat_binaries
-
-- name: Download and extract binaries
-  when: not stat_binaries.stat.exists
-  block:
-    - name: Download alertmanager binaries
-      ansible.builtin.get_url:
-        url: >
-          https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/
-          alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
-        dest: /tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
-        mode: "0774"
-
-    - name: Extract alertmanager
-      ansible.builtin.unarchive:
-        src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
-        dest: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
-        remote_src: true
-        creates: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
-
-    - name: Create alertmanager directory
-      become: true
-      ansible.builtin.file:
-        path: /opt/alertmanager
-        state: directory
-        owner: alertmanager
-        group: alertmanager
-        mode: "0770"
-
-    - name: Move alertmanager binaries
-      ansible.builtin.shell: "cp -r /tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/* /opt/alertmanager"
-      register: _
-      changed_when: _.rc == 0
+- name: Download and extract Alertmanager
+  become: true
+  ansible.builtin.unarchive:
+    src: "
+      https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/\
+      alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
+      "
+    dest: /tmp
+    remote_src: true
+    creates: "/opt/alertmanager"
+    mode: "0774"
+    notify:
+      - Move Alertmanager binaries
+      - Start Alertmanager
 
 - name: Copy alertmanager service file
   become: true
@@ -67,6 +45,8 @@
     owner: alertmanager
     group: alertmanager
     mode: "0774"
+    notify:
+      - Restart Alertmanager
 
 - name: Template alertmanager config
   become: true
@@ -76,14 +56,16 @@
     owner: alertmanager
     group: alertmanager
     mode: "0770"
+    notify:
+      - Restart Alertmanager
   loop:
     - alertmanager.yml.j2
     - web.yml.j2
 
-- name: Start alertmanager service
-  become: true
-  ansible.builtin.systemd_service:
-    name: alertmanager.service
-    state: restarted
-    daemon_reload: true
-    enabled: true
+- name: Create Alertmanager log directory
+  ansible.builtin.file:
+    path: /var/log/alertmanager
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: "0770"
