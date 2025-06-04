@@ -7,6 +7,13 @@
         name: terraform
         tasks_from: deploy
 
+- name: Add SSH key to agent
+  hosts: localhost
+  tasks:
+    - name: Add SSH key
+      ansible.builtin.include_role:
+        name: add_ssh_key
+
 - name: Add known hosts of bastion host and private VMs
   hosts: localhost
   gather_facts: false
