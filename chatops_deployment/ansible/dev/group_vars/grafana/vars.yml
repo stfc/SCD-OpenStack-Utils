@@ -1,0 +1,4 @@
+---
+grafana_client_id: "{{ vault_grafana_client_id }}"
+grafana_client_secret: "{{ vault_grafana_client_secret }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
