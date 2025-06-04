@@ -23,6 +23,15 @@
     group: alertmanager
     system: true
 
+- name: Create Alertmanager directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/alertmanager
+    state: directory
+    mode: "0774"
+    owner: alertmanager
+    group: alertmanager
+
 - name: Download and extract Alertmanager
   become: true
   ansible.builtin.unarchive:
@@ -32,11 +41,11 @@
       "
     dest: /tmp
     remote_src: true
-    creates: "/opt/alertmanager"
+    creates: "/opt/alertmanager/alertmanager"
     mode: "0774"
-    notify:
-      - Move Alertmanager binaries
-      - Start Alertmanager
+  notify:
+    - Move Alertmanager binaries
+    - Start Alertmanager
 
 - name: Copy alertmanager service file
   become: true
@@ -46,8 +55,8 @@
     owner: alertmanager
     group: alertmanager
     mode: "0774"
-    notify:
-      - Restart Alertmanager
+  notify:
+    - Restart Alertmanager
 
 - name: Template alertmanager config
   become: true
@@ -57,8 +66,8 @@
     owner: alertmanager
     group: alertmanager
     mode: "0770"
-    notify:
-      - Restart Alertmanager
+  notify:
+    - Restart Alertmanager
   loop:
     - alertmanager.yml.j2
     - web.yml.j2
@@ -79,10 +88,13 @@
     dest: "/opt/alertmanager/alertmanager.{{ item }}"
     owner: alertmanager
     group: alertmanager
-  loop:
     mode: "0440"
+  loop:
     - crt
     - key
+  notify:
+    - Restart Alertmanager
+
 - name: Copy filebeat external config
   become: true
   ansible.builtin.copy:
