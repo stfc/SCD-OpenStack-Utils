@@ -1,4 +1,11 @@
 ---
+- name: Add SSH key to agent
+  hosts: localhost
+  tasks:
+    - name: Add SSH key
+      ansible.builtin.include_role:
+        name: add_ssh_key
+
 - name: Temporary work around for EGI services down 08/05/2025
   hosts: private, haproxy
   gather_facts: false

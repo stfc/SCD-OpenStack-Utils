@@ -1,0 +1,19 @@
+---
+- name: Install expect
+  become: true
+  ansible.builtin.apt:
+    name: expect
+    update_cache: true
+
+- name: Add key to ssh-agent
+  # noqa: command-instead-of-shell
+  # We must use shell here as here-docs don't work with command
+  ansible.builtin.shell: |
+    expect << EOF
+      spawn ssh-add {{ env }}-bastion-key
+      expect "Enter passphrase for {{ env }}-bastion-key:"
+      send "{{ bastion_key_passphrase }}\r"
+      expect eof
+    EOF
+  register: _
+  changed_when: _.rc == 0
