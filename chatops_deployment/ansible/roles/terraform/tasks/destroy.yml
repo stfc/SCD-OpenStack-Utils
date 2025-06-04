@@ -27,12 +27,12 @@
 
     - name: Remove private key file
       ansible.builtin.file:
-        path: bastion-key
+        path: "{{ env }}-bastion-key"
         state: absent
 
     - name: Remove public key file
       ansible.builtin.file:
-        path: "../terraform/bastion-key.pub"
+        path: "../terraform/{{ env }}-bastion-key.pub"
         state: absent
 
     - name: Remove ssl directory
