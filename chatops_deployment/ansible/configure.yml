@@ -1,10 +1,10 @@
 ---
 - name: Configure load balancer
-  hosts: loadbalancer
+  hosts: haproxy
   roles:
-    - role: loadbalancer
+    - role: haproxy
       tags:
-        - loadbalancer
+        - haproxy
 
 - name: Configure ChatOps
   hosts: chatops
@@ -12,6 +12,14 @@
     - role: chatops
       tags:
         - chatops
+
+- name: Configure CAdvisor
+  hosts: chatops
+  remote_user: ubuntu
+  roles:
+    - role: cadvisor
+      tags:
+        - cadvisor
 
 - name: Set up systemd exporters
   hosts: all
