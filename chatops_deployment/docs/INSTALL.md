@@ -7,11 +7,35 @@
 ## Quick Start:
 
 - If you are deploying from scratch, start at [Setting up localhost](#setting-up-localhost)
-- If you already have the repository cloned and the vault password saved then start
+- If you already have the repository cloned, the vault password saved and the projects clouds.yaml then start
   at [Deploy infrastructure](#deploy-infrastructure).
 - If you only need to make changes to an existing deployment then start
   at [Configure infrastructure](#configure-infrastructure)
 - To destroy all infrastructure, see [Destroy infrastructure](#destroy-infrastructure)
+
+## OpenStack Project Requirements:
+
+The project `KHalford-Scratch-Space` is already setup with all the required requisites. The variables in this project 
+reference that project. If you are using a different project for a deployment not used by the Cloud Team you will 
+require the following:
+
+- A floating IP (e.g. 130.246.X.Y)
+- DNS records:
+  - `<your-domain> CNAME host-130-246-X-Y.nubes.stfc.ac.uk`
+  - **AND**
+  - ```
+    # EITHER
+    *.<your-domain> CNAME host-130-246-X-Y.nubes.stfc.ac.uk
+    # OR
+    kibana.<your-domain>.       CNAME   host-130-246-X-Y.nubes.stfc.ac.uk.
+    grafana.<your-domain>.      CNAME   host-130-246-X-Y.nubes.stfc.ac.uk.
+    prometheus.<your-domain>.   CNAME   host-130-246-X-Y.nubes.stfc.ac.uk.
+    alertmanager.<your-domain>. CNAME   host-130-246-X-Y.nubes.stfc.ac.uk.
+    chatops.<your-domain>.      CNAME   host-130-246-X-Y.nubes.stfc.ac.uk.
+    ```
+- Ports 80 and 443 open inbound from the internet
+- OpenStack Volume for Prometheus ~10GB
+- OpenStack Volume for Elasticsearch ~10GB
 
 ### Deploying the Infrastructure:
 
@@ -52,6 +76,11 @@ Machine requirements:
    ```shell
    chmod 400 ~/.chatops_vault_pass
    chattr -i ~/.chatops_vault_pass
+   ```
+   
+4. Copy the projects clouds.yaml to the `~/.config/openstack/clouds.yaml`
+   ```shell
+   cp <path-to>/clouds.yaml ~/.config/openstack/clouds.yaml
    ```
 
 #### Deploy infrastructure:
@@ -100,6 +129,8 @@ To destroy the infrastructure and all locally generated files run the destroy pl
 
 ## Debugging:
 
+### Terraform
+
 To debug the Terraform deployment, it is best to use the Terraform directly rather than through Ansible.
 When you run the deploy.yml playbook, a `terraform.tfvars` file is created which allows you to run the Terraform modules
 separate to Ansible.
@@ -135,3 +166,19 @@ separate to Ansible.
    # Validate the config
    terraform validate
    ```
+   
+### Ansible
+
+Each role in the Ansible playbook is tagged in its play. This enables you to run only parts of the playbooks. This is 
+important as it takes ~15 minutes to run the entire playbook. So, when you only want to make changes to certain parts 
+of the deployment you can use `--tags <some-tag>` to run only that part of the play.
+
+For example, if you change the Prometheus config file template you can just run the playbook with the **prometheus** tag
+.
+```shell
+ansible-playbook configure.yml --vault-password-file=~./chatops_vault_pass -i dev --tags prometheus
+```
+
+It is not recommended to use tags when making changes to the production deployment. As changes are promoted to 
+production the entire playbook should be run. This avoids any changes being missed out and ensures the entire deployment
+is running the latest configuration.
