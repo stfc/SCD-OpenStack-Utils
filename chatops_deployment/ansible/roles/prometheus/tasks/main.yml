@@ -23,17 +23,28 @@
     group: prometheus
     system: true
 
+- name: Create Prometheus directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/prometheus
+    state: directory
+    mode: "0774"
+    owner: prometheus
+    group: prometheus
+
 - name: Download and extract Prometheus
   become: true
   ansible.builtin.unarchive:
     src: " https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz "
     dest: /tmp
     remote_src: true
-    creates: "/opt/prometheus"
+    creates: "/opt/prometheus/prometheus"
     mode: "0774"
-    notify:
-      - Move Prometheus binaries
-      - Start Prometheus
+  notify:
+    - Move Prometheus binaries
+
+- name: Flush Handlers to move binaries. We this as it overwrites the config file
+  ansible.builtin.meta: flush_handlers
 
 - name: Attach volume to Prometheus data directory
   become: true
@@ -52,6 +63,7 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
+    recurse: true
 
 - name: Copy prometheus service file
   become: true
@@ -61,8 +73,8 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
-    notify:
-      - Start Prometheus
+  notify:
+    - Start Prometheus
 
 - name: Copy prometheus rules file
   become: true
@@ -72,8 +84,8 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
-    notify:
-      - Restart Prometheus
+  notify:
+    - Restart Prometheus
 
 - name: Template prometheus config
   become: true
@@ -83,8 +95,8 @@
     owner: prometheus
     group: prometheus
     mode: "0774"
-    notify:
-      - Restart Prometheus
+  notify:
+    - Restart Prometheus
   loop:
     - prometheus.yml.j2
     - web.yml.j2
@@ -110,6 +122,8 @@
     - prometheus.key
     - prometheus.crt
     - alertmanager.crt
+  notify:
+    - Restart Prometheus
 
 - name: Copy filebeat external config
   become: true
