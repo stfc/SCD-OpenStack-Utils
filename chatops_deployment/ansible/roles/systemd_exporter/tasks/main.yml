@@ -23,6 +23,15 @@
     group: systemd-exporter
     system: true
 
+- name: Create systemd-exporter directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/filebeat
+    state: directory
+    mode: "0774"
+    owner: systemd-exporter
+    group: systemd-exporter
+
 - name: Download and extract systemd-exporter
   become: true
   ansible.builtin.unarchive:
@@ -31,36 +40,21 @@
        systemd_exporter-{{ systemd_exporter_version}}.linux-amd64.tar.gz"
     dest: /tmp
     remote_src: true
-    creates: "/tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64"
+    creates: "/opt/systemd-exporter/systemd-exporter"
     mode: "0774"
-
-- name: Move systemd-exporter binaries
-  become: true
-  ansible.builtin.copy:
-    src: "/tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64/"
-    dest: "/opt/systemd-exporter"
-    mode: preserve
-    owner: systemd-exporter
-    group: systemd-exporter
-    remote_src: true
-
-- name: Create systemd directory
-  become: true
-  ansible.builtin.file:
-    path: /usr/local/lib/systemd/system
-    state: directory
-    mode: "0755"
-    owner: root
-    group: root
+  notify:
+    - Move Move systemd-exporter binaries
 
 - name: Copy systemd-exporter service file
   become: true
   ansible.builtin.copy:
     src: systemd-exporter.service
-    dest: /usr/local/lib/systemd/system/systemd-exporter.service
+    dest: /etc/systemd/system/systemd-exporter.service
     owner: systemd-exporter
     group: systemd-exporter
     mode: "0774"
+  notify:
+    - Start systemd-exporter
 
 - name: Create systemd-exporter logging directory
   become: true
@@ -71,10 +65,3 @@
     owner: systemd-exporter
     group: systemd-exporter
 
-- name: Start systemd-exporter service
-  become: true
-  ansible.builtin.systemd_service:
-    name: systemd-exporter.service
-    state: restarted
-    daemon_reload: true
-    enabled: true
