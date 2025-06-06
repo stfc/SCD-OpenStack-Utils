@@ -9,7 +9,7 @@
     group: systemd-exporter
     remote_src: true
 
-- name: Start systemd-exporter service
+- name: Start systemd-exporter
   become: true
   ansible.builtin.systemd_service:
     name: systemd-exporter.service
