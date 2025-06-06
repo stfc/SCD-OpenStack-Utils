@@ -26,7 +26,7 @@
 - name: Create systemd-exporter directory
   become: true
   ansible.builtin.file:
-    path: /opt/filebeat
+    path: /opt/systemd-exporter
     state: directory
     mode: "0774"
     owner: systemd-exporter
@@ -43,7 +43,7 @@
     creates: "/opt/systemd-exporter/systemd-exporter"
     mode: "0774"
   notify:
-    - Move Move systemd-exporter binaries
+    - Move systemd-exporter binaries
 
 - name: Copy systemd-exporter service file
   become: true
