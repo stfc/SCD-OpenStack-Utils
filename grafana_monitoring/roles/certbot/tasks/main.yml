@@ -45,6 +45,21 @@
   ansible.builtin.shell: "cat /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem > /etc/haproxy/{{ inventory_hostname }}.crt"
   when: not certificate_file.stat.exists
 
+- name: Restart HAProxy
+  become: true
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: haproxy.service
+
+- name: Template renew script to host
+  become: true
+  ansible.builtin.template:
+    src: renew_certs.sh.j2
+    dest: /usr/local/sbin/renew_certs.sh
+    mode: "0554"
+    owner: root
+    group: root
+
 - name: Create a cron job for the renewal of certificates
   become: true
   become_user: root
@@ -53,41 +68,4 @@
     minute: "0"
     hour: "0,12"
     day: "*"
-    job: "/opt/certbot/bin/python -c 'import random; import time; time.sleep(random.random() * 3600)' && sudo certbot renew -q"
-
-- name: Create a cron job for the upgrade of certbot
-  become: true
-  become_user: root
-  ansible.builtin.cron:
-    name: "Upgrade Certbot"
-    month: "*"
-    job: "sudo /opt/certbot/bin/pip install --upgrade certbot"
-
-- name: Create a cron job to copy certificate to haproxy directory
-  become: true
-  become_user: root
-  ansible.builtin.cron:
-    name: "Copy certificate"
-    minute: "1"
-    hour: "0,12"
-    day: "*"
-    job: "cat /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem > /etc/haproxy/{{ inventory_hostname }}.crt"
-
-- name: Create a cron job to restart HAProxy to pick up new certificate
-  become: true
-  become_user: root
-  ansible.builtin.cron:
-    name: "Restart HAProxy to pick up new certificate"
-    minute: "3"
-    hour: "0,12"
-    day: "*"
-    job: "systemctl restart haproxy.service"
-
-- name: Restart HAProxy
-  become: true
-  ansible.builtin.systemd_service:
-    state: restarted
-    name: haproxy.service
-
-
-
+    job: "/usr/local/sbin/renew_certs.sh"

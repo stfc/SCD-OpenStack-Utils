@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -xe
+
+/opt/certbot/bin/pip install --upgrade certbot
+
+systemctl stop haproxy
+certbot renew -q
+cat /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem > /etc/haproxy/{{ inventory_hostname }}.crt
+systemctl start haproxy
