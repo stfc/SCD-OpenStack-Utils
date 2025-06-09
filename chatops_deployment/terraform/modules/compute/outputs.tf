@@ -10,6 +10,14 @@ output "prometheus_host_ips" {
   value = openstack_compute_instance_v2.prometheus.*.access_ip_v4
 }
 
+output "elastic_host_ips" {
+  value = openstack_compute_instance_v2.elastic.*.access_ip_v4
+}
+
 output "loadbalancer_host_ip" {
   value = openstack_compute_instance_v2.loadbalancer.access_ip_v4
+}
+
+output "elasticsearch_device" {
+  value = openstack_compute_volume_attach_v2.elasticsearch_volume.device
 }

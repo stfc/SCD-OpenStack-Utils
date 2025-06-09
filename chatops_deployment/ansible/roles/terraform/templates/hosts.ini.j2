@@ -19,16 +19,26 @@
 [prometheus:vars]
 loadbalancer_private_ip="{{ terraform_output.outputs.loadbalancer_private_ip.value }}"
 
+[elastic]
+{% for ip in terraform_output.outputs.elastic_host_ips.value %}
+{{ ip }}
+{% endfor %}
+
+[elastic:vars]
+elasticsearch_device="{{ terraform_output.outputs.elasticsearch_device.value }}"
+
 [monitoring]
 [monitoring:children]
 prometheus
 grafana
+elastic
 
 [private]
 [private:children]
 prometheus
 grafana
 chatops
+elastic
 
 [private:vars]
 ansible_ssh_common_args='-o ProxyCommand="ssh -p 22 -W %h:%p -q ubuntu@{{ terraform_floating_ip }}"'
