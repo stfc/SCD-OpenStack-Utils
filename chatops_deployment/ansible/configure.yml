@@ -57,6 +57,14 @@
       tags:
         - systemd_exporter
 
+- name: Set up node exporters
+  hosts: private, haproxy
+  gather_facts: false
+  roles:
+    - role: node_exporter
+      tags:
+        - node_exporter
+
 - name: Configure Grafana
   hosts: grafana
   gather_facts: false
