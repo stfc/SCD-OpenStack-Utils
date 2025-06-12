@@ -55,6 +55,7 @@
       - /etc/chatops/config.yml:/usr/src/app/cloud_chatops/config/config.yml
       - /etc/chatops/secrets.yml:/usr/src/app/cloud_chatops/secrets/secrets.yml
     network_mode: host
+    restart_policy: "always"
 
 - name: Copy filebeat external config
   become: true
