@@ -1,0 +1,76 @@
+---
+- name: Create node-exporter group
+  become: true
+  ansible.builtin.group:
+    name: node-exporter
+    state: present
+
+- name: Add ubuntu to node-exporter group
+  become: true
+  ansible.builtin.user:
+    name: ubuntu
+    groups: node-exporter
+    append: true
+
+- name: Reset connection for group changes
+  ansible.builtin.meta: reset_connection
+
+- name: Create a node-exporter user
+  become: true
+  ansible.builtin.user:
+    name: node-exporter
+    create_home: false
+    group: node-exporter
+    system: true
+
+- name: Create node-exporter directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/node-exporter
+    state: directory
+    mode: "0774"
+    owner: node-exporter
+    group: node-exporter
+
+- name: Download and extract node-exporter
+  become: true
+  ansible.builtin.unarchive:
+    src: "
+      https://github.com/prometheus/node_exporter/releases/download/\
+      v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz
+    "
+    dest: /tmp
+    remote_src: true
+    creates: "/opt/node-exporter/node-exporter"
+    mode: "0774"
+  notify:
+    - Move node-exporter binaries
+
+- name: Copy node-exporter service file
+  become: true
+  ansible.builtin.copy:
+    src: node-exporter.service
+    dest: /etc/systemd/system/node-exporter.service
+    owner: node-exporter
+    group: node-exporter
+    mode: "0774"
+  notify:
+    - Start node-exporter
+
+- name: Create node-exporter logging directory
+  become: true
+  ansible.builtin.file:
+    path: /var/log/node-exporter
+    state: directory
+    mode: "0774"
+    owner: node-exporter
+    group: node-exporter
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: node-exporter.filebeat.yml
+    dest: /var/filebeat/node-exporter.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"

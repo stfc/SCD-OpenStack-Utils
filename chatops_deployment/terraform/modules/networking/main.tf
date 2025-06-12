@@ -174,3 +174,18 @@ resource "openstack_networking_secgroup_rule_v2" "systemd_exporter" {
   remote_ip_prefix  = "192.168.100.0/22"
   security_group_id = openstack_networking_secgroup_v2.systemd_exporter.id
 }
+
+resource "openstack_networking_secgroup_v2" "node_exporter" {
+  name        = "node_exporter-${var.deployment}"
+  description = "Node exporter security group."
+}
+
+resource "openstack_networking_secgroup_rule_v2" "node_exporter" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 9100
+  port_range_max    = 9100
+  remote_ip_prefix  = "192.168.100.0/22"
+  security_group_id = openstack_networking_secgroup_v2.node_exporter.id
+}
