@@ -1,0 +1,9 @@
+---
+- type: filestream
+  id: node-exporter
+  enabled: true
+  paths:
+    - /opt/node-exporter/node-exporter.log
+  fields:
+    service.name: node-exporter
+  fields_under_root: true

@@ -1,0 +1,15 @@
+[Unit]
+Description=Node Exporter Service
+Documentation=https://github.com/prometheus-community/node_exporter
+After=network-online.target
+
+[Service]
+User=node-exporter
+Group=node-exporter
+Restart=on-failure
+ExecStart=/opt/node-exporter/node_exporter --web.telemetry-path="/"
+StandardOutput=append:/var/log/node-exporter/node-exporter.log
+StandardError=append:/var/log/node-exporter/node-exporter.log
+
+[Install]
+WantedBy=multi-user.target

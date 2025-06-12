@@ -75,6 +75,7 @@
     - haproxy.json
     - alerts.json
     - status.json
+    - node.json
 
 - name: Copy certificate and key
   become: true
