@@ -22,7 +22,7 @@ resource "openstack_compute_instance_v2" "grafana" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.grafana_secgroup.name, var.systemd_exporter_secgroup.name]
+  security_groups = ["default", var.grafana_secgroup.name, var.systemd_exporter_secgroup.name, var.node_exporter_secgroup.name]
   count           = 2
 
   metadata = {
@@ -41,7 +41,7 @@ resource "openstack_compute_instance_v2" "prometheus" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.prometheus_secgroup.name, var.systemd_exporter_secgroup.name]
+  security_groups = ["default", var.prometheus_secgroup.name, var.systemd_exporter_secgroup.name, var.node_exporter_secgroup.name]
 
   metadata = {
     service = "prometheus",
@@ -58,7 +58,7 @@ resource "openstack_compute_instance_v2" "elastic" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.tiny"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.elasticsearch_secgroup.name, var.systemd_exporter_secgroup.name]
+  security_groups = ["default", var.elasticsearch_secgroup.name, var.systemd_exporter_secgroup.name, var.node_exporter_secgroup.name]
 
   metadata = {
     service = "elastic",
@@ -85,7 +85,7 @@ resource "openstack_compute_instance_v2" "chatops" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.chatops_secgroup.name, var.systemd_exporter_secgroup.name]
+  security_groups = ["default", var.chatops_secgroup.name, var.systemd_exporter_secgroup.name, var.node_exporter_secgroup.name]
   count           = 3
 
   metadata = {
@@ -103,7 +103,7 @@ resource "openstack_compute_instance_v2" "loadbalancer" {
   image_name      = "ubuntu-jammy-22.04-nogui"
   flavor_name     = "l3.nano"
   key_pair        = openstack_compute_keypair_v2.bastion_keypair.name
-  security_groups = ["default", var.loadbalancer_secgroup.name, var.systemd_exporter_secgroup.name]
+  security_groups = ["default", var.loadbalancer_secgroup.name, var.systemd_exporter_secgroup.name, var.node_exporter_secgroup.name]
 
   metadata = {
     service = "haproxy",

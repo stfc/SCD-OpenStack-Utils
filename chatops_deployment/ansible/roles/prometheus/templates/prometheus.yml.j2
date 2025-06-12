@@ -42,6 +42,13 @@ scrape_configs:
       {% endfor %}
       - targets: ['{{ ansible_local.terraform.vars.loadbalancer_private_ip }}:9558']
 
+  - job_name: 'node_exporter'
+    static_configs:
+      {% for host in (groups.private | map('extract', hostvars, 'ansible_ssh_host')) %}
+      - targets: ['{{ host }}:9100']
+      {% endfor %}
+      - targets: ['{{ ansible_local.terraform.vars.loadbalancer_private_ip }}:9100']
+
 rule_files:
   - '/opt/prometheus/rules.yml'
 

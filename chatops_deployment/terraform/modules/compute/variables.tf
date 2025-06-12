@@ -5,6 +5,7 @@ variable "prometheus_secgroup" {}
 variable "elasticsearch_secgroup" {}
 variable "loadbalancer_secgroup" {}
 variable "systemd_exporter_secgroup" {}
+variable "node_exporter_secgroup" {}
 variable "private_network" {}
 variable "floating_ip" {}
 variable "private_subnet" {}
