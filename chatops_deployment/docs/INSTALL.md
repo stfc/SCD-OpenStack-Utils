@@ -59,6 +59,9 @@ Machine requirements:
    
    # Install collections using Ansible Galaxy
    ansible-galaxy install -r requirements.yml  
+
+   # Install dependencies
+   pip install -r requirements.yml
    ```
 
 2. Create a vault password file to avoid repeated inputs
