@@ -29,8 +29,6 @@
     owner: root
     group: root
     mode: "0740"
-  notify:
-    - Start Filebeat
 
 - name: Flush Handlers to move binaries. We this as it overwrites the config file
   ansible.builtin.meta: flush_handlers
