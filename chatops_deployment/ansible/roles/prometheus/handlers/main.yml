@@ -1,3 +1,4 @@
+---
 - name: Move Prometheus binaries
   become: true
   ansible.builtin.copy:

@@ -1,3 +1,4 @@
+---
 - name: Move Alertmanager binaries
   become: true
   ansible.builtin.copy:
