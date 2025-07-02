@@ -11,7 +11,7 @@
   ansible.builtin.file:
     path: /etc/chatops
     state: directory
-    mode: '0775'
+    mode: "0775"
     owner: ubuntu
     group: ubuntu
     recurse: true
@@ -22,7 +22,7 @@
     dest: /etc/chatops/config.yml
     owner: ubuntu
     group: ubuntu
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy secrets.yml file
   ansible.builtin.template:
@@ -30,7 +30,7 @@
     dest: /etc/chatops/secrets.yml
     owner: ubuntu
     group: ubuntu
-    mode: '0644'
+    mode: "0644"
 
 - name: Add ubuntu to docker group
   become: true

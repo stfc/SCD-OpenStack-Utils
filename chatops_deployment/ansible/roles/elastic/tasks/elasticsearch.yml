@@ -34,10 +34,7 @@
 
 - name: Extract elasticsearch
   ansible.builtin.unarchive:
-    src: "
-      https://artifacts.elastic.co/downloads/elasticsearch/\
-      elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz
-      "
+    src: " https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elasticsearch_version }}-linux-x86_64.tar.gz "
     dest: /tmp
     remote_src: true
     creates: /opt/elasticsearch/bin/elasticsearch
@@ -55,7 +52,7 @@
     state: directory
     owner: elastic
     group: elastic
-    mode: '0774'
+    mode: "0774"
 
 - name: Attach data volume to Elasticsearch data directory
   become: true

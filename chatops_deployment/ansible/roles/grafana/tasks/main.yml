@@ -13,7 +13,7 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Add Grafana key and repository to apt
   become: true
@@ -22,7 +22,7 @@
       ansible.builtin.get_url:
         url: https://apt.grafana.com/gpg.key
         dest: /etc/apt/keyrings/grafana.asc
-        mode: '0755'
+        mode: "0755"
 
     - name: Add repository
       ansible.builtin.apt_repository:
@@ -42,7 +42,7 @@
     dest: /etc/grafana/provisioning/datasources/datasource.yml
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy config file template
   become: true
@@ -51,7 +51,7 @@
     dest: /etc/grafana/grafana.ini
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy dashboard file
   become: true
@@ -60,7 +60,7 @@
     dest: /etc/grafana/provisioning/dashboards/dashboard.yml
     owner: root
     group: grafana
-    mode: '0644'
+    mode: "0644"
 
 - name: Copy dashboards
   become: true
@@ -69,7 +69,7 @@
     dest: "/etc/grafana/provisioning/dashboards/{{ item }}"
     owner: root
     group: grafana
-    mode: '0777'
+    mode: "0777"
   loop:
     - chatops.json
     - haproxy.json
