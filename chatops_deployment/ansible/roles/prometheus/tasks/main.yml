@@ -97,6 +97,19 @@
     group: prometheus
     mode: "0770"
 
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/opt/prometheus/{{ item }}"
+    owner: prometheus
+    group: prometheus
+    mode: "0440"
+  loop:
+    - prometheus.key
+    - prometheus.crt
+    - alertmanager.crt
+
 - name: Copy filebeat external config
   become: true
   ansible.builtin.copy:
