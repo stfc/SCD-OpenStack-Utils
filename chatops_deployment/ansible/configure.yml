@@ -98,3 +98,5 @@
   force_handlers: true
   roles:
     - elastic
+  tags:
+    - elastic
