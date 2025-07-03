@@ -5,6 +5,11 @@
     name: expect
     update_cache: true
 
+- name: Start ssh-agent
+  # noqa: command-instead-of-shell
+  # interpolation is not supported by the command module
+  ansible.builtin.shell: 'eval $("ssh-agent -s")'
+
 - name: Add key to ssh-agent
   # noqa: command-instead-of-shell
   # We must use shell here as here-docs don't work with command
