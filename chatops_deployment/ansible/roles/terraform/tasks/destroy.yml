@@ -46,3 +46,9 @@
       ansible.builtin.file:
         path: "../terraform/bastion-key.pub"
         state: absent
+
+    - name: Remove SSL directory
+      ansible.builtin.file:
+        path: './SSL'
+        state: absent
+

@@ -13,3 +13,9 @@
   roles:
     - role: ssh_known_hosts
       tags: known_hosts
+
+- name: Create certificates
+  hosts: localhost
+  roles:
+    - role: ssl_certificates
+      tags: ssl_certificates

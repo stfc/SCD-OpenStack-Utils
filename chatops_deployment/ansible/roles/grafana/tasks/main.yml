@@ -76,6 +76,18 @@
     - alerts.json
     - status.json
 
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/grafana.{{ item }}"
+    dest: "/etc/grafana/grafana.{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0440"
+  loop:
+    - key
+    - crt
+
 - name: Make sure grafana-server.service is running
   become: true
   ansible.builtin.systemd_service:
