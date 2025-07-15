@@ -1,6 +1,6 @@
 path:
-    data: /var/elasticsearch/data
-    logs: /var/log/elasticsearch
+  data: /var/elasticsearch/data
+  logs: /var/log/elasticsearch
 cluster.name: chatops-elasticsearch
 xpack.security.enabled: true
 xpack.security.enrollment.enabled: true
