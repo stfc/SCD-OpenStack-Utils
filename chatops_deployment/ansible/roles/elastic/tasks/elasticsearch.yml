@@ -22,7 +22,7 @@
       ansible.builtin.get_url:
         url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
         dest: /etc/apt/keyrings/elasticsearch.asc
-        mode: "0755"
+        mode: "0644"
 
     - name: Add repository
       ansible.builtin.apt_repository:

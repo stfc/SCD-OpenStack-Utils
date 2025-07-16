@@ -1,8 +1,0 @@
-- type: filestream
-  id: elasticsearch
-  enabled: true
-  paths:
-    - /var/log/elasticsearch/*.log
-  fields:
-    service.name: elasticsearch
-  fields_under_root: true
