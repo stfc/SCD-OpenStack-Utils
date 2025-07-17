@@ -1,0 +1,81 @@
+---
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    update_cache: true
+
+- name: Create key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Elasticsearch key and repository to apt
+  become: true
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /etc/apt/keyrings/elasticsearch.asc
+        mode: "0644"
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/9.x/apt stable main"
+        state: present
+
+- name: Install Elasticsearch
+  become: true
+  ansible.builtin.apt:
+    name: elasticsearch
+    state: latest # noqa: package-latest
+    update_cache: true
+
+- name: Attach data volume to Elasticsearch data directory
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/elasticsearch/data
+    src: "{{ elasticsearch_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions on volume
+  become: true
+  ansible.builtin.file:
+    path: /var/elasticsearch/data
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: "0774"
+    recurse: true
+
+- name: Copy elasticsearch config
+  become: true
+  ansible.builtin.copy:
+    src: elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: "0770"
+  notify:
+    - Restart Elasticsearch
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/elasticsearch.{{ item }}"
+    dest: "/etc/elasticsearch/certs/elasticsearch.{{ item }}"
+    owner: root
+    group: elasticsearch
+    mode: "0440"
+  notify:
+    - Restart Elasticsearch
+  loop:
+    - key
+    - crt

@@ -48,3 +48,10 @@
     - alertmanager
   tags:
     - alertmanager
+
+- name: Configure Elastic Stack
+  hosts: elastic
+  remote_user: ubuntu
+  force_handlers: true
+  roles:
+    - elastic
