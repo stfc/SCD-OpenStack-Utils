@@ -1,3 +1,4 @@
+---
 path:
   data: /var/elasticsearch/data
   logs: /var/log/elasticsearch
