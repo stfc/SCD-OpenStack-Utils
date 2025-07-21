@@ -41,7 +41,7 @@
   become: true
   ansible.builtin.command: |
     certbot certonly --standalone --non-interactive --agree-tos --expand --domains \
-    {{ domain }},chatops.{{ domain }},prometheus.{{ domain }},grafana.{{ domain }},alertmanager.{{ domain }} \
+    {{ domain }},chatops.{{ domain }},prometheus.{{ domain }},grafana.{{ domain }},alertmanager.{{ domain }},kibana.{{ domain }} \
     -m cloud-support@stfc.ac.uk
   register: generate_cert
   changed_when: generate_cert.rc == 0

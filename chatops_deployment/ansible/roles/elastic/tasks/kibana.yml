@@ -1,0 +1,63 @@
+---
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    update_cache: true
+
+- name: Create key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Elasticsearch key and repository to apt
+  become: true
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /etc/apt/keyrings/elasticsearch.asc
+        mode: "0755"
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/9.x/apt stable main"
+        state: present
+
+- name: Install Kibana
+  become: true
+  ansible.builtin.apt:
+    name: kibana
+    state: latest # noqa: package-latest
+    update_cache: true
+
+- name: Template kibana config
+  become: true
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "/etc/kibana/kibana.yml"
+    owner: root
+    group: kibana
+    mode: "0770"
+  notify:
+    - Restart Kibana
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./SSL/{{ item }}"
+    dest: "/etc/kibana/{{ item }}"
+    owner: root
+    group: kibana
+    mode: "0440"
+  notify:
+    - Restart Kibana
+  loop:
+    - kibana.key
+    - kibana.crt
+    - elasticsearch.crt
