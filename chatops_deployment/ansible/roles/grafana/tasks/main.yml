@@ -33,6 +33,7 @@
   become: true
   ansible.builtin.apt:
     name: grafana
+    state: latest # noqa: package-latest
     update_cache: true
 
 - name: Copy datasource file template
