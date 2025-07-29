@@ -43,7 +43,7 @@
     dest: "/etc/logstash/logstash.conf"
     owner: root
     group: logstash
-    mode: "0770"
+    mode: "0640"
   notify:
     - Restart Logstash
 

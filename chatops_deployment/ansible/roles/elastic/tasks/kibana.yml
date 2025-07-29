@@ -43,7 +43,7 @@
     dest: "/etc/kibana/kibana.yml"
     owner: root
     group: kibana
-    mode: "0770"
+    mode: "0640"
   notify:
     - Restart Kibana
 
