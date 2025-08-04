@@ -1,3 +1,4 @@
+---
 grafana_client_id: "{{ vault_grafana_client_id }}"
 grafana_client_secret: "{{ vault_grafana_client_secret }}"
 grafana_admin_password: "{{ vault_grafana_admin_password }}"
@@ -8,3 +9,5 @@ alertmanager_password: "{{ vault_alertmanager_password }}"
 alertmanager_version: "0.28.1"
 prometheus_version: "3.2.1"
 elastic_password: "{{ vault_elastic_password }}"
+kibana_system_password: "{{ vault_kibana_system_password }}"
+logstash_system_password: "{{ vault_logstash_system_password }}"

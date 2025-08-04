@@ -3,3 +3,13 @@
   ansible.builtin.import_tasks: elasticsearch.yml
   tags:
     - elasticsearch
+
+- name: Install Kibana
+  ansible.builtin.import_tasks: kibana.yml
+  tags:
+    - kibana
+
+- name: Install Logstash
+  ansible.builtin.import_tasks: logstash.yml
+  tags:
+    - logstash
