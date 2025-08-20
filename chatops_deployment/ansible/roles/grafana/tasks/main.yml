@@ -81,3 +81,12 @@
   ansible.builtin.systemd_service:
     state: restarted
     name: grafana-server.service
+
+- name: Copy filebeat external config
+  become: true
+  ansible.builtin.copy:
+    src: grafana.filebeat.yml
+    dest: /var/filebeat/grafana.filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"

@@ -1,0 +1,9 @@
+---
+- type: filestream
+  id: alertmanager
+  enabled: true
+  paths:
+    - /opt/alertmanager/alertmanager.log
+  fields:
+    service.name: alertmanager
+  fields_under_root: true
