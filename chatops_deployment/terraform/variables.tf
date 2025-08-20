@@ -17,3 +17,8 @@ variable "stack_volume_id" {
   type        = string
   description = "ID of the ChatOps Stack volume in your project."
 }
+
+variable "environment" {
+  type = string
+  description = "The environment being deployed into. E.g. dev, staging, prod"
+}

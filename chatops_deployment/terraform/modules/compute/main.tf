@@ -14,7 +14,7 @@ provider "openstack" {
 
 resource "openstack_compute_keypair_v2" "bastion_keypair" {
   name       = "bastion-keypair-${var.deployment}"
-  public_key = file("bastion-key.pub")
+  public_key = file("${var.environment}-bastion-key.pub")
 }
 
 resource "openstack_compute_instance_v2" "stack" {
