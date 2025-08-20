@@ -8,6 +8,15 @@
       ansible.builtin.include_role:
         name: add_ssh_key
 
+
+- name: Set up filebeat
+  hosts: stack
+  gather_facts: false
+  roles:
+    - role: filebeat
+      tags:
+        - filebeat
+
 - name: Configure load balancer
   hosts: stack
   roles:
