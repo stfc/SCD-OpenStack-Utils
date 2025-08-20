@@ -48,8 +48,10 @@
   when: not haproxy_certificate_file.stat.exists
 
 - name: Copy certificate for the first time
+  # noqa: command-instead-of-shell
+  # We must use shell here as command doesn't support appending to files
   become: true
-  ansible.builtin.command: |
+  ansible.builtin.shell: |
     cat /etc/letsencrypt/live/{{ domain }}/privkey.pem \
     /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt
   register: haproxy_copy_cert
