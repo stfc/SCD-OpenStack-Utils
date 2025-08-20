@@ -57,14 +57,6 @@
       tags:
         - node_exporter
 
-- name: Configure Grafana
-  hosts: stack
-  gather_facts: false
-  roles:
-    - grafana
-  tags:
-    - grafana
-
 - name: Attach volume
   hosts: stack
   gather_facts: true
