@@ -1,0 +1,53 @@
+---
+- name: Stop ChatOps Containers
+  hosts: chatops
+  tags: down
+  tasks:
+    - name: Stop ChatOps container
+      community.docker.docker_container:
+        name: chatops
+        state: stopped
+
+- name: Stop Kibana
+  hosts: elastic
+  tags: down
+  tasks:
+    - name: Stop Kibana
+      become: true
+      ansible.builtin.systemd_service:
+        state: stopped
+        name: kibana.service
+
+- name: Start ChatOps Containers
+  hosts: chatops
+  tags: up
+  tasks:
+    - name: Start ChatOps container
+      community.docker.docker_container:
+        image: "{{ chatops_image }}"
+        name: chatops
+        pull: always
+        state: started
+        ports:
+          - "3000:3000"
+        volumes:
+          - /etc/chatops/config.yml:/usr/src/app/cloud_chatops/config/config.yml
+          - /etc/chatops/secrets.yml:/usr/src/app/cloud_chatops/secrets/secrets.yml
+        network_mode: host
+
+- name: Start Kibana
+  hosts: elastic
+  tags: up
+  tasks:
+    - name: Start Kibana
+      become: true
+      ansible.builtin.systemd_service:
+        state: started
+        name: kibana.service
+
+
+
+
+
+
+
