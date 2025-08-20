@@ -7,16 +7,20 @@
     group: "{{ ansible_env.USER }}"
     mode: "0774"
 
+- name: Create Terraform variables file
+  ansible.builtin.template:
+    src: terraform.tfvars.j2
+    dest: "{{ playbook_dir }}/../terraform/terraform.tfvars"
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+    mode: "0774"
+
 - name: Destroy infrastructure
   community.general.terraform:
     project_path: "../terraform"
     state: absent
     complex_vars: true
     workspace: "{{ env }}"
-    variables:
-      deployment: "{{ terraform_deployment }}"
-      external_network_id: "{{ terraform_external_network_id }}"
-      floating_ip: "{{ terraform_floating_ip }}"
 
 - name: Remove generated files
   block:
