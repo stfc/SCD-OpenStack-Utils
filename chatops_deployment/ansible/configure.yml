@@ -50,6 +50,14 @@
       tags:
         - systemd_exporter
 
+- name: Set up node exporters
+  hosts: stack
+  gather_facts: false
+  roles:
+    - role: node_exporter
+      tags:
+        - node_exporter
+
 - name: Configure Grafana
   hosts: stack
   gather_facts: false
