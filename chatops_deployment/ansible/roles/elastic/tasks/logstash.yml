@@ -40,7 +40,7 @@
   become: true
   ansible.builtin.template:
     src: logstash.conf.j2
-    dest: "/etc/logstash/logstash.conf"
+    dest: "/etc/logstash/conf.d/logstash.conf"
     owner: root
     group: logstash
     mode: "0640"
