@@ -44,16 +44,23 @@
 
 - name: Start ChatOps container
   community.docker.docker_container:
-    image: harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:7.0.0
-    name: chatops
+    image: "{{ chatops_image }}"
+    name: "chatops-{{ count }}"
     pull: always
     state: started
+    restart: true
     ports:
-      - "3000:3000"
+      - "{{ item }}:3000"
     volumes:
-      - /etc/chatops/config.yml:/usr/src/app/cloud_chatops/config/config.yml
-      - /etc/chatops/secrets.yml:/usr/src/app/cloud_chatops/secrets/secrets.yml
-    network_mode: host
+      - /etc/chatops/config.yml:/usr/src/app/config.yml
+      - /etc/chatops/secrets.yml:/usr/src/app/secrets.yml
+    restart_policy: "always"
+  loop:
+    - 3030
+    - 3031
+    - 3032
+  loop_control:
+    index_var: count
 
 - name: Copy filebeat external config
   become: true
