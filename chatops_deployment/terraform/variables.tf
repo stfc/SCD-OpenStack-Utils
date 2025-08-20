@@ -13,7 +13,7 @@ variable "external_network_id" {
   description = "ID of the external network in your project."
 }
 
-variable "elasticsearch_volume_id" {
+variable "stack_volume_id" {
   type        = string
-  description = "ID of the elasticsearch volume in your project."
+  description = "ID of the ChatOps Stack volume in your project."
 }
