@@ -1,0 +1,68 @@
+---
+- name: Install prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    update_cache: true
+
+- name: Create key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Elasticsearch key and repository to apt
+  become: true
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /etc/apt/keyrings/elasticsearch.asc
+        mode: "0755"
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/9.x/apt stable main"
+        state: present
+
+- name: Install Filebeat
+  become: true
+  ansible.builtin.apt:
+    name: filebeat
+    state: latest # noqa: package-latest
+    update_cache: true
+
+- name: Template filebeat config
+  become: true
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: "/etc/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0640"
+  notify:
+    - Restart Filebeat
+
+- name: Copy Logstash SSL certificate
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/logstash.crt"
+    dest: "/etc/filebeat"
+    owner: root
+    group: root
+    mode: "0400"
+  notify:
+    - Restart Filebeat
+
+- name: Create filebeat external config directory
+  become: true
+  ansible.builtin.file:
+    path: /var/filebeat
+    state: directory
+    owner: root
+    group: root
+    mode: "0770"
