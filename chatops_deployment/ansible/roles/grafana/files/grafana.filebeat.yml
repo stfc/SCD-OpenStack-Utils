@@ -1,9 +1,0 @@
----
-- type: filestream
-  id: grafana
-  enabled: true
-  paths:
-    - /var/log/grafana/grafana.log
-  fields:
-    service.name: grafana
-  fields_under_root: true
