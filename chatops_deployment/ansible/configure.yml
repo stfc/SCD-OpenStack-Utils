@@ -1,4 +1,13 @@
 ---
+- name: Add SSH key to agent
+  hosts: localhost
+  tags:
+    - key
+  tasks:
+    - name: Add SSH key
+      ansible.builtin.include_role:
+        name: add_ssh_key
+
 - name: Configure load balancer
   hosts: stack
   roles:
