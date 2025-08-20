@@ -1,9 +1,9 @@
 ---
-- type: filestream
+filebeat.inputs:
+- type: journald
   id: prometheus
-  enabled: true
-  paths:
-    - /opt/prometheus/prometheus.log
+  include_matches.match:
+    - _SYSTEMD_UNIT=prometheus.service
   fields:
     service.name: prometheus
   fields_under_root: true

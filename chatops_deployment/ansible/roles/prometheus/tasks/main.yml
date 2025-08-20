@@ -1,41 +1,9 @@
 ---
-- name: Create prometheus group
+- name: Install Prometheus
   become: true
-  ansible.builtin.group:
+  ansible.builtin.apt:
     name: prometheus
-    state: present
-
-- name: Add ubuntu to prometheus group
-  become: true
-  ansible.builtin.user:
-    name: ubuntu
-    group: prometheus
-
-- name: Reset connection for group changes
-  ansible.builtin.meta: reset_connection
-
-- name: Create a prometheus user
-  become: true
-  ansible.builtin.user:
-    name: prometheus
-    create_home: false
-    group: prometheus
-    system: true
-
-- name: Download and extract Prometheus
-  become: true
-  ansible.builtin.unarchive:
-    src: " https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz "
-    dest: /tmp
-    remote_src: true
-    creates: "/opt/prometheus"
-    mode: "0774"
-    notify:
-      - Move Prometheus binaries
-      - Start Prometheus
-
-- name: Flush handlers to move binaries
-  ansible.builtin.meta: flush_handlers
+    state: latest # noqa: package-latest
 
 - name: Set permissions on volume
   become: true
@@ -47,55 +15,61 @@
     mode: "0774"
     recurse: true
 
-- name: Copy prometheus service file
-  become: true
-  ansible.builtin.copy:
-    src: prometheus.service
-    dest: /etc/systemd/system/prometheus.service
-    owner: prometheus
-    group: prometheus
-    mode: "0774"
-    notify:
-      - Start Prometheus
-
 - name: Copy prometheus rules file
   become: true
   ansible.builtin.copy:
     src: rules.yml
-    dest: /opt/prometheus/rules.yml
+    dest: /etc/prometheus/rules.yml
     owner: prometheus
     group: prometheus
     mode: "0774"
-    notify:
-      - Restart Prometheus
+
+- name: Copy systemd arguments
+  become: true
+  ansible.builtin.copy:
+    src: prometheus
+    dest: "/etc/default/prometheus"
+    owner: prometheus
+    group: prometheus
+    mode: "0644"
 
 - name: Template prometheus config
   become: true
   ansible.builtin.template:
     src: "{{ item }}"
-    dest: "/opt/prometheus/{{ item[:-3] }}"
+    dest: "/etc/prometheus/{{ item[:-3] }}"
     owner: prometheus
     group: prometheus
     mode: "0774"
-    notify:
-      - Restart Prometheus
   loop:
     - prometheus.yml.j2
-    - web.yml.j2
+    - prometheus-web.yml.j2
 
-- name: Create Prometheus log directory
-  ansible.builtin.file:
-    path: /var/log/prometheus
-    state: directory
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/{{ item }}"
+    dest: "/etc/prometheus/{{ item }}"
     owner: prometheus
     group: prometheus
-    mode: "0770"
+    mode: "0440"
+  loop:
+    - prometheus.key
+    - prometheus.crt
+    - alertmanager.crt
+
+- name: Restart Prometheus
+  become: true
+  ansible.builtin.systemd_service:
+    name: prometheus.service
+    state: restarted
+    daemon_reload: true
 
 - name: Copy filebeat external config
   become: true
   ansible.builtin.copy:
     src: prometheus.filebeat.yml
     dest: /var/filebeat/prometheus.filebeat.yml
-    owner: root
-    group: root
+    owner: prometheus
+    group: prometheus
     mode: "0640"
