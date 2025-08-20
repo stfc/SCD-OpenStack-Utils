@@ -44,9 +44,8 @@
 
 - name: Set up systemd exporters
   hosts: stack
-  gather_facts: false
   roles:
-    - role: systemd_exporter
+    - role: prometheus.prometheus.systemd_exporter
       tags:
         - systemd_exporter
 
