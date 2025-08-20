@@ -47,3 +47,9 @@
       ansible.builtin.file:
         path: terraform.fact
         state: absent
+
+- name: Create certificates
+  hosts: localhost
+  roles:
+    - role: ssl_certificates
+      tags: ssl_certificates
