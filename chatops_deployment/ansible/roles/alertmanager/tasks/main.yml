@@ -1,77 +1,55 @@
 ---
-- name: Create alertmanager group
+- name: Install Alertmanager
   become: true
-  ansible.builtin.group:
-    name: alertmanager
-    state: present
-
-- name: Add ubuntu to alertmanager group
-  become: true
-  ansible.builtin.user:
-    name: ubuntu
-    group: alertmanager
-
-- name: Reset connection for group changes
-  ansible.builtin.meta: reset_connection
-
-- name: Create a alertmanager user
-  become: true
-  ansible.builtin.user:
-    name: alertmanager
-    create_home: false
-    group: alertmanager
-    system: true
-
-- name: Download and extract Alertmanager
-  become: true
-  ansible.builtin.unarchive:
-    src: " https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz "
-    dest: /tmp
-    remote_src: true
-    creates: "/opt/alertmanager"
-    mode: "0774"
-    notify:
-      - Move Alertmanager binaries
-      - Start Alertmanager
-
-- name: Copy alertmanager service file
-  become: true
-  ansible.builtin.copy:
-    src: alertmanager.service
-    dest: /etc/systemd/system/alertmanager.service
-    owner: alertmanager
-    group: alertmanager
-    mode: "0774"
-    notify:
-      - Restart Alertmanager
+  ansible.builtin.apt:
+    name: prometheus-alertmanager
+    state: latest # noqa: package-latest
 
 - name: Template alertmanager config
   become: true
   ansible.builtin.template:
     src: "{{ item }}"
-    dest: "/opt/alertmanager/{{ item[:-3] }}"
-    owner: alertmanager
-    group: alertmanager
+    dest: "/etc/prometheus/{{ item[:-3] }}"
+    owner: prometheus
+    group: prometheus
     mode: "0770"
-    notify:
-      - Restart Alertmanager
   loop:
     - alertmanager.yml.j2
-    - web.yml.j2
+    - alertmanager-web.yml.j2
 
-- name: Create Alertmanager log directory
-  ansible.builtin.file:
-    path: /var/log/alertmanager
-    state: directory
-    owner: alertmanager
-    group: alertmanager
-    mode: "0770"
+- name: Copy systemd arguments
+  become: true
+  ansible.builtin.copy:
+    src: prometheus-alertmanager
+    dest: "/etc/default/prometheus-alertmanager"
+    owner: prometheus
+    group: prometheus
+    mode: "0644"
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/alertmanager.{{ item }}"
+    dest: "/etc/prometheus/alertmanager.{{ item }}"
+    owner: prometheus
+    group: prometheus
+    mode: "0440"
+  loop:
+    - crt
+    - key
+
+- name: Restart Alertmanager
+  become: true
+  ansible.builtin.systemd_service:
+    name: prometheus-alertmanager.service
+    state: restarted
+    daemon_reload: true
 
 - name: Copy filebeat external config
   become: true
   ansible.builtin.copy:
     src: alertmanager.filebeat.yml
     dest: /var/filebeat/alertmanager.filebeat.yml
-    owner: root
-    group: root
+    owner: prometheus
+    group: prometheus
     mode: "0640"

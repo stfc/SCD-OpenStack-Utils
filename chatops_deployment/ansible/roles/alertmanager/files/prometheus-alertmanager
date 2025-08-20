@@ -1,0 +1,1 @@
+ARGS="--web.config.file=/etc/prometheus/alertmanager-web.yml"
