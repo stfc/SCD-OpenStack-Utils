@@ -34,23 +34,17 @@
       - Move Prometheus binaries
       - Start Prometheus
 
-- name: Attach volume to Prometheus data directory
-  become: true
-  ansible.posix.mount:
-    boot: true
-    path: /var/prometheus/data
-    src: "{{ prometheus_device }}"
-    state: mounted
-    fstype: ext4
+  ansible.builtin.meta: flush_handlers
 
 - name: Set permissions on volume
   become: true
   ansible.builtin.file:
-    path: /var/prometheus/data
+    path: /var/stack/prometheus/data
     state: directory
     owner: prometheus
     group: prometheus
     mode: "0774"
+    recurse: true
 
 - name: Copy prometheus service file
   become: true

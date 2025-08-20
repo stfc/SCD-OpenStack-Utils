@@ -44,6 +44,14 @@
   tags:
     - grafana
 
+- name: Attach volume
+  hosts: stack
+  gather_facts: true
+  roles:
+    - volume
+  tags:
+    - volume
+
 - name: Configure Prometheus
   hosts: stack
   roles:
