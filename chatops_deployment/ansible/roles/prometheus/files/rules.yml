@@ -12,10 +12,10 @@ groups:
           description: "Container has been not running for more than 30 seconds."
 
       - alert: SystemdServiceDown
-        expr: systemd_unit_state{name=~"grafana-server.service|haproxy.service",state=~"failed|inactive"} == 1
+        expr: systemd_unit_state{name=~"grafana-server.service|haproxy.service|kibana.service|elasticsearch.service|logstash.service|filebeat.service",state=~"failed|inactive"} == 1
         for: 30s
         labels:
           severity: critical
         annotations:
           summary: "Systemd service {{ $labels.name }} on host {{ $labels.instance }} is in state {{ $labels.state }}."
-          description: "Systemd service has been in failed state for 30s."
+          description: "Systemd service has been in failed {{ $labels.state }} for 30s."
