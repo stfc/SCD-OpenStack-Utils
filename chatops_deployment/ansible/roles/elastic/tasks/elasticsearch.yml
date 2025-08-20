@@ -60,7 +60,7 @@
 - name: Copy certificate and key
   become: true
   ansible.builtin.copy:
-    src: "./SSL/elasticsearch.{{ item }}"
+    src: "./{{ env }}_ssl/elasticsearch.{{ item }}"
     dest: "/etc/elasticsearch/certs/elasticsearch.{{ item }}"
     owner: root
     group: elasticsearch
