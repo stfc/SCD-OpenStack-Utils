@@ -1,2 +1,0 @@
-basic_auth_users:
-    {{ alertmanager_username }}: {{ alertmanager_password | ansible.builtin.password_hash(hashtype="bcrypt") }}
