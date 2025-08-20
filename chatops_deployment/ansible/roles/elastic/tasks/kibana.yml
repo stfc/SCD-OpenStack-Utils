@@ -50,7 +50,7 @@
 - name: Copy certificate and key
   become: true
   ansible.builtin.copy:
-    src: "./SSL/{{ item }}"
+    src: "./{{ env }}_ssl/{{ item }}"
     dest: "/etc/kibana/{{ item }}"
     owner: root
     group: kibana

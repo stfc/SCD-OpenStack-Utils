@@ -75,6 +75,19 @@
     - haproxy.json
     - alerts.json
     - status.json
+    - node.json
+
+- name: Copy certificate and key
+  become: true
+  ansible.builtin.copy:
+    src: "./{{ env }}_ssl/grafana.{{ item }}"
+    dest: "/etc/grafana/grafana.{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0440"
+  loop:
+    - key
+    - crt
 
 - name: Make sure grafana-server.service is running
   become: true
