@@ -1,5 +1,6 @@
 global:
   scrape_interval:     15s
+  evaluation_interval: 15s
   external_labels:
     monitor: 'chatops-monitor'
 
@@ -7,9 +8,12 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+    scheme: https
     basic_auth:
       username: "{{ prometheus_username }}"
       password: "{{ prometheus_password }}"
+    tls_config:
+      ca_file: /etc/prometheus/prometheus.crt
 
   - job_name: 'alertmanager'
     static_configs:
@@ -17,26 +21,28 @@ scrape_configs:
     basic_auth:
       username: "{{ alertmanager_username }}"
       password: "{{ alertmanager_password }}"
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/alertmanager.crt
 
   - job_name: 'load-balancer-metrics'
     static_configs:
-      - targets: ['{{ loadbalancer_private_ip }}:8405']
+      - targets: ['localhost:8405']
 
   - job_name: 'chatops_cadvisor'
     static_configs:
-      {% for host in groups['chatops'] %}
-      - targets: ['{{ host }}:8080']
-      {% endfor %}
+      - targets: ['localhost:8080']
 
   - job_name: 'systemd_exporter'
     static_configs:
-      {% for host in groups['private'] %}
-      - targets: ['{{ host }}:9558']
-      {% endfor %}
-      - targets: ['{{ loadbalancer_private_ip }}:9558']
+      - targets: ['localhost:9558']
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
 
 rule_files:
-  - '/opt/prometheus/rules.yml'
+  - '/etc/prometheus/rules.yml'
 
 alerting:
   alertmanagers:
@@ -47,3 +53,5 @@ alerting:
       basic_auth:
         username: "{{ alertmanager_username }}"
         password: "{{ alertmanager_password }}"
+      tls_config:
+        ca_file: /etc/prometheus/alertmanager.crt
