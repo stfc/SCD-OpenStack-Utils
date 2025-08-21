@@ -84,3 +84,25 @@ datasources:
       maxSeries: 200
     secureJsonData:
       password: {{ dev_influx_password }}
+
+  - name: DevChatOps
+    type: prometheus
+    uid: "dev-chatops"
+    access: proxy
+    url: https://prometheus.dev-cloud-chatops.nubes.rl.ac.uk
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: {{ dev_chatops_prometheus_username }}
+    secureJsonData:
+      basicAuthPassword: {{ dev_chatops_prometheus_password }}
+
+  - name: ProdChatOps
+    type: prometheus
+    uid: "prod-chatops"
+    access: proxy
+    url: https://prometheus.cloud-chatops.nubes.rl.ac.uk
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: {{ prod_chatops_prometheus_username }}
+    secureJsonData:
+      basicAuthPassword: {{ prod_chatops_prometheus_password }}
