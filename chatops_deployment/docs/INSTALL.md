@@ -51,10 +51,14 @@ Machine requirements:
 
 #### Setting up localhost:
 
-1. Install Ansible (preferably into a virtual environment) and collections
+1. Install Ansible and collections
    ```shell
-   # Using pip or another package manager
-   pip install ansible
+   # Install venv and Ansible
+   apt install python3-venv ansible
+   
+   # Create a virtual environment
+   python3 -m venv venv
+   source venv/bin/activate
    
    # Install collections using Ansible Galaxy
    ansible-galaxy install -r requirements.yml  
