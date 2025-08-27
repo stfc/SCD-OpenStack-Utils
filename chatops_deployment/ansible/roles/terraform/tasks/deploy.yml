@@ -4,12 +4,12 @@
     - name: Check clouds.yaml
       ansible.builtin.stat:
         path: "~/.config/openstack/clouds.yaml"
-      register: clouds_yaml_state
+      register: terraform_clouds_yaml_state
 
     - name: Fail if clouds.yaml does not exist
       ansible.builtin.fail:
         msg: "Could not find a clouds.yaml in ~/.config/openstack/clouds.yaml"
-      when: not clouds_yaml_state.stat.exists
+      when: not terraform_clouds_yaml_state.stat.exists
 
 - name: Check public and private keys
   block:
@@ -17,16 +17,16 @@
     - name: Check Bastion public key is valid # noqa: no-changed-when
       ansible.builtin.command: "ssh-keygen -l -f '../terraform/bastion-key.pub'"
       ignore_errors: true
-      register: public_key_state
+      register: terraform_public_key_state
 
     # We can ignore this warning as this command doesn't change anything when it runs.
     - name: Check Bastion private key is valid # noqa: no-changed-when
       ansible.builtin.command: "ssh-keygen -l -f '../ansible/bastion-key'"
       ignore_errors: true
-      register: private_key_state
+      register: terraform_private_key_state
 
     - name: Generate an SSH key pair and copy to directories
-      when: public_key_state.rc != 0 or private_key_state.rc != 0
+      when: terraform_public_key_state.rc != 0 or terraform_private_key_state.rc != 0
       block:
         - name: Generate key
           community.crypto.openssh_keypair:
