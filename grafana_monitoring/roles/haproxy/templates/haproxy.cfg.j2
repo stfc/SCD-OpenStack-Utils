@@ -22,4 +22,5 @@ frontend {{ inventory_hostname }}
   default_backend localhost
 
 backend localhost
+  option forwardfor
   server grafana 127.0.0.1:3000 check
