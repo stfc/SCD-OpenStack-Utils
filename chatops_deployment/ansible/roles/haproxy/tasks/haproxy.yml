@@ -19,11 +19,11 @@
   become: true
   ansible.builtin.stat:
     path: /etc/haproxy/{{ domain }}.crt
-  register: certificate_file
+  register: haproxy_certificate_file
 
 - name: Make sure haproxy.service is running
   become: true
   ansible.builtin.systemd_service:
     state: restarted
     name: haproxy.service
-  when: certificate_file.stat.exists
+  when: haproxy_certificate_file.stat.exists
