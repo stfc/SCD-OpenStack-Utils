@@ -83,12 +83,3 @@
     force_init: true
     workspace: "{{ env }}"
   register: terraform_output
-
-- name: Write Terraform device vars to file
-  become: true
-  ansible.builtin.template:
-    src: terraform.fact.j2
-    dest: terraform.fact
-    mode: "0664"
-    owner: "{{ ansible_env.USER }}"
-    group: "{{ ansible_env.USER }}"
