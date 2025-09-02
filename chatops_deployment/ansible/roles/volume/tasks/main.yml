@@ -1,12 +1,23 @@
 ---
 - name: Attach volume to stack host
-  become: true
-  ansible.posix.mount:
-    boot: true
-    path: /var/stack
-    src: "{{ ansible_local.terraform.vars.stack_device }}"
-    state: mounted
-    fstype: ext4
+  block:
+    - name: Try sdb
+      become: true
+      ansible.posix.mount:
+        boot: true
+        path: /var/stack
+        src: /dev/sdb
+        state: mounted
+        fstype: ext4
+  rescue:
+    - name: Try vdb
+      become: true
+      ansible.posix.mount:
+        boot: true
+        path: /var/stack
+        src: /dev/vdb
+        state: mounted
+        fstype: ext4
 
 - name: Set permissions
   become: true
