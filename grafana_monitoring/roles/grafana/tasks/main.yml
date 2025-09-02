@@ -81,3 +81,4 @@
   ansible.builtin.systemd_service:
     state: restarted
     name: grafana-server.service
+    enabled: true
