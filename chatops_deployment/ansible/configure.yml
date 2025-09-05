@@ -1,20 +1,20 @@
 ---
 - name: Configure load balancer
-  hosts: haproxy
+  hosts: stack
   roles:
     - role: haproxy
       tags:
         - haproxy
 
 - name: Configure ChatOps
-  hosts: chatops
+  hosts: stack
   roles:
     - role: chatops
       tags:
         - chatops
 
 - name: Configure CAdvisor
-  hosts: chatops
+  hosts: stack
   remote_user: ubuntu
   roles:
     - role: cadvisor
@@ -22,35 +22,35 @@
         - cadvisor
 
 - name: Set up systemd exporters
-  hosts: all
+  hosts: stack
   roles:
     - role: systemd_exporter
       tags:
         - systemd_exporter
 
 - name: Configure Grafana
-  hosts: grafana
+  hosts: stack
   roles:
     - grafana
   tags:
     - grafana
 
 - name: Configure Prometheus
-  hosts: prometheus
+  hosts: stack
   roles:
     - prometheus
   tags:
     - prometheus
 
 - name: Configure Alert Manager
-  hosts: prometheus
+  hosts: stack
   roles:
     - alertmanager
   tags:
     - alertmanager
 
 - name: Configure Elastic Stack
-  hosts: elastic
+  hosts: stack
   remote_user: ubuntu
   force_handlers: true
   roles:

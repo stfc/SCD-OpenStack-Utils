@@ -35,167 +35,27 @@ resource "openstack_networking_router_interface_v2" "router_interface" {
   subnet_id = openstack_networking_subnet_v2.subnet.id
 }
 
-resource "openstack_networking_secgroup_v2" "grafana" {
-  name        = "grafana-${var.deployment}"
-  description = "Grafana host security group."
+resource "openstack_networking_secgroup_v2" "stack" {
+  name        = "chatops-stack-${var.deployment}"
+  description = "ChatOps Stack host security group."
 }
 
-resource "openstack_networking_secgroup_rule_v2" "grafana" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 3000
-  port_range_max    = 3000
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.grafana.id
-}
-
-resource "openstack_networking_secgroup_v2" "chatops" {
-  name        = "chatops-${var.deployment}"
-  description = "ChatOps host security group."
-}
-
-resource "openstack_networking_secgroup_rule_v2" "chatops" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 3000
-  port_range_max    = 3000
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.chatops.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "cadvisor" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 8080
-  port_range_max    = 8080
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.chatops.id
-}
-
-resource "openstack_networking_secgroup_v2" "prometheus" {
-  name        = "prometheus-${var.deployment}"
-  description = "Prometheus host security group."
-}
-
-resource "openstack_networking_secgroup_rule_v2" "prometheus" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9090
-  port_range_max    = 9090
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.prometheus.id
-}
-
-resource "openstack_networking_secgroup_v2" "elasticsearch" {
-  name        = "elasticsearch-${var.deployment}"
-  description = "ElasticSearch host security group."
-}
-
-resource "openstack_networking_secgroup_rule_v2" "logstash" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 5044
-  port_range_max    = 5044
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.elasticsearch.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "kibana" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 5601
-  port_range_max    = 5601
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.elasticsearch.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "alertmanager" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9093
-  port_range_max    = 9093
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.prometheus.id
-}
-
-resource "openstack_networking_secgroup_v2" "loadbalancer" {
-  name        = "loadbalancer-${var.deployment}"
-  description = "Load balancer host security group."
-}
-
-resource "openstack_networking_secgroup_rule_v2" "loadbalancer_http" {
+resource "openstack_networking_secgroup_rule_v2" "stack_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
   port_range_min    = 80
   port_range_max    = 80
   remote_ip_prefix  = "0.0.0.0/0"
-  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
+  security_group_id = openstack_networking_secgroup_v2.stack.id
 }
 
-resource "openstack_networking_secgroup_rule_v2" "loadbalancer_https" {
+resource "openstack_networking_secgroup_rule_v2" "stack_https" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
   port_range_min    = 443
   port_range_max    = 443
   remote_ip_prefix  = "0.0.0.0/0"
-  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "loadbalancer_prometheus" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 8405
-  port_range_max    = 8405
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_prometheus" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.prometheus.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_chatops" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.chatops.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_grafana" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.grafana.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "systemd_exporter_loadbalancer" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9558
-  port_range_max    = 9558
-  remote_ip_prefix  = "192.168.100.0/22"
-  security_group_id = openstack_networking_secgroup_v2.loadbalancer.id
+  security_group_id = openstack_networking_secgroup_v2.stack.id
 }

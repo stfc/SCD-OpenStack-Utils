@@ -1,21 +1,5 @@
-output "grafana_secgroup" {
-  value = openstack_networking_secgroup_v2.grafana
-}
-
-output "chatops_secgroup" {
-  value = openstack_networking_secgroup_v2.chatops
-}
-
-output "prometheus_secgroup" {
-  value = openstack_networking_secgroup_v2.prometheus
-}
-
-output "elasticsearch_secgroup" {
-  value = openstack_networking_secgroup_v2.elasticsearch
-}
-
-output "loadbalancer_secgroup" {
-  value = openstack_networking_secgroup_v2.loadbalancer
+output "stack_secgroup" {
+  value = openstack_networking_secgroup_v2.stack
 }
 
 output "private_network" {

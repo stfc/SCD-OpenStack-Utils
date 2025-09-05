@@ -19,19 +19,6 @@
 
 - name: Remove generated files
   block:
-    - name: Delete hosts.ini file
-      ansible.builtin.file:
-        path: hosts.ini
-        state: absent
-
-    - name: Touch hosts.ini file
-      ansible.builtin.file:
-        path: hosts.ini
-        state: touch
-        owner: "{{ ansible_env.USER }}"
-        group: "{{ ansible_env.USER }}"
-        mode: "0774"
-
     - name: Delete terraform.tfvars file
       ansible.builtin.file:
         path: "../terraform/terraform.tfvars"
