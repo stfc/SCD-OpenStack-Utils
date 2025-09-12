@@ -1,0 +1,49 @@
+---
+ansible_user: ubuntu
+domain: "chatops.nubes.rl.ac.uk"
+alertmanager_version: "0.28.1"
+prometheus_version: "3.2.1"
+systemd_exporter_version: "0.7.0"
+terraform_floating_ip: 130.246.214.193
+env: prod
+chatops_image: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:8.0.1"
+chatops_github_repos:
+  stfc:
+    - cloud-deployed-apps
+    - st2-cloud-pack
+    - cloud-grafana-dashboards
+    - cloud-pe-jupyterhub
+    - cloud-docker-images
+    - cloud-capi-values
+    - cloud-image-builders
+    - cloud-docs
+    - cloud-openstack-horizon
+    - ansible-harbor
+    - terraform-openstack
+    - cloud-rundeck-jobs
+    - openstack-guide
+    - ansible-jupyter
+    - SCD-Openstack-Utils
+    - check-version-action
+    - cloud-helm-charts
+    - openstack-query-library
+chatops_gitlab_domain: gitlab.stfc.ac.uk
+chatops_gitlab_projects:
+  stfc-cloud:
+    - stfc-cloud-kayobe
+chatops_users: "{{ vault_chatops_users }}"
+chatops_slack_bot_token: "{{ vault_chatops_slack_bot_token }}"
+chatops_slack_signing_secret: "{{ vault_chatops_slack_signing_secret }}"
+chatops_custom_api_token: "{{ vault_chatops_custom_api_token }}"
+chatops_github_token: "{{ vault_chatops_github_token }}"
+chatops_gitlab_token: "{{ vault_chatops_gitlab_token }}"
+grafana_client_id: "{{ vault_grafana_client_id }}"
+grafana_client_secret: "{{ vault_grafana_client_secret }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
+prometheus_username: "{{ vault_prometheus_username }}"
+prometheus_password: "{{ vault_prometheus_password }}"
+alertmanager_username: "{{ vault_alertmanager_username }}"
+alertmanager_password: "{{ vault_alertmanager_password }}"
+elastic_password: "{{ vault_elastic_password }}"
+kibana_system_password: "{{ vault_kibana_system_password }}"
+logstash_system_password: "{{ vault_logstash_system_password }}"
