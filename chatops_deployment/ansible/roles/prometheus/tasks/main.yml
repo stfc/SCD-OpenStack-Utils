@@ -34,6 +34,7 @@
       - Move Prometheus binaries
       - Start Prometheus
 
+- name: Flush handlers to move binaries
   ansible.builtin.meta: flush_handlers
 
 - name: Set permissions on volume
