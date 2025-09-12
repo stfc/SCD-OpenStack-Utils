@@ -1,6 +1,6 @@
 ---
 ansible_user: ubuntu
-domain: "cloud-chatops.nubes.rl.ac.uk"
+domain: "chatops.nubes.rl.ac.uk"
 alertmanager_version: "0.28.1"
 prometheus_version: "3.2.1"
 systemd_exporter_version: "0.7.0"
