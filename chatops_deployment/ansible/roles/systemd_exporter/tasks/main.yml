@@ -26,9 +26,8 @@
 - name: Download and extract systemd-exporter
   become: true
   ansible.builtin.unarchive:
-    src:
-      "https://github.com/prometheus-community/systemd_exporter/releases/download/v{{ systemd_exporter_version }}/\
-       systemd_exporter-{{ systemd_exporter_version}}.linux-amd64.tar.gz"
+    src: "https://github.com/prometheus-community/systemd_exporter/releases/download/v{{ systemd_exporter_version }}/systemd_exporter-{{ systemd_exporter_version
+      }}.linux-amd64.tar.gz"
     dest: /tmp
     remote_src: true
     creates: "/tmp/systemd_exporter-{{ systemd_exporter_version }}.linux-amd64"
