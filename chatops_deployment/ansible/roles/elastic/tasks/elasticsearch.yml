@@ -36,19 +36,10 @@
     state: latest # noqa: package-latest
     update_cache: true
 
-- name: Attach data volume to Elasticsearch data directory
-  become: true
-  ansible.posix.mount:
-    boot: true
-    path: /var/elasticsearch/data
-    src: "{{ elasticsearch_device }}"
-    state: mounted
-    fstype: ext4
-
 - name: Set permissions on volume
   become: true
   ansible.builtin.file:
-    path: /var/elasticsearch/data
+    path: /var/stack/elasticsearch/data
     state: directory
     owner: root
     group: elasticsearch

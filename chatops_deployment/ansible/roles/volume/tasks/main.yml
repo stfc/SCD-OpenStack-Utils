@@ -1,0 +1,18 @@
+---
+- name: Attach volume to stack host
+  become: true
+  ansible.posix.mount:
+    boot: true
+    path: /var/stack
+    src: "{{ ansible_local.terraform.vars.stack_device }}"
+    state: mounted
+    fstype: ext4
+
+- name: Set permissions
+  become: true
+  ansible.builtin.file:
+    state: directory
+    path: /var/stack
+    owner: ubuntu
+    group: ubuntu
+    mode: "0775"
