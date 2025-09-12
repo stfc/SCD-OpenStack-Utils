@@ -1,6 +1,6 @@
 global:
   resolve_timeout: 5m
-  smtp_smarthost: ${{ alertmanager_smtp_mail_server }}
+  smtp_smarthost: {{ alertmanager_smtp_mail_server }}
   smtp_from: cloud-support@stfc.ac.uk
   smtp_require_tls: false
 
