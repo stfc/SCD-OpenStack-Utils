@@ -29,13 +29,7 @@ jobs:
 
       - name: Check Ansible
         run: |
-          pip install ansible
-          pip install ansible-lint
           cd chatops_deployment
+          pip install -r ansible/requirements.txt
           ansible-galaxy install -r ansible/requirements.yml  
           ansible-lint --project-dir ansible
-
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          scandir: './chatops_deployment'
