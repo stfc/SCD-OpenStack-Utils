@@ -27,4 +27,5 @@ module "compute" {
   floating_ip           = var.floating_ip
   deployment            = var.deployment
   stack_volume_id = var.stack_volume_id
+  environment = var.environment
 }
