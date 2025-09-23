@@ -93,3 +93,11 @@ datasources:
     basicAuthUser: {{ prod_chatops_prometheus_username }}
     secureJsonData:
       basicAuthPassword: {{ prod_chatops_prometheus_password }}
+
+  - name: HarborPrometheus
+    type: prometheus
+    uid: "harbor-prometheus"
+    access: proxy
+    url: http://130.246.83.216:9090
+    isDefault: false
+    basicAuth: false
