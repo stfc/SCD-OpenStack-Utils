@@ -47,19 +47,6 @@ datasources:
     secureJsonData:
       token: {{ weekly_reports_token }}
 
-  - name: WeeklyReportsInfluxDB-DW
-    type: influxdb
-    access: proxy
-    uid: "weekly-reports-dw"
-    url: "http://172.16.115.39:8086"
-    basicAuth: false
-    jsonData:
-      httpMode: POST
-      organization: cloud
-      version: Flux
-    secureJsonData:
-      token: {{ weekly_reports_token_dw }}
-
   - name: Meerkat DB
     type: prometheus
     uid: "meerkat-db"
@@ -106,3 +93,11 @@ datasources:
     basicAuthUser: {{ prod_chatops_prometheus_username }}
     secureJsonData:
       basicAuthPassword: {{ prod_chatops_prometheus_password }}
+
+  - name: HarborPrometheus
+    type: prometheus
+    uid: "harbor-prometheus"
+    access: proxy
+    url: http://130.246.83.216:9090
+    isDefault: false
+    basicAuth: false
