@@ -1,9 +1,9 @@
 ---
-- type: filestream
-  id: alertmanager
-  enabled: true
-  paths:
-    - /opt/alertmanager/alertmanager.log
-  fields:
-    service.name: alertmanager
-  fields_under_root: true
+filebeat.inputs:
+  - type: journald
+    id: alertmanager
+    include_matches.match:
+      - _SYSTEMD_UNIT=prometheus-alertmanager.service
+    fields:
+      service.name: alertmanager
+    fields_under_root: true
