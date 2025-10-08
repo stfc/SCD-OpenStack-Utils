@@ -1,9 +1,9 @@
 ---
 filebeat.inputs:
-- type: journald
-  id: prometheus
-  include_matches.match:
-    - _SYSTEMD_UNIT=prometheus.service
-  fields:
-    service.name: prometheus
-  fields_under_root: true
+  - type: journald
+    id: prometheus
+    include_matches.match:
+      - _SYSTEMD_UNIT=prometheus.service
+    fields:
+      service.name: prometheus
+    fields_under_root: true
