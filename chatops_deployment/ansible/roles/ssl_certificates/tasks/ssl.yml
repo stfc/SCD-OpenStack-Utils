@@ -1,0 +1,45 @@
+---
+- name: Get key info
+  community.crypto.openssl_privatekey_info:
+    path: "./{{ env }}_ssl/{{ service }}.key"
+  register: ssl_certificates_privatekey_info
+  ignore_errors: true
+
+- name: Get certificate info
+  community.crypto.x509_certificate_info:
+    path: "./{{ env }}_ssl/{{ service }}.crt"
+  register: ssl_certificates_certificate_info
+  ignore_errors: true
+
+- name: Set fact if key matches
+  ansible.builtin.set_fact:
+    ssl_certificates_pair_valid: "{{ ssl_certificates_certificate_info.public_key == ssl_certificates_privatekey_info.public_key }}"
+  when: not ssl_certificates_privatekey_info.failed and not ssl_certificates_certificate_info.failed
+
+- name: Set fact if files don't exist or aren't valid
+  ansible.builtin.set_fact:
+    ssl_certificates_pair_valid: ""
+  when: ssl_certificates_privatekey_info.failed or ssl_certificates_certificate_info.failed
+
+- name: Generate private key
+  community.crypto.openssl_privatekey:
+    path: "./{{ env }}_ssl/{{ service }}.key"
+  when: not ssl_certificates_pair_valid
+
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "./{{ env }}_ssl/{{ service }}.csr"
+    privatekey_path: "./{{ env }}_ssl/{{ service }}.key"
+    common_name: "localhost"
+    subject_alt_name:
+      - "IP:127.0.0.1"
+      - "DNS:localhost"
+  when: not ssl_certificates_pair_valid
+
+- name: Generate self-signed SSL certificates
+  community.crypto.x509_certificate:
+    path: "./{{ env }}_ssl/{{ service }}.crt"
+    privatekey_path: "./{{ env }}_ssl/{{ service }}.key"
+    csr_path: "./{{ env }}_ssl/{{ service }}.csr"
+    provider: selfsigned
+  when: not ssl_certificates_pair_valid

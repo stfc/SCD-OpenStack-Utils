@@ -1,0 +1,21 @@
+---
+- name: Create ssl directory
+  ansible.builtin.file:
+    path: ./{{ env }}_ssl
+    state: directory
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+    mode: "0700"
+
+- name: Loop over play
+  ansible.builtin.include_tasks: ssl.yml
+  loop:
+    - kibana
+    - logstash
+    - chatops
+    - grafana
+    - alertmanager
+    - prometheus
+    - elasticsearch
+  loop_control:
+    loop_var: service
