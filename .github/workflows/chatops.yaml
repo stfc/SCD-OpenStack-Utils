@@ -32,6 +32,7 @@ jobs:
           pip install ansible
           pip install ansible-lint
           cd chatops_deployment
+          ansible-galaxy install -r ansible/requirements.yml  
           ansible-lint --project-dir ansible
 
       - name: Run ShellCheck
