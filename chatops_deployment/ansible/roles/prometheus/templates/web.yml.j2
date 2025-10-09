@@ -1,2 +1,0 @@
-basic_auth_users:
-    {{ prometheus_username }}: {{ prometheus_password | ansible.builtin.password_hash(hashtype="bcrypt") }}
