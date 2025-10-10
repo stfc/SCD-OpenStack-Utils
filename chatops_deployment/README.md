@@ -26,4 +26,4 @@ For information about what services are deployed, see [SERVICES.md](docs/SERVICE
 
 To understand what the Terraform modules do, see [TERRAFORM.md](docs/TERRAFORM.md)
 
-To know what and where variables are stored, see [VARIABLES.md](docks/VARIABLES.md)
+To know what and where variables are stored, see [VARIABLES.md](docs/VARIABLES.md)
