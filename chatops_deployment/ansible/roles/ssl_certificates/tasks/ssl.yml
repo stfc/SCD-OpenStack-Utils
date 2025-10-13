@@ -1,12 +1,12 @@
 ---
 - name: Get key info
-  community.crypto.openssl_privatekey_info:
+  community.crypto.openssl_ssl_certificates_privatekey_info:
     path: "./{{ env }}_ssl/{{ service }}.key"
   register: ssl_certificates_privatekey_info
   ignore_errors: true
 
 - name: Get certificate info
-  community.crypto.x509_certificate_info:
+  community.crypto.x509_ssl_certificates_certificate_info:
     path: "./{{ env }}_ssl/{{ service }}.crt"
   register: ssl_certificates_certificate_info
   ignore_errors: true

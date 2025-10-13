@@ -101,4 +101,3 @@
   ansible.builtin.systemd_service:
     state: restarted
     name: haproxy.service
-  when: haproxy_copy_cert.rc == 0
