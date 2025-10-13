@@ -39,9 +39,9 @@
 - name: Set permissions on volume
   become: true
   ansible.builtin.file:
-    path: /var/stack/elasticsearch/data
+    path: /var/stack/elasticsearch
     state: directory
-    owner: root
+    owner: elasticsearch
     group: elasticsearch
     mode: "0774"
     recurse: true
