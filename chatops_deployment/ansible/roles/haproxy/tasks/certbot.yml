@@ -41,15 +41,17 @@
   become: true
   ansible.builtin.command: |
     certbot certonly --standalone --non-interactive --agree-tos --expand --domains \
-    {{ domain }},chatops.{{ domain }},prometheus.{{ domain }},grafana.{{ domain }},alertmanager.{{ domain }},kibana.{{ domain }} \
+    {{ domain }},chatops.{{ domain }},prometheus.{{ domain }},alertmanager.{{ domain }},kibana.{{ domain }} \
     -m cloud-support@stfc.ac.uk
   register: haproxy_generate_cert
   changed_when: haproxy_generate_cert.rc == 0
   when: not haproxy_certificate_file.stat.exists
 
 - name: Copy certificate for the first time
+  # noqa: command-instead-of-shell
+  # We must use shell here as command doesn't support appending to files
   become: true
-  ansible.builtin.command: |
+  ansible.builtin.shell: |
     cat /etc/letsencrypt/live/{{ domain }}/privkey.pem \
     /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /etc/haproxy/{{ domain }}.crt
   register: haproxy_copy_cert

@@ -45,14 +45,12 @@ http-request add-header X-Forwarded-Port 443
 redirect scheme https if !{ ssl_fc }
 option forwardfor
 
-acl grafana hdr_sub(host) -i grafana.{{ domain }}
 acl prometheus hdr_sub(host) -i prometheus.{{ domain }}
 acl alertmanager hdr_sub(host) -i alertmanager.{{ domain }}
 acl chatops_sub hdr_sub(host) -i chatops.{{ domain }}
 acl kibana hdr_sub(host) -i kibana.{{ domain }}
 acl chatops hdr_sub(host) -i {{ domain }}
 
-use_backend GRAFANA if grafana
 use_backend PROMETHEUS if prometheus
 use_backend KIBANA if kibana
 use_backend ALERTMANAGER if alertmanager
@@ -63,10 +61,6 @@ frontend PROMETHEUS
   mode http
   http-request use-service prometheus-exporter if { path /metrics }
   no log
-
-backend GRAFANA
-balance source
-server grafana localhost:3000 check ssl verify required ca-file /etc/haproxy/ssl/grafana.crt
 
 backend PROMETHEUS
 balance source
