@@ -83,11 +83,3 @@
     force_init: true
     workspace: "{{ env }}"
   register: terraform_output
-
-- name: Write ansible inventory file from Terraform outputs
-  ansible.builtin.template:
-    src: hosts.ini.j2
-    dest: "{{ playbook_dir }}/hosts.ini"
-    owner: "{{ ansible_env.USER }}"
-    group: "{{ ansible_env.USER }}"
-    mode: "0774"
