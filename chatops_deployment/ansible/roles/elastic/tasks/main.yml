@@ -4,6 +4,11 @@
   tags:
     - elasticsearch
 
+- name: Set Elasticsearch passwords
+  ansible.builtin.import_tasks: elasticsearch_passwords.yml
+  tags:
+    - elasticsearch
+
 - name: Install Kibana
   ansible.builtin.import_tasks: kibana.yml
   tags:
