@@ -70,9 +70,7 @@ backend ALERTMANAGER
 server alertmanager localhost:9093 check ssl verify required ca-file /etc/haproxy/ssl/alertmanager.crt
 
 backend CHATOPS
-server chatops_0 localhost:3030 check
-server chatops_1 localhost:3031 check
-server chatops_2 localhost:3032 check backup
+server chatops localhost:3030 check
 
 backend KIBANA
 server kibana localhost:5601 check ssl verify required ca-file /etc/haproxy/ssl/kibana.crt
