@@ -50,17 +50,11 @@
     state: started
     restart: true
     ports:
-      - "{{ item }}:3000"
+      - "3030:3000"
     volumes:
       - /etc/chatops/config.yml:/usr/src/app/config.yml
       - /etc/chatops/secrets.yml:/usr/src/app/secrets.yml
     restart_policy: "always"
-  loop:
-    - 3030
-    - 3031
-    - 3032
-  loop_control:
-    index_var: count
 
 - name: Copy filebeat external config
   become: true
