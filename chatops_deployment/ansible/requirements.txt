@@ -2,3 +2,4 @@ bcrypt
 passlib
 openstacksdk
 ansible
+ansible-lint
