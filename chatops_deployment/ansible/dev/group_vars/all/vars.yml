@@ -1,10 +1,10 @@
 ---
 ansible_user: ubuntu
-domain: "dev-cloud-chatops.nubes.rl.ac.uk"
+domain: "dev-chatops.nubes.rl.ac.uk"
 alertmanager_version: "0.28.1"
 prometheus_version: "3.2.1"
 systemd_exporter_version: "0.7.0"
-terraform_floating_ip: 130.246.83.230
+terraform_floating_ip: 130.246.211.163
 env: dev
 chatops_image: "harbor.stfc.ac.uk/stfc-cloud-staging/cloud-chatops:de80494"
 chatops_github_repos:
@@ -47,3 +47,4 @@ alertmanager_password: "{{ vault_alertmanager_password }}"
 elastic_password: "{{ vault_elastic_password }}"
 kibana_system_password: "{{ vault_kibana_system_password }}"
 logstash_system_password: "{{ vault_logstash_system_password }}"
+alertmanager_smtp_mail_server: "{{ vault_alertmanager_smtp_mail_server }}"

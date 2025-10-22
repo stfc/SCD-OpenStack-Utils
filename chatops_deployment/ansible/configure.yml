@@ -9,6 +9,16 @@
         name: add_ssh_key
 
 
+- name: MTU fix
+  hosts: stack
+  gather_facts: false
+  tasks:
+    - name: Fix MTU
+      become: true
+      ansible.builtin.command: "iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+      register: _
+      changed_when: _.rc == 0
+
 - name: Set up filebeat
   hosts: stack
   gather_facts: false
