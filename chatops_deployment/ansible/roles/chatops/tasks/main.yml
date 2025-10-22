@@ -45,7 +45,7 @@
 - name: Start ChatOps container
   community.docker.docker_container:
     image: "{{ chatops_image }}"
-    name: "chatops-{{ count }}"
+    name: "chatops"
     pull: always
     state: started
     restart: true
