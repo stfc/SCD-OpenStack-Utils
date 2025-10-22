@@ -22,3 +22,8 @@ variable "environment" {
   type = string
   description = "The environment being deployed into. E.g. dev, staging, prod"
 }
+
+variable "cloud" {
+  type = string
+  description = "clouds.yaml entry to use for authentication."
+}
