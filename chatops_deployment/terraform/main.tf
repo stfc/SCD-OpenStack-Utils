@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "openstack" {
-  cloud = "openstack"
+  cloud = var.cloud
 }
 
 module "networking" {
@@ -17,6 +17,7 @@ module "networking" {
 
   deployment          = var.deployment
   external_network_id = var.external_network_id
+  cloud = var.cloud
 }
 
 module "compute" {
@@ -28,4 +29,5 @@ module "compute" {
   deployment            = var.deployment
   stack_volume_id = var.stack_volume_id
   environment = var.environment
+  cloud = var.cloud
 }

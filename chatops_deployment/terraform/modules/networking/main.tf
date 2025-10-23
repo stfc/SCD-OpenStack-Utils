@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "openstack" {
-  cloud = "openstack"
+  cloud = var.cloud
 }
 
 resource "openstack_networking_network_v2" "private_network" {

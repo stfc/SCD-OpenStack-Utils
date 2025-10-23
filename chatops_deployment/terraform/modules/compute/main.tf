@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "openstack" {
-  cloud = "openstack"
+  cloud = var.cloud
 }
 
 resource "openstack_compute_keypair_v2" "bastion_keypair" {
