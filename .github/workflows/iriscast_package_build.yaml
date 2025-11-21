@@ -14,10 +14,10 @@ on:
 
 jobs:
   test_and_lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.x", "3.10", "3.6.8"]
+        python-version: ["3.x", "3.10"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
@@ -39,7 +39,7 @@ jobs:
           cd iriscasttools && pylint --recursive yes test iriscasttools
 
   build-wheel:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.x"]
@@ -60,17 +60,17 @@ jobs:
       - name: Build Wheels
         run: cd iriscasttools && python setup.py bdist_wheel
       - name: Upload Wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: iriscasttools-${{ env.version }}-py3-none-any.whl
           path: iriscasttools/dist/iriscasttools-${{ env.version }}-py3-none-any.whl
           if-no-files-found: error
 
   build-rpms:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.6.8"]
+        python-version: ["3.10"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
@@ -92,14 +92,14 @@ jobs:
           python setup.py bdist_rpm
           cd dist
           mv iriscasttools-${{ env.version }}-1.noarch.rpm iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
           path: iriscasttools/dist/iriscasttools-${{ env.version }}-py${{ matrix.python-version }}.noarch.rpm
           if-no-files-found: error
   
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     needs:
       - test_and_lint
@@ -122,7 +122,7 @@ jobs:
 
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: iriscasttools/dist
 
