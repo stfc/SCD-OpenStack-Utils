@@ -1,0 +1,10 @@
+psutil
+
+[dev]
+bumpversion
+
+[test]
+pytest
+pytest-cov
+black
+pylint
