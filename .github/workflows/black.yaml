@@ -7,38 +7,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        
+
       - name: Prometheus IP Script
         uses: psf/black@stable
         with:
           src: "prometheus_ip_script"
 
-      - name: IRISCAST Energy Monitoring
+      - name: Aquilon Zombie Finder
         uses: psf/black@stable
         with:
-          src: "iriscasttools/iriscasttools"
+          src: "aq_zombie_finder"
 
-      - name: Aquilon Zombie Finder 
+      - name: DNS Entry Checker
         uses: psf/black@stable
         with:
-            src: "aq_zombie_finder"
-          
-      - name: DNS Entry Checker 
-        uses: psf/black@stable
-        with:
-            src: "dns_entry_checker"
+          src: "dns_entry_checker"
 
-      - name: Word Cloud Generator 
+      - name: Word Cloud Generator
         uses: psf/black@stable
         with:
-            src: "word_cloud_generator"
-         
+          src: "word_cloud_generator"
+
       - name: JSM Metric Collection
         uses: psf/black@stable
         with:
-            src: "jsm_metric_collection"
+          src: "jsm_metric_collection"
 
       - name: Openstack-Rally-Tester
         uses: psf/black@stable
         with:
-            src: "OpenStack-Rally-Tester"
+          src: "OpenStack-Rally-Tester"
