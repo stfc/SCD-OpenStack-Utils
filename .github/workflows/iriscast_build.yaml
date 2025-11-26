@@ -1,0 +1,91 @@
+name: IRISCAST Bump, Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump-type:
+        description: 'Bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - major
+        - minor
+        - patch
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Setup Github Token"
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+      
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setting up git config
+        shell: bash
+        env:
+          GH_TOKEN: "${{ steps.app-token.outputs.token }}"
+        run: |
+          git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)"
+          git config -l
+
+      - name: Install bump-my-version
+        shell: bash
+        run: pip install "bump-my-version"
+      
+      - name: Pass Inputs to Shell
+        id: bump
+        shell: bash
+        run: |
+          cd iriscasttools/
+          echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+
+          bump-my-version bump ${{ inputs.bump-type }}
+          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
+          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+      
+      - name: Push changes to GitHub
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: "${{ steps.app-token.outputs.token }}"
+          branch: master
+          force: true
+
+      - name: Check
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+
+      - name: Build package
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          cd iriscasttools/
+          pip install build
+          python -m build
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.bumped == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: iriscasttools-v${{ steps.bump.outputs.current-version }}
+          name: iriscasttools-v${{ steps.bump.outputs.current-version }}
+          files: iriscasttools/dist/*
+          token: "${{ steps.app-token.outputs.token }}"
+
+      
