@@ -122,7 +122,7 @@ jobs:
 
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           path: iriscasttools/dist
 
