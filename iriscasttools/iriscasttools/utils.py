@@ -3,6 +3,7 @@
 """
 Provides utility functions to collect energy usage information
 """
+
 import subprocess
 import time
 import os

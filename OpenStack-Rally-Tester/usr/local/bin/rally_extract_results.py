@@ -4,6 +4,7 @@
 """
 Parses results from the rally task report and sends them to influxdb
 """
+
 import json
 import sys
 import time
