@@ -6,7 +6,7 @@ prometheus_version: "3.2.1"
 systemd_exporter_version: "0.7.0"
 terraform_floating_ip: 130.246.214.193
 env: prod
-chatops_image: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:8.0.1"
+chatops_image: "harbor.stfc.ac.uk/stfc-cloud/cloud-chatops:9.1.1"
 chatops_github_repos:
   stfc:
     - cloud-deployed-apps
@@ -27,6 +27,7 @@ chatops_github_repos:
     - check-version-action
     - cloud-helm-charts
     - openstack-query-library
+    - cloud-workshops
 chatops_gitlab_domain: gitlab.stfc.ac.uk
 chatops_gitlab_projects:
   stfc-cloud:

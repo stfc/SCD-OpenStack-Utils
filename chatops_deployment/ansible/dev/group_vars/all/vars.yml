@@ -27,6 +27,7 @@ chatops_github_repos:
     - check-version-action
     - cloud-helm-charts
     - openstack-query-library
+    - cloud-workshops
 chatops_gitlab_domain: gitlab.stfc.ac.uk
 chatops_gitlab_projects:
   stfc-cloud:
