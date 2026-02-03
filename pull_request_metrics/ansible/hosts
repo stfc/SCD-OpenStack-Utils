@@ -1,0 +1,11 @@
+[proemtheus]
+172.16.115.207
+
+[exporter]
+172.16.115.229
+
+[grafana]
+172.16.115.137
+
+[hosts:vars]
+ansible_user=ubuntu
