@@ -1,0 +1,31 @@
+name: IRISCAST Unittest
+
+on: 
+  push:
+    branches:
+      - master
+    paths:
+      - "iriscasttools/**"
+      - ".github/workflows/iriscast_unittest.yaml"
+  pull_request:
+    paths:
+      - "iriscasttools/**"
+      - ".github/workflows/iriscast_unittest.yaml"
+
+jobs:
+  test_and_lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.x", "3.10"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Navigate to Folder
+        run: cd ./iriscasttools
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}

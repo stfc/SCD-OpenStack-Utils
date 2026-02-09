@@ -1,0 +1,47 @@
+Metadata-Version: 2.4
+Name: iriscasttools
+Version: 1.0.0
+Summary: python package for IRISCAST Tools
+Author-email: STFC Cloud Team <cloud-support@stfc.ac.uk>
+Project-URL: Repository, https://github.com/stfc/SCD-Openstack-Utils
+Project-URL: Documentation, https://github.com/stfc/SCD-Openstack-Utils/iriscasttools/README.md
+Project-URL: Issues, https://github.com/stfc/SCD-Openstack-Utils/issues
+Keywords: python,openstack
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Openstack Admins :: Monitoring Tools
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: psutil
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-cov; extra == "test"
+Requires-Dist: black; extra == "test"
+Requires-Dist: pylint; extra == "test"
+Provides-Extra: dev
+Requires-Dist: bumpversion; extra == "dev"
+
+# IRISCAST Tools
+
+> [!Warning]
+> This package is deprecated and is not supported.
+
+A python package that bundlels together a collection of energy usage monitoring scripts to be run on cloud hypervisors.
+
+These scripts will collect power usage data using IPMI.
+
+This package is intended to be installed onto HVs and a cronjob written to run this every 15mins to populate a csv - which can be read by filebeat/fluentd to a datastore.
+
+## Installation
+
+```bash
+pip install "iriscasttools @ git+https://github.com/stfc/SCD-OpenStack-Utils.git"
+```
+
+## Usage
+
+Run as a cron job:
+```
+python3 -m iriscasttols --as-csv >> /var/cache/iriscast/ipmi-stats-$(date -I).csv
+
+```
