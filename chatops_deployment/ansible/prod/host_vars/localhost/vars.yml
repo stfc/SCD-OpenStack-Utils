@@ -1,6 +1,6 @@
 ---
 terraform_deployment: chatops-production
 terraform_external_network_id: 5283f642-8bd8-48b6-8608-fa3006ff4539
-terraform_stack_volume_id: df3fdff2-30fc-4aca-b8e5-03412a507607
+terraform_stack_volume_id: f3e52dbb-4a20-449c-9c1c-655fd947aa91
 bastion_key_passphrase: "{{ vault_bastion_key_passphrase }}"
 cloud: "cloud-microservices"
