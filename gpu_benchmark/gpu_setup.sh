@@ -1,6 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023 United Kingdom Research and Innovation
+set -ex
 
 sudo dnf update -y
 
@@ -13,6 +14,11 @@ sudo dracut --force
 
 sudo dnf install tar bzip2 make automake gcc gcc-c++ pciutils elfutils-libelf-devel libglvnd-devel -y
 sudo dnf install -y kernel-devel kernel-headers -y
-wget -nc https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run
-nvidia-smi || sudo sh cuda_12.1.0_530.30.02_linux.run --silent
-nvidia-smi || (echo "Rebooting machine to load Nvidia Driver" && sudo reboot)
+
+VERSION=$(awk -F= '/^VERSION_ID=/ {gsub("\"","",$2); print $2}' /etc/os-release 2>/dev/null || true)
+
+sudo dnf config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel"${VERSION%%.*}"/"$(uname -m)"/cuda-rhel"${VERSION%%.*}".repo
+sudo dnf install nvidia-driver-assistant -y 
+
+nvidia-smi || nvidia-driver-assistant --install --branch 590 --module-flavor closed
+(echo "Rebooting machine to load Nvidia Driver" && sudo reboot)
