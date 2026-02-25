@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 United Kingdom Research and Innovation
+# Copyright (c) 2026 United Kingdom Research and Innovation
 
 set -e
 
@@ -22,7 +22,6 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 nvidia-smi || bash "$DIR/gpu_setup.sh"
 
 
-sudo dnf install phoronix-test-suite xorg-x11-server-Xvfb -y
 
 echo '<?xml version="1.0"?>
 <!--Phoronix Test Suite v10.8.4-->
