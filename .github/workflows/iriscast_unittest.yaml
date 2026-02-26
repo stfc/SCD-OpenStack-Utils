@@ -1,0 +1,47 @@
+name: IRISCAST Unittest
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "iriscasttools/**"
+      - ".github/workflows/iriscast_unittest.yaml"
+  pull_request:
+    paths:
+      - "iriscasttools/**"
+      - ".github/workflows/iriscast_unittest.yaml"
+
+jobs:
+  test_and_lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: iriscasttools
+
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Navigate to iriscasttools project
+        run: cd iriscasttools
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the project
+        run: uv sync --locked --all-extras
+
+      - name: Run tests
+        # For example, using `pytest`
+        run: uv run pytest tests
+
+      - name: Run pylint
+        run: uv run pylint iriscasttools tests

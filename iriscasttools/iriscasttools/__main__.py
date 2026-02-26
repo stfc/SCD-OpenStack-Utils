@@ -14,6 +14,7 @@ def _prep_logging():
 
 
 def main():
+    """main function to get iriscast stats"""
     _prep_logging()
     cmd_args = parse_args(sys.argv[1:])
     print(get_iriscast_stats(cmd_args.as_csv, cmd_args.include_header))

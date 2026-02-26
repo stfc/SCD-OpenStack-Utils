@@ -22,10 +22,12 @@ from iriscasttools.stats import get_iriscast_stats, parse_args
     ],
 )
 def test_parse_args(test_args, expected_arg_values):
+    """ test that args get parsed properly """
     res = parse_args(test_args)
     assert vars(res) == expected_arg_values
 
-
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 @pytest.mark.parametrize(
     "test_csv_flag, test_include_header",
     [(False, False), (True, True), (True, False)],
