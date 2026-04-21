@@ -101,3 +101,14 @@ datasources:
     url: http://130.246.83.216:9090
     isDefault: false
     basicAuth: false
+
+  - name: RemoteWritePrometheus
+    type: prometheus
+    uid: "remote_write_prometheus"
+    access: proxy
+    url: http://130.246.83.213:9090
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: {{ remote_write_prometheus_username }}
+    secureJsonData:
+      basicAuthPassword: {{ remote_write_prometheus_password }}
