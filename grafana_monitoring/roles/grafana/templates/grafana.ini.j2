@@ -17,15 +17,10 @@ auth_url = https://iris-iam.stfc.ac.uk/authorize
 token_url = https://iris-iam.stfc.ac.uk/token
 api_url = https://iris-iam.stfc.ac.uk/userinfo
 groups_attribute_path = groups[*]
-allowed_groups = "stfc-cloud/team,stfc-cloud/admins"
+allowed_groups = "stfc-cloud/team,stfc-cloud/admins,stfc-cloud/users"
 
-# Only apply role changes on dev so we can edit datasources and dashboards before pushing changes to prod.
-{% if inventory_hostname.startswith("dev") %}
 role_attribute_path=contains(groups[*], 'stfc-cloud/admins') && 'Admin' || contains(groups[*], 'stfc-cloud/team') && 'Editor' || 'Viewer'
-{% else %}
-# Keep role for all users as Viewer on production.
-role_attribute_path='Viewer'
-{% endif %}
+
 
 [log]
 # Raise the log level as the default is "info"

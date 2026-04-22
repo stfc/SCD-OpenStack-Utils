@@ -15,3 +15,9 @@ BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$BRANCH_NAME" == "{{ grafana_dashboards_branch }}" ]]; then
    git fetch && git reset --h origin/{{ grafana_dashboards_branch }}
 fi
+
+{% if inventory_hostname.startswith("grafana") %}
+for DIR in $(ls -l | grep -v cloud_dashboard.yaml | grep -v Slots-Available | grep -v total | awk -F' ' '{ print $NF }'); do rm -r $DIR; done
+mv Slots-Available/openstack_slots_available.json .
+rm -r Slots-Available
+{% endif %}
