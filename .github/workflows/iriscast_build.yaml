@@ -1,3 +1,6 @@
+permissions:
+  contents: read
+  
 name: IRISCAST Bump, Build and Release
 
 on:
@@ -22,17 +25,17 @@ jobs:
 
     steps:
       - name: "Setup Github Token"
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
       
       - name: Checkout
-        uses: actions/checkout@v4
+        uses:actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses:actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.11"
 
@@ -61,7 +64,7 @@ jobs:
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
       
       - name: Push changes to GitHub
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@m4cc74773234f74829a8c21bc4d69dd4be9cfa599
         with:
           github_token: "${{ steps.app-token.outputs.token }}"
           branch: master
@@ -81,7 +84,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.bump.outputs.bumped == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
         with:
           tag_name: iriscasttools-v${{ steps.bump.outputs.current-version }}
           name: iriscasttools-v${{ steps.bump.outputs.current-version }}
