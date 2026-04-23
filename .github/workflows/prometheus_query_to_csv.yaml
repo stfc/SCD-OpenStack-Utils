@@ -19,9 +19,9 @@ jobs:
       matrix:
         python-version: ["3.x"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -39,7 +39,7 @@ jobs:
         run: cd prometheus_query_to_csv && python3 -m pytest . --cov-report xml:coverage.xml --cov
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
         with:
           token: ${{secrets.CODECOV_TOKEN}}
           files: ./prometheus_query_to_csv/coverage.xml

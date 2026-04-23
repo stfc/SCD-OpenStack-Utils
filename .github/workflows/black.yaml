@@ -6,34 +6,34 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Prometheus IP Script
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "prometheus_ip_script"
 
       - name: Aquilon Zombie Finder
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "aq_zombie_finder"
 
       - name: DNS Entry Checker
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "dns_entry_checker"
 
       - name: Word Cloud Generator
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "word_cloud_generator"
 
       - name: JSM Metric Collection
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "jsm_metric_collection"
 
       - name: Openstack-Rally-Tester
-        uses: psf/black@stable
+        uses: psf/black@c6755bb741b6481d6b3d3bb563c83fa060db96c9
         with:
           src: "OpenStack-Rally-Tester"
