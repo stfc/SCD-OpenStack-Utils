@@ -1,3 +1,6 @@
+permissions:
+  contents: read
+  
 name: Black formatter
 
 on: [push, pull_request]
