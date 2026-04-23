@@ -1,6 +1,35 @@
 apiVersion: 1
 prune: true
 datasources:
+# These are our datasources safe for public query
+  - name: RemoteWritePrometheus
+    type: prometheus
+    uid: "remote_write_prometheus"
+    access: proxy
+    url: http://130.246.83.213:9090
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: {{ remote_write_prometheus_username }}
+    secureJsonData:
+      basicAuthPassword: {{ remote_write_prometheus_password }}
+  
+  - name: DevCloudInfluxDB
+    type: influxdb
+    access: proxy
+    uid: "dev_openstack_grafana"
+    user: {{ dev_influx_username }}
+    url: "http://172.16.110.169:8086"
+    jsonData:
+      dbName : "cloud"
+      httpMode: POST
+      timeInterval: "60"
+      maxSeries: 200
+    secureJsonData:
+      password: {{ dev_influx_password }}
+
+# These datasources should not be queried by the public.
+# That's why they are only on the dev instance
+{% if inventory_hostname.startswith("dev") %}
   - name: CloudInfluxDB
     type: influxdb
     access: proxy
@@ -58,20 +87,6 @@ datasources:
     secureJsonData:
       basicAuthPassword: {{ meerkat_db_password }}
 
-  - name: DevCloudInfluxDB
-    type: influxdb
-    access: proxy
-    uid: "dev_openstack_grafana"
-    user: {{ dev_influx_username }}
-    url: "http://172.16.110.169:8086"
-    jsonData:
-      dbName : "cloud"
-      httpMode: POST
-      timeInterval: "60"
-      maxSeries: 200
-    secureJsonData:
-      password: {{ dev_influx_password }}
-
   - name: DevChatOps
     type: prometheus
     uid: "dev-chatops"
@@ -102,13 +117,4 @@ datasources:
     isDefault: false
     basicAuth: false
 
-  - name: RemoteWritePrometheus
-    type: prometheus
-    uid: "remote_write_prometheus"
-    access: proxy
-    url: http://130.246.83.213:9090
-    isDefault: false
-    basicAuth: true
-    basicAuthUser: {{ remote_write_prometheus_username }}
-    secureJsonData:
-      basicAuthPassword: {{ remote_write_prometheus_password }}
+{% endif %}
