@@ -23,8 +23,7 @@ role_attribute_path=contains(groups[*], 'stfc-cloud/admins') && 'Admin' || conta
 
 
 [log]
-# Raise the log level as the default is "info"
-log_level = critical
+log_level = info
 
 [security]
 admin_password="{{ grafana_admin_password }}"
