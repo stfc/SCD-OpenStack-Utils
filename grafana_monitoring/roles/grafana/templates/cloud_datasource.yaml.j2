@@ -10,6 +10,8 @@ datasources:
     isDefault: false
     basicAuth: true
     basicAuthUser: {{ remote_write_prometheus_username }}
+    jsonData:
+      timeout: 120
     secureJsonData:
       basicAuthPassword: {{ remote_write_prometheus_password }}
   
