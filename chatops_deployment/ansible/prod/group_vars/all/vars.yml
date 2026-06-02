@@ -15,7 +15,6 @@ chatops_github_repos:
     - cloud-docker-images
     - cloud-capi-values
     - cloud-image-builders
-    - ansible-jupyter
     - SCD-Openstack-Utils
     - check-version-action
     - cloud-helm-charts
