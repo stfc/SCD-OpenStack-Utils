@@ -17,8 +17,9 @@ if [[ "$BRANCH_NAME" == "{{ grafana_dashboards_branch }}" ]]; then
 fi
 
 {% if inventory_hostname.startswith("grafana") %}
-for DIR in $(ls -l | grep -v cloud_dashboard.yaml | grep -v Slots-Available | grep -v total | awk -F' ' '{ print $NF }'); do rm -r $DIR; done
+for DIR in $(ls -l | grep -v cloud_dashboard.yaml | grep -v Slots-Available | grep -v Virtual-Machines | grep -v total | awk -F' ' '{ print $NF }'); do rm -r $DIR; done
 mkdir "Public"
 mv Slots-Available/openstack_slots_available.json Public
-rm -r Slots-Available
+mv Virtual-Machines/* Public
+rm -d Slots-Available Virtual-Machines
 {% endif %}
