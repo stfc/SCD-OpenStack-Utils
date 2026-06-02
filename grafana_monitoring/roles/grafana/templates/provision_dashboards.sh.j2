@@ -21,5 +21,5 @@ for DIR in $(ls -l | grep -v cloud_dashboard.yaml | grep -v Slots-Available | gr
 mkdir "Public"
 mv Slots-Available/openstack_slots_available.json Public
 mv Virtual-Machines/* Public
-rm -d Slots-Available Virtual-Machines
+rm -rd Slots-Available Virtual-Machines
 {% endif %}
