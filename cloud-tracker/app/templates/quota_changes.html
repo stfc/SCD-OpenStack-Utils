@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Quota Changes – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Quota Change Requests</h1>
+  <p class="page-header__subtitle">Submit and track cloud resource quota requests</p>
+</div>
+
+<!-- New request form -->
+<div class="card card--collapsible" id="new-request-card">
+  <div class="card__header card__header--toggle" data-target="new-request-form">
+    <h2 class="card__title">Submit a New Request</h2>
+    <span class="card__toggle-icon">&#9660;</span>
+  </div>
+  <div class="card__body" id="new-request-form">
+    <form method="post" action="{{ url_for('main.quota_change_new') }}" class="form" novalidate>
+
+      <div class="form-row">
+        <div class="form-group form-group--required">
+          <label for="project_name" class="form-label">OpenStack Project Name</label>
+          <input type="text" id="project_name" name="project_name" class="form-control"
+                 placeholder="e.g. my-research-project" required maxlength="255">
+        </div>
+
+        <div class="form-group form-group--required">
+          <label for="quota_type" class="form-label">Quota Type</label>
+          <select id="quota_type" name="quota_type" class="form-control" required>
+            <option value="">-- Select quota type --</option>
+            {% for key, label, unit in quota_types %}
+            <option value="{{ key }}" data-unit="{{ unit }}">{{ label }} ({{ unit }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group form-group--required">
+          <label for="current_value" class="form-label">Current Value <span class="unit-label"></span></label>
+          <input type="number" id="current_value" name="current_value" class="form-control"
+                 min="0" required placeholder="0">
+        </div>
+
+        <div class="form-group form-group--required">
+          <label for="requested_value" class="form-label">Requested Value <span class="unit-label"></span></label>
+          <input type="number" id="requested_value" name="requested_value" class="form-control"
+                 min="1" required placeholder="0">
+        </div>
+      </div>
+
+      <div class="form-group form-group--required">
+        <label for="justification" class="form-label">Business Justification</label>
+        <textarea id="justification" name="justification" class="form-control form-control--textarea"
+                  rows="4" required maxlength="2000"
+                  placeholder="Describe why this quota increase is required, expected usage, and any relevant project context..."></textarea>
+        <span class="form-hint">Minimum 20 characters. Be as specific as possible.</span>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary">Submit Request</button>
+        <button type="reset" class="btn btn--ghost">Clear</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <form method="get" action="{{ url_for('main.quota_changes') }}" class="filter-bar__form">
+    <div class="filter-bar__group">
+      <label for="filter-status" class="filter-bar__label">Status</label>
+      <select id="filter-status" name="status" class="form-control form-control--sm" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for s in statuses %}
+        <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s | title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-bar__group">
+      <label for="filter-project" class="filter-bar__label">Project</label>
+      <input type="text" id="filter-project" name="project" class="form-control form-control--sm"
+             value="{{ project_filter }}" placeholder="Filter by project name">
+    </div>
+    <button type="submit" class="btn btn--outline btn--sm">Filter</button>
+    <a href="{{ url_for('main.quota_changes') }}" class="btn btn--ghost btn--sm">Clear</a>
+  </form>
+</div>
+
+<!-- Requests table -->
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">
+      Requests
+      {% if status_filter or project_filter %}
+      <span class="badge badge--info">Filtered</span>
+      {% endif %}
+      <span class="badge badge--neutral">{{ changes | length }}</span>
+    </h2>
+  </div>
+  <div class="card__body card__body--table">
+    {% if changes %}
+    <table class="data-table data-table--full">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Project</th>
+          <th>Quota Type</th>
+          <th>Current</th>
+          <th>Requested</th>
+          <th>Requester</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          {% if is_admin %}<th>Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in changes %}
+        <tr class="row--{{ c.status }}">
+          <td>{{ c.id }}</td>
+          <td><strong>{{ c.project_name }}</strong></td>
+          <td>{{ c.quota_type | replace('_', ' ') | title }}</td>
+          <td class="nowrap">{{ c.current_value }} {{ c.unit }}</td>
+          <td class="nowrap"><strong>{{ c.requested_value }} {{ c.unit }}</strong></td>
+          <td>
+            <span title="{{ c.requester_email }}">{{ c.requester_name }}</span>
+          </td>
+          <td><span class="badge badge--{{ c.status }}">{{ c.status | title }}</span></td>
+          <td class="nowrap">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          {% if is_admin %}
+          <td>
+            <button class="btn btn--ghost btn--xs"
+                    onclick="toggleAdminPanel({{ c.id }})">
+              Manage
+            </button>
+          </td>
+          {% endif %}
+        </tr>
+        {% if is_admin %}
+        <tr class="admin-panel" id="admin-panel-{{ c.id }}" style="display:none">
+          <td colspan="9">
+            <form method="post" action="{{ url_for('main.quota_change_update', change_id=c.id) }}" class="admin-form">
+              <div class="admin-form__fields">
+                <div class="form-group">
+                  <label class="form-label">Update Status</label>
+                  <select name="status" class="form-control form-control--sm">
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if c.status == s %}selected{% endif %}>{{ s | title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label class="form-label">Admin Notes</label>
+                  <input type="text" name="admin_notes" class="form-control form-control--sm"
+                         value="{{ c.admin_notes or '' }}" placeholder="Optional notes...">
+                </div>
+                <div class="form-group form-group--submit">
+                  <button type="submit" class="btn btn--primary btn--sm">Save</button>
+                </div>
+              </div>
+              {% if c.justification %}
+              <details class="justification-details">
+                <summary>View justification</summary>
+                <blockquote>{{ c.justification }}</blockquote>
+              </details>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>No quota change requests found.</p>
+      {% if not status_filter and not project_filter %}
+      <p>Use the form above to submit your first request.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_head %}
+<script>
+  // Update unit labels when quota type changes
+  document.addEventListener('DOMContentLoaded', function () {
+    var sel = document.getElementById('quota_type');
+    var labels = document.querySelectorAll('.unit-label');
+    if (sel) {
+      sel.addEventListener('change', function () {
+        var unit = this.options[this.selectedIndex].dataset.unit || '';
+        labels.forEach(function (el) { el.textContent = unit ? '(' + unit + ')' : ''; });
+      });
+    }
+
+    // Collapsible card
+    var toggle = document.querySelector('[data-target="new-request-form"]');
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        var body = document.getElementById('new-request-form');
+        var icon = toggle.querySelector('.card__toggle-icon');
+        var open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : '';
+        icon.textContent = open ? '▶' : '▼';
+      });
+    }
+  });
+
+  function toggleAdminPanel(id) {
+    var panel = document.getElementById('admin-panel-' + id);
+    if (panel) {
+      panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    }
+  }
+</script>
+{% endblock %}

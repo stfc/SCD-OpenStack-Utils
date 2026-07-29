@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ site_title }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="container topbar__inner">
+      <span class="topbar__org">Science and Technology Facilities Council</span>
+      <span class="topbar__divider">|</span>
+      <span class="topbar__ukri">Part of UKRI</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="{{ url_for('main.index') }}" class="site-header__logo" aria-label="{{ site_title }} home">
+        <div class="logo-mark">
+          <span class="logo-mark__stfc">STFC</span>
+          <span class="logo-mark__cloud">Cloud</span>
+        </div>
+        <span class="site-header__title">{{ site_title }}</span>
+      </a>
+
+      {% if current_user %}
+      <nav class="site-nav" aria-label="Main navigation">
+        <ul class="site-nav__list">
+          <li><a href="{{ url_for('main.index') }}" class="site-nav__link {% if request.endpoint == 'main.index' %}active{% endif %}">Dashboard</a></li>
+          <li><a href="{{ url_for('main.quota_changes') }}" class="site-nav__link {% if request.endpoint and 'quota' in request.endpoint %}active{% endif %}">Quota Changes</a></li>
+          <li><a href="{{ url_for('main.snapshots') }}" class="site-nav__link {% if request.endpoint and 'snapshot' in request.endpoint %}active{% endif %}">Snapshots</a></li>
+        </ul>
+      </nav>
+      <div class="user-menu">
+        <span class="user-menu__name">{{ current_user.name }}</span>
+        {% if is_admin %}<span class="badge badge--admin">Admin</span>{% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="user-menu__logout">Sign out</a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-container container">
+    {% for category, message in messages %}
+    <div class="alert alert--{{ category }}" role="alert">
+      <span class="alert__icon">
+        {% if category == 'success' %}&#10003;{% elif category == 'error' %}&#33;{% else %}&#8505;{% endif %}
+      </span>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Main content -->
+  <main class="main-content" id="main-content">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__left">
+        <strong>{{ site_title }}</strong> &mdash; Science and Technology Facilities Council
+      </div>
+      <div class="site-footer__right">
+        <a href="https://www.ukri.org/about-us/stfc/" rel="noopener noreferrer" target="_blank">About STFC</a>
+        <span class="separator">|</span>
+        <a href="https://www.ukri.org/privacy-notice/" rel="noopener noreferrer" target="_blank">Privacy</a>
+        <span class="separator">|</span>
+        <a href="https://www.ukri.org/accessibility-statement/" rel="noopener noreferrer" target="_blank">Accessibility</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Dashboard</h1>
+  <p class="page-header__subtitle">Cloud quota change requests overview</p>
+</div>
+
+<!-- Stats cards -->
+<div class="stats-grid">
+  <div class="stat-card stat-card--blue">
+    <div class="stat-card__value">{{ total }}</div>
+    <div class="stat-card__label">Total Requests</div>
+  </div>
+  <div class="stat-card stat-card--warning">
+    <div class="stat-card__value">{{ pending }}</div>
+    <div class="stat-card__label">Pending</div>
+  </div>
+  <div class="stat-card stat-card--success">
+    <div class="stat-card__value">{{ approved }}</div>
+    <div class="stat-card__label">Approved</div>
+  </div>
+  <div class="stat-card stat-card--info">
+    <div class="stat-card__value">{{ in_progress }}</div>
+    <div class="stat-card__label">In Progress</div>
+  </div>
+  <div class="stat-card stat-card--danger">
+    <div class="stat-card__value">{{ rejected }}</div>
+    <div class="stat-card__label">Rejected</div>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div class="section-row">
+
+  <div class="card flex-1">
+    <div class="card__header">
+      <h2 class="card__title">Quick Actions</h2>
+    </div>
+    <div class="card__body card__body--actions">
+      <a href="{{ url_for('main.quota_changes') }}" class="btn btn--primary">
+        Request Quota Change
+      </a>
+      <a href="{{ url_for('main.quota_changes') }}?status=pending" class="btn btn--outline">
+        View Pending ({{ pending }})
+      </a>
+      {% if is_admin %}
+      <form action="{{ url_for('main.snapshot_create') }}" method="post" style="display:inline">
+        <button type="submit" class="btn btn--secondary">Take Snapshot Now</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card flex-1">
+    <div class="card__header">
+      <h2 class="card__title">Last Snapshot</h2>
+    </div>
+    <div class="card__body">
+      {% if last_snapshot %}
+      <dl class="definition-list">
+        <dt>Time</dt>
+        <dd>{{ last_snapshot.snapshot_time.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+        <dt>Type</dt>
+        <dd><span class="badge badge--{{ 'info' if last_snapshot.snapshot_type == 'scheduled' else 'primary' }}">{{ last_snapshot.snapshot_type }}</span></dd>
+        <dt>Records</dt>
+        <dd>{{ last_snapshot.record_count }}</dd>
+      </dl>
+      <a href="{{ url_for('main.snapshots') }}" class="btn btn--ghost btn--sm">View all snapshots &rarr;</a>
+      {% else %}
+      <p class="text-muted">No snapshots taken yet. Snapshots are created every 6 hours automatically.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent requests -->
+{% if recent %}
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Recent Requests</h2>
+    <a href="{{ url_for('main.quota_changes') }}" class="card__header-link">View all &rarr;</a>
+  </div>
+  <div class="card__body card__body--table">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Project</th>
+          <th>Quota Type</th>
+          <th>Change</th>
+          <th>Requester</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in recent %}
+        <tr>
+          <td>{{ c.id }}</td>
+          <td><strong>{{ c.project_name }}</strong></td>
+          <td>{{ c.quota_type | replace('_', ' ') | title }}</td>
+          <td class="nowrap">{{ c.current_value }} &rarr; {{ c.requested_value }} {{ c.unit }}</td>
+          <td>{{ c.requester_name }}</td>
+          <td><span class="badge badge--{{ c.status }}">{{ c.status | title }}</span></td>
+          <td class="nowrap">{{ c.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

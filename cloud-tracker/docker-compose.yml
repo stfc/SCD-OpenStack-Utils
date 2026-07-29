@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+
+  web:
+    build: ./app
+    container_name: cloud-tracker-web
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://cloudtracker:${DB_PASSWORD}@db:5432/cloudtracker"
+      SECRET_KEY: "${SECRET_KEY}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID}"
+      OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET}"
+      OIDC_DISCOVERY_URL: "${OIDC_DISCOVERY_URL}"
+      APP_BASE_URL: "${APP_BASE_URL}"
+      SITE_TITLE: "${SITE_TITLE:-STFC Cloud Tracker}"
+      ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/etc/ssl/cloudtracker:ro
+    networks:
+      - internal
+
+  db:
+    image: postgres:15-alpine
+    container_name: cloud-tracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudtracker
+      POSTGRES_USER: cloudtracker
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudtracker -d cloudtracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: cloud-tracker-pg-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://cloudtracker:${DB_PASSWORD}@db:5432/cloudtracker?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cloud-tracker-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    ports:
+      # Bind to localhost only - connect Grafana to this port
+      - "127.0.0.1:9090:9090"
+    networks:
+      - internal
+
+  db-backup:
+    build: ./db-backup
+    container_name: cloud-tracker-db-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: cloudtracker
+      PGPASSWORD: "${DB_PASSWORD}"
+      PGDATABASE: cloudtracker
+      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 2 * * *}"
+      BACKUP_RETAIN_DAYS: "${BACKUP_RETAIN_DAYS:-7}"
+    volumes:
+      - db_backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  db_backups:
+
+networks:
+  internal:
+    driver: bridge
