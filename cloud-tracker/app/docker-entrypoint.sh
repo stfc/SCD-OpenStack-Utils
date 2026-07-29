@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# If real certs were mounted, ensure permissions are correct
-if [ -f /etc/ssl/cloudtracker/server.crt ] && [ -f /etc/ssl/cloudtracker/server.key ]; then
-    chmod 600 /etc/ssl/cloudtracker/server.key
-    chmod 644 /etc/ssl/cloudtracker/server.crt
-fi
-
 # Wait for database to be ready
 echo "Waiting for database..."
 until python3 -c "

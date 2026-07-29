@@ -17,12 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     libpq-dev \
     gcc \
-    openssl \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Enable Apache modules ────────────────────────────────
-RUN a2enmod wsgi ssl rewrite headers expires
+RUN a2enmod wsgi headers expires
 
 # ── Python dependencies ──────────────────────────────────
 COPY requirements.txt /tmp/requirements.txt
@@ -37,19 +36,11 @@ RUN chown -R www-data:www-data /var/www/app
 COPY apache-app.conf /etc/apache2/sites-available/cloudtracker.conf
 RUN a2dissite 000-default.conf && a2ensite cloudtracker.conf
 
-# ── Self-signed certificate (fallback) ───────────────────
-# Mount real certs via: -v /path/to/ssl:/etc/ssl/cloudtracker:ro
-RUN mkdir -p /etc/ssl/cloudtracker && \
-    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-        -keyout /etc/ssl/cloudtracker/server.key \
-        -out    /etc/ssl/cloudtracker/server.crt \
-        -subj   "/C=GB/ST=Oxfordshire/L=Didcot/O=STFC/CN=cloud-tracker.stfc.ac.uk"
-
 # ── Entrypoint ────────────────────────────────────────────
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 80 443
+EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["apache2ctl", "-D", "FOREGROUND"]

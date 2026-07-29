@@ -2,11 +2,9 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
-from apscheduler.schedulers.background import BackgroundScheduler
 
 db = SQLAlchemy()
 oauth = OAuth()
-scheduler = BackgroundScheduler(daemon=True)
 
 
 def create_app():
@@ -33,31 +31,25 @@ def create_app():
         },
     )
 
-    from .auth import auth_bp
+    from .auth import auth_bp, current_user, is_admin
     from .routes import main_bp
     from .metrics import metrics_bp
+    from .quota import quota_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(metrics_bp)
+    app.register_blueprint(quota_bp)
+
+    @app.context_processor
+    def inject_globals():
+        return {
+            'site_title': app.config.get('SITE_TITLE', 'STFC Cloud Tracker'),
+            'current_user': current_user(),
+            'is_admin': is_admin(),
+        }
 
     with app.app_context():
         db.create_all()
-        _start_scheduler(app)
 
     return app
-
-
-def _start_scheduler(app):
-    from .snapshot import take_scheduled_snapshot
-
-    if not scheduler.running:
-        scheduler.add_job(
-            func=take_scheduled_snapshot,
-            args=[app],
-            trigger='interval',
-            hours=6,
-            id='db_snapshot',
-            replace_existing=True,
-        )
-        scheduler.start()

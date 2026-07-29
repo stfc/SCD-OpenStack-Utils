@@ -19,10 +19,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./ssl:/etc/ssl/cloudtracker:ro
+      - "127.0.0.1:8080:80"
     networks:
       - internal
 
@@ -36,7 +33,7 @@ services:
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro,z
     networks:
       - internal
     healthcheck:
@@ -62,7 +59,7 @@ services:
     container_name: cloud-tracker-prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'

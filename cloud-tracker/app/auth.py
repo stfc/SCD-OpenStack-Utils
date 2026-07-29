@@ -1,6 +1,6 @@
 from flask import (
     Blueprint, redirect, url_for, session,
-    request, current_app, render_template, flash,
+    request, current_app,
 )
 from functools import wraps
 from . import oauth
@@ -14,19 +14,6 @@ def login_required(f):
         if 'user' not in session:
             session['next'] = request.url
             return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated
-
-
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user' not in session:
-            session['next'] = request.url
-            return redirect(url_for('auth.login'))
-        user_email = session['user'].get('email', '')
-        if user_email not in current_app.config.get('ADMIN_EMAILS', []):
-            return render_template('403.html'), 403
         return f(*args, **kwargs)
     return decorated
 

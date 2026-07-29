@@ -33,8 +33,10 @@
       <nav class="site-nav" aria-label="Main navigation">
         <ul class="site-nav__list">
           <li><a href="{{ url_for('main.index') }}" class="site-nav__link {% if request.endpoint == 'main.index' %}active{% endif %}">Dashboard</a></li>
-          <li><a href="{{ url_for('main.quota_changes') }}" class="site-nav__link {% if request.endpoint and 'quota' in request.endpoint %}active{% endif %}">Quota Changes</a></li>
-          <li><a href="{{ url_for('main.snapshots') }}" class="site-nav__link {% if request.endpoint and 'snapshot' in request.endpoint %}active{% endif %}">Snapshots</a></li>
+          <li><a href="{{ url_for('quota.entry') }}" class="site-nav__link {% if request.endpoint == 'quota.entry' or request.endpoint == 'quota.entry_post' %}active{% endif %}">Quota Entry</a></li>
+          <li><a href="{{ url_for('quota.log') }}" class="site-nav__link {% if request.endpoint == 'quota.log' %}active{% endif %}">Quota Log</a></li>
+          <li><a href="{{ url_for('quota.snapshots') }}" class="site-nav__link {% if request.endpoint == 'quota.snapshots' %}active{% endif %}">Quota Snapshots</a></li>
+          <li><a href="{{ url_for('quota.parties') }}" class="site-nav__link {% if request.endpoint and request.endpoint.startswith('quota.parties') %}active{% endif %}">Funding Parties</a></li>
         </ul>
       </nav>
       <div class="user-menu">
@@ -85,5 +87,6 @@
     </div>
   </footer>
 
+  <script src="{{ url_for('static', filename='js/table-tools.js') }}"></script>
 </body>
 </html>

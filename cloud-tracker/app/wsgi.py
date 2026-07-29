@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.insert(0, '/var/www/app')
+sys.path.insert(0, '/var/www')
 
 from app import create_app
 

@@ -1,28 +1,28 @@
-from flask import Blueprint, Response, current_app
+from flask import Blueprint, Response
 from prometheus_client import (
     generate_latest, CONTENT_TYPE_LATEST,
-    Gauge, Counter, REGISTRY,
+    Gauge, REGISTRY,
 )
 
 metrics_bp = Blueprint('metrics', __name__)
 
 # Custom application metrics
-quota_requests_total = Gauge(
-    'cloudtracker_quota_requests_total',
-    'Total number of quota change requests',
+tracked_projects_total = Gauge(
+    'cloudtracker_tracked_projects_total',
+    'Total number of projects with a recorded quota snapshot',
 )
-quota_requests_by_status = Gauge(
-    'cloudtracker_quota_requests_by_status',
-    'Quota change requests broken down by status',
-    ['status'],
+quota_snapshots_total = Gauge(
+    'cloudtracker_quota_snapshots_total',
+    'Total number of quota snapshots recorded',
 )
-snapshots_total = Gauge(
-    'cloudtracker_snapshots_total',
-    'Total number of database snapshots taken',
+funding_parties_total = Gauge(
+    'cloudtracker_funding_parties_total',
+    'Total number of funding parties defined',
 )
-last_snapshot_timestamp = Gauge(
-    'cloudtracker_last_snapshot_timestamp_seconds',
-    'Unix timestamp of the most recent database snapshot',
+project_quota = Gauge(
+    'cloudtracker_project_quota',
+    'Latest recorded quota value per project and field',
+    ['project', 'field'],
 )
 
 
@@ -34,17 +34,22 @@ def prometheus_metrics():
 
 
 def _refresh_metrics():
-    from .models import QuotaChange, DbSnapshot
+    from . import db
+    from .models import QuotaSnapshot, FundingParty, QUOTA_FIELD_KEYS
     try:
-        quota_requests_total.set(QuotaChange.query.count())
-        for status in QuotaChange.STATUSES:
-            quota_requests_by_status.labels(status=status).set(
-                QuotaChange.query.filter_by(status=status).count()
-            )
-        snap_count = DbSnapshot.query.count()
-        snapshots_total.set(snap_count)
-        last_snap = DbSnapshot.query.order_by(DbSnapshot.snapshot_time.desc()).first()
-        if last_snap and last_snap.snapshot_time:
-            last_snapshot_timestamp.set(last_snap.snapshot_time.timestamp())
+        quota_snapshots_total.set(QuotaSnapshot.query.count())
+        funding_parties_total.set(FundingParty.query.count())
+
+        project_names = [r[0] for r in db.session.query(QuotaSnapshot.project_name).distinct()]
+        tracked_projects_total.set(len(project_names))
+        for project_name in project_names:
+            latest = (QuotaSnapshot.query
+                      .filter_by(project_name=project_name)
+                      .order_by(QuotaSnapshot.recorded_at.desc())
+                      .first())
+            for key in QUOTA_FIELD_KEYS:
+                val = getattr(latest, key)
+                if val is not None:
+                    project_quota.labels(project=project_name, field=key).set(val)
     except Exception:
         pass

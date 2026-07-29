@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Quota Snapshots – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Quota Snapshots</h1>
+  <p class="page-header__subtitle">Raw history of recorded quota allocations per project</p>
+</div>
+
+<div class="filter-bar">
+  <form method="get" action="{{ url_for('quota.snapshots') }}" class="filter-bar__form">
+    <div class="filter-bar__group">
+      <label for="filter-project" class="filter-bar__label">Project</label>
+      <select id="filter-project" name="project" class="form-control form-control--sm" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for p in projects %}
+        <option value="{{ p }}" {% if project_filter == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <a href="{{ url_for('quota.snapshots') }}" class="btn btn--ghost btn--sm">Clear</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">History</h2>
+    <span class="badge badge--neutral">{{ snapshots | length }}</span>
+  </div>
+  <div class="card__body card__body--table">
+    {% if snapshots %}
+    <div class="table-toolbar">
+      <input type="search" id="snapshots-search" class="form-control form-control--sm table-search"
+             placeholder="Search project, recorded by...">
+    </div>
+    <table class="data-table data-table--full" id="snapshots-table">
+      <thead>
+        <tr>
+          <th class="no-sort">#</th>
+          <th>Project</th>
+          <th>Recorded</th>
+          <th>By</th>
+          {% for key, label, unit in quota_fields %}
+          <th class="nowrap">{{ label }}{% if unit %} ({{ unit }}){% endif %}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in snapshots %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td><strong>{{ s.project_name }}</strong></td>
+          <td class="nowrap">{{ s.recorded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ s.recorded_by or '—' }}</td>
+          {% for key, label, unit in quota_fields %}
+          <td class="nowrap">{{ s[key] if s[key] is not none else '—' }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>No quota snapshots recorded yet.</p>
+      <p><a href="{{ url_for('quota.entry') }}">Record quota values &rarr;</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var table = document.getElementById('snapshots-table');
+  TableTools.enableTableSearch(document.getElementById('snapshots-search'), table);
+  TableTools.enableTableSort(table);
+});
+</script>
+{% endblock %}
