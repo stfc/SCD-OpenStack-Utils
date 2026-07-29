@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Quota Change Log – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Quota Change Log</h1>
+  <p class="page-header__subtitle">History of recorded quota entries and what changed</p>
+</div>
+
+<div class="filter-bar">
+  <form method="get" action="{{ url_for('quota.log') }}" class="filter-bar__form">
+    <div class="filter-bar__group">
+      <label for="filter-project" class="filter-bar__label">Project</label>
+      <select id="filter-project" name="project" class="form-control form-control--sm" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for p in projects %}
+        <option value="{{ p }}" {% if project_filter == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-bar__group">
+      <label class="filter-bar__label">
+        <input type="checkbox" name="changed_only" value="1" {% if changed_only %}checked{% endif %}
+               onchange="this.form.submit()"> Changes only
+      </label>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Entries</h2>
+    <span class="badge badge--neutral">{{ events | length }}</span>
+  </div>
+  <div class="card__body card__body--table">
+    {% if events %}
+    <div class="table-toolbar">
+      <input type="search" id="log-search" class="form-control form-control--sm table-search"
+             placeholder="Search project, field...">
+    </div>
+    <div id="log-events">
+    {% for ev in events %}
+    <div class="card card--compact log-entry" style="margin-bottom:0.75rem">
+      <div class="card__header card__header--toggle" data-target="log-{{ ev.id }}">
+        <h2 class="card__title">
+          {{ ev.project_name }}
+          <span class="text-muted" style="font-weight:400">— {{ ev.recorded_at.strftime('%Y-%m-%d %H:%M') }} by {{ ev.recorded_by or 'unknown' }}</span>
+        </h2>
+        <span>
+          {% if ev.new_count %}<span class="badge badge--info">{{ ev.new_count }} new</span>{% endif %}
+          {% if ev.changed_count %}<span class="badge badge--warning">{{ ev.changed_count }} changed</span>{% endif %}
+        </span>
+      </div>
+      <div class="card__body card__body--table" id="log-{{ ev.id }}">
+        <table class="data-table">
+          <thead>
+            <tr><th>Field</th><th>Previous</th><th>New</th><th>Difference</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for c in ev.changes %}
+            <tr>
+              <td>{{ field_labels.get(c.field_name, c.field_name) }}</td>
+              <td class="nowrap">{{ c.previous_value if c.previous_value is not none else '—' }}</td>
+              <td class="nowrap">{{ c.new_value if c.new_value is not none else '—' }}</td>
+              <td class="nowrap">{{ c.difference if c.difference is not none else '—' }}</td>
+              <td>
+                {% if c.status == 'new' %}<span class="badge badge--info">New</span>
+                {% elif c.status == 'changed' %}<span class="badge badge--warning">Changed</span>
+                {% else %}<span class="badge badge--neutral">Unchanged</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>No quota entries found.</p>
+      <p><a href="{{ url_for('quota.entry') }}">Record quota values &rarr;</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-target^="log-"]').forEach(function (toggle) {
+    toggle.addEventListener('click', function () {
+      var body = document.getElementById(toggle.dataset.target);
+      body.style.display = body.style.display === 'none' ? '' : 'none';
+    });
+  });
+
+  TableTools.enableCardSearch(
+    document.getElementById('log-search'),
+    document.getElementById('log-events'),
+    '.log-entry'
+  );
+});
+</script>
+{% endblock %}

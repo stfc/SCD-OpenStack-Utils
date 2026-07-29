@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Record Quota – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Record Quota Values</h1>
+  <p class="page-header__subtitle">Enter current quota allocations for a project. Leave any field blank to record it as unchanged.</p>
+</div>
+
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Quota Entry</h2>
+  </div>
+  <div class="card__body">
+    <form method="post" action="{{ url_for('quota.entry_post') }}" class="form" id="quota-form" novalidate>
+
+      <div class="form-group form-group--required" style="max-width:440px; margin-bottom:1.75rem">
+        <label for="project_name" class="form-label">Project Name</label>
+        <input type="text" id="project_name" name="project_name" class="form-control"
+               required placeholder="e.g. my-research-project"
+               list="project-list" autocomplete="off"
+               value="{{ form_data.project_name if form_data else '' }}">
+        <datalist id="project-list">
+          {% for p in projects %}<option value="{{ p }}">{% endfor %}
+        </datalist>
+        <span class="form-hint">Select an existing project or type a new name</span>
+      </div>
+
+      <div id="current-notice" class="alert alert--info" style="display:none; margin-bottom:1.25rem">
+        <span class="alert__icon">&#9432;</span>
+        Current recorded values shown below each field. Leave blank to keep unchanged.
+      </div>
+
+      <div class="quota-fields-grid">
+        {% for key, label, unit in quota_fields %}
+        <div class="form-group">
+          <label for="{{ key }}" class="form-label">
+            {{ label }}{% if unit %} <span class="form-label__unit">({{ unit }})</span>{% endif %}
+          </label>
+          <input type="number" id="{{ key }}" name="{{ key }}"
+                 class="form-control" min="0" placeholder="blank = unchanged"
+                 data-field="{{ key }}"
+                 value="{{ form_data[key] if form_data and form_data.get(key) else '' }}">
+          <span class="form-hint current-hint" id="hint-{{ key }}"></span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="form-actions" style="margin-top:1.5rem">
+        <button type="submit" class="btn btn--primary">Record Quota Values</button>
+        <button type="button" class="btn btn--ghost" onclick="clearForm()">Clear</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+const projectInput = document.getElementById('project_name');
+const notice       = document.getElementById('current-notice');
+
+projectInput.addEventListener('change', fetchCurrent);
+projectInput.addEventListener('blur',   fetchCurrent);
+
+async function fetchCurrent() {
+  const name = projectInput.value.trim();
+  if (!name) return;
+  try {
+    const res  = await fetch('/quota/api/project/' + encodeURIComponent(name) + '/current');
+    const data = await res.json();
+    if (data.found) {
+      notice.style.display = 'flex';
+      Object.entries(data.values).forEach(function([key, val]) {
+        const hint = document.getElementById('hint-' + key);
+        if (hint) hint.textContent = val !== null ? 'Current: ' + val : 'Current: not recorded';
+      });
+    } else {
+      notice.style.display = 'none';
+      document.querySelectorAll('.current-hint').forEach(function(el) { el.textContent = ''; });
+    }
+  } catch(e) {}
+}
+
+function clearForm() {
+  document.getElementById('quota-form').reset();
+  document.querySelectorAll('.current-hint').forEach(function(el) { el.textContent = ''; });
+  notice.style.display = 'none';
+}
+</script>
+{% endblock %}

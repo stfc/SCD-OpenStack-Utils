@@ -1,0 +1,37 @@
+# Environment secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# SSL / certs
+ssl/*.key
+ssl/*.crt
+ssl/*.pem
+ssl/*.p12
+ssl/*.csr
+ssl/*.der
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Local runtime/log files
+*.log
+*.tmp
+*.bak
+
+# Claude Code
+.claude/

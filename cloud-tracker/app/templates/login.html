@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in – {{ site_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+
+  <div class="topbar">
+    <div class="container topbar__inner">
+      <span class="topbar__org">Science and Technology Facilities Council</span>
+      <span class="topbar__divider">|</span>
+      <span class="topbar__ukri">Part of UKRI</span>
+    </div>
+  </div>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <div class="login-card__header">
+        <div class="logo-mark logo-mark--large">
+          <span class="logo-mark__stfc">STFC</span>
+          <span class="logo-mark__cloud">Cloud</span>
+        </div>
+        <h1 class="login-card__title">{{ site_title }}</h1>
+        <p class="login-card__subtitle">Cloud resource quota management portal</p>
+      </div>
+
+      <div class="login-card__body">
+        <p class="login-card__info">
+          Access is restricted to authorised STFC staff and collaborators.
+          Sign in with your institutional IRIS IAM account.
+        </p>
+
+        <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--full btn--large">
+          <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          Sign in with IRIS IAM
+        </a>
+      </div>
+
+      <div class="login-card__footer">
+        <p>
+          Don&rsquo;t have an IRIS account?
+          <a href="https://iris-iam.stfc.ac.uk/registration" target="_blank" rel="noopener noreferrer">Register here</a>
+        </p>
+        <p>
+          Need help? Contact
+          <a href="mailto:cloud-support@stfc.ac.uk">cloud-support@stfc.ac.uk</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="login-ukri-brand">
+      <span>Delivered by STFC Scientific Computing</span>
+    </div>
+  </div>
+
+  <footer class="site-footer site-footer--minimal">
+    <div class="container site-footer__inner">
+      <span>&copy; Science and Technology Facilities Council {{ now.year if now else '2025' }}</span>
+      <span class="separator">|</span>
+      <a href="https://www.ukri.org/privacy-notice/" target="_blank" rel="noopener noreferrer">Privacy</a>
+      <span class="separator">|</span>
+      <a href="https://www.ukri.org/accessibility-statement/" target="_blank" rel="noopener noreferrer">Accessibility</a>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'cloud-tracker'
+
+scrape_configs:
+
+  # ── Application metrics (Flask /metrics endpoint) ────────
+  - job_name: 'cloud-tracker-app'
+    static_configs:
+      - targets: ['web:80']
+    metrics_path: /metrics
+    scheme: http
+
+  # ── PostgreSQL metrics (postgres-exporter) ───────────────
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # ── Prometheus self-monitoring ────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

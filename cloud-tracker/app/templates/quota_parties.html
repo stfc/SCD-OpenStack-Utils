@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Funding Parties – {{ site_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Quotas by Funding Party</h1>
+  <p class="page-header__subtitle">Aggregate quota allocations grouped by funding body</p>
+</div>
+
+{% if parties %}
+<div class="table-toolbar">
+  <input type="search" id="parties-search" class="form-control form-control--sm table-search"
+         placeholder="Search party, project...">
+</div>
+<div id="parties-list">
+{% for party in parties %}
+<div class="card card--collapsible party-entry" id="party-{{ party.id }}" style="margin-bottom:1rem">
+  <div class="card__header card__header--toggle" data-target="party-projects-{{ party.id }}">
+    <h2 class="card__title">
+      {{ party.name }}
+      <span class="badge badge--neutral">{{ party.project_count }} project{{ 's' if party.project_count != 1 }}</span>
+    </h2>
+    <span class="card__toggle-icon">&#9660;</span>
+  </div>
+
+  <div class="card__body card__body--table">
+    <table class="data-table data-table--full">
+      <thead>
+        <tr>
+          <th>Aggregate</th>
+          {% for key, label, unit in quota_fields %}
+          <th class="nowrap">{{ label }}{% if unit %} ({{ unit }}){% endif %}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Total ({{ party.project_count }} projects)</strong></td>
+          {% for key, label, unit in quota_fields %}
+          <td><strong>{{ party.totals[key] or 0 }}</strong></td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card__body card__body--table" id="party-projects-{{ party.id }}">
+    {% if party.projects %}
+    <table class="data-table data-table--full">
+      <thead>
+        <tr>
+          <th>Project</th>
+          {% for key, label, unit in quota_fields %}
+          <th class="nowrap">{{ label }}{% if unit %} ({{ unit }}){% endif %}</th>
+          {% endfor %}
+          <th>Last Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for proj in party.projects %}
+        <tr>
+          <td><strong>{{ proj.project_name }}</strong></td>
+          {% for key, label, unit in quota_fields %}
+          <td class="nowrap">{{ proj[key] if proj[key] is not none else '—' }}</td>
+          {% endfor %}
+          <td class="nowrap">
+            {% if proj.recorded_at %}{{ proj.recorded_at.strftime('%Y-%m-%d %H:%M') }}{% else %}<span class="text-muted">no data</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('quota.parties_remove_project', party_id=party.id) }}"
+                  onsubmit="return confirm('Remove {{ proj.project_name }} from {{ party.name }}?')">
+              <input type="hidden" name="project_name" value="{{ proj.project_name }}">
+              <button type="submit" class="btn btn--ghost btn--xs">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No projects assigned yet.</p></div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('quota.parties_add_project', party_id=party.id) }}"
+          class="filter-bar__form" style="padding: 0 1.25rem 1.25rem">
+      <div class="filter-bar__group">
+        <label class="filter-bar__label">Add project to {{ party.name }}</label>
+        <input type="text" name="project_name" class="form-control form-control--sm"
+               placeholder="project name" list="project-list-{{ party.id }}"
+               autocomplete="off" required>
+        <datalist id="project-list-{{ party.id }}">
+          {% for p in all_projects %}<option value="{{ p }}">{% endfor %}
+        </datalist>
+      </div>
+      <button type="submit" class="btn btn--primary btn--sm">Add</button>
+    </form>
+
+    <form method="post" action="{{ url_for('quota.parties_delete', party_id=party.id) }}"
+          style="padding: 0 1.25rem 1.25rem"
+          onsubmit="return confirm('Delete party {{ party.name }} and all its project assignments?')">
+      <button type="submit" class="btn btn--outline btn--sm">Delete party</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body"><div class="empty-state"><p>No funding parties defined yet.</p></div></div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card__header">
+    <h2 class="card__title">Add Funding Party</h2>
+  </div>
+  <div class="card__body">
+    <form method="post" action="{{ url_for('quota.parties_new') }}" class="form" style="max-width:400px">
+      <div class="form-group form-group--required">
+        <label for="party_name" class="form-label">Party Name</label>
+        <input type="text" id="party_name" name="name" class="form-control"
+               required placeholder="e.g. IRIS, PSDI, DiRAC">
+        <span class="form-hint">Top-level funding body name</span>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary">Create Party</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-target^="party-projects-"]').forEach(function (toggle) {
+    var body = document.getElementById(toggle.dataset.target);
+    body.style.display = 'none';
+    toggle.addEventListener('click', function () {
+      var icon = toggle.querySelector('.card__toggle-icon');
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : '';
+      icon.textContent = open ? '▶' : '▼';
+    });
+  });
+
+  TableTools.enableCardSearch(
+    document.getElementById('parties-search'),
+    document.getElementById('parties-list'),
+    '.party-entry'
+  );
+});
+</script>
+{% endblock %}
