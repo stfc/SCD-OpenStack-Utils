@@ -15,6 +15,8 @@ from sqlalchemy.orm import sessionmaker
 import configparser
 
 
+CONFIG_FP = "/etc/thecount/thecount.conf"
+
 def get_logger(component):
     logging.basicConfig(
         filename="/var/log/thecount.log",
@@ -47,10 +49,10 @@ def project_to_department(result):
 def send_to_influx(datastring, logger):
     """Takes a datastring formatted to send to InfluxDBs rest api. Loads necessary config, sends and returns the response"""
     # Read from config file
-    influx_parser = configparser.SafeConfigParser()
+    influx_parser = configparser.ConfigParser()
     try:
-        influx_parser.read("/etc/influxdb.conf")
-    except Exceptions as exp:
+        influx_parser.read(CONFIG_FP)
+    except Exception as e:
         logger.info(f"Unable to read from influx config file - {str(exp)}")
         sys.exit(1)
     try:
@@ -59,7 +61,7 @@ def send_to_influx(datastring, logger):
         username = influx_parser.get("auth", "username")
         password = influx_parser.get("auth", "password")
         instance = influx_parser.get("cloud", "instance")
-    except Exceptions as exp:
+    except Exception as exp:
         logger.info(f"Unable to parse influx config file - {str(exp)}")
         sys.exit(1)
     finaldatastring = datastring.replace(
@@ -76,7 +78,7 @@ def get_accounting_data(database, starttime, endtime, logger):
     thecount_parser = configparser.RawConfigParser(strict=False)
 
     try:
-        thecount_parser.read("/etc/thecount/thecount.conf")
+        thecount_parser.read(CONFIG_FP)
     except Exceptions as exp:
         logger.info(f"Unable to read from thecount config file - {str(exp)}")
         sys.exit(1)

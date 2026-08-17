@@ -13,6 +13,11 @@ A database user with read access to the relevant databases for each OpenStack co
 ## Installation
 
 Copy the scripts into `/usr/local/sbin` as shown in this repo
+Create a virtual environment - `python3 -m venv /root/envs/thecount/bin/python` 
+Activate the virtual environment `sudo source /etc/thecount/thecount`
+Install the packages `
+
+
 Create a config file with a database connection string in the format shown in `/etc/thecount/thecount.conf.example` in `/etc/thecount/thecount.conf`
 Create the stored procedures in the `sql` directory appropriate db.
 

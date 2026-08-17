@@ -6,15 +6,14 @@ import accountinglib
 import sys
 import time
 import datetime
-import logging
 
 
 def main():
-    """Processes accounting from Manila"""
+    """Processes accounting from Cinder"""
     nowtime = time.localtime()
-    logger = accountinglib.get_logger("manila")
+    logger = accountinglib.get_logger("cinder")
 
-    logger.info("Manila Accounting run start")
+    logger.info("Cinder Accounting run start")
     starttime = sys.argv[1]
     logger.info("Start Time = " + starttime)
     endtime = sys.argv[2]
@@ -24,7 +23,7 @@ def main():
         datetime.datetime.strptime(endtime, "%Y-%m-%d %H:%M").timetuple()
     )
 
-    results = accountinglib.get_accounting_data("manila", starttime, endtime, logger)
+    results = accountinglib.get_accounting_data("cinder", starttime, endtime, logger)
     datastring = ""
     logger.info(results)
     for result in results:
@@ -33,16 +32,15 @@ def main():
 
         datastring += "Accounting"
 
-        datastring += ",AvailabilityZone=" + result["Availability_zone"]
+        datastring += ",AvailabilityZone=" + result["AvailabilityZone"]
         datastring += ",Project=" + result["Project"].replace(" ", "\ ")
         datastring += ",Department=" + department.replace(" ", "\ ")
-        datastring += ",ManilaType=" + result["ManilaType"]
-        datastring += ",ManilaShareType=" + result["Share_type"]
+        datastring += ",CinderType=" + result["CinderType"]
         datastring += ",YYYY-MM=" + endyyyymm
-        datastring += " Shares=" + str(result["Shares"])
-        datastring += ",Share_Seconds=" + str(result["Share_Seconds"])
-        datastring += ",ManilaGBs=" + str(
-            result["Share_GB"] * result["Share_Seconds"] * result["Shares"]
+        datastring += " Volumes=" + str(result["Volumes"])
+        datastring += ",Volume_Seconds=" + str(result["Volume_Seconds"])
+        datastring += ",CinderGBs=" + str(
+            result["Volume_GB"] * result["Volume_Seconds"] * result["Volumes"]
         )
 
         datastring += " " + str(int(endtimestamp))

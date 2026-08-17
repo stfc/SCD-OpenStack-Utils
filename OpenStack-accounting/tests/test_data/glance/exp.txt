@@ -1,0 +1,17 @@
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=179530.5600 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=706,GlanceGBSeconds=1498.6262 1786449600
+Accounting,instance=PreProd,Project=A-Scratch-Space,Department=A-Scratch-Space,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=184040.6400 1786449600
+Accounting,instance=PreProd,Project=B-Scratch-Space,Department=SCD\ Systems\ Division,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=184291.2000 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=185405.7600 1786449600
+Accounting,instance=PreProd,Project=C-Scratch-Space,Department=C-Scratch-Space,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=187297.9200 1786449600
+Accounting,instance=PreProd,Project=A-Scratch-Space,Department=A-Scratch-Space,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=198840.9600 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=218427.8400 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=218453.7600 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=218695.6800 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=7303,GlanceGBSeconds=18759.2161 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=224691.8400 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=image,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=238213.4400 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=snapshot,YYYY-MM=2026-08 Images=8,Image_Seconds=691200,GlanceGBSeconds=76129320.9600 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=RBD,GlanceType=snapshot,YYYY-MM=2026-08 Images=6,Image_Seconds=518400,GlanceGBSeconds=62208000.0000 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=RBD,GlanceType=snapshot,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=3456000.0000 1786449600
+Accounting,instance=PreProd,Project=admin,Department=admin,StorageBackend=OBJECT,GlanceType=snapshot,YYYY-MM=2026-08 Images=1,Image_Seconds=86400,GlanceGBSeconds=9481881.6000 1786449600

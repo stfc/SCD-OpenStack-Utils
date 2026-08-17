@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project]
+name = "thecount"
+version = "1.0.0"
+description = "python package for collecting stfc cloud accounting data"
+authors = [{name = "STFC Cloud Team", email = "cloud-support@stfc.ac.uk"}]
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["python", "openstack"]
+classifiers = [
+    "Development Status :: 5 - Stable",
+    "Intended Audience :: Openstack Admins :: Monitoring Tools",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "requests",
+    "sqlalchemy",
+    "pymysql",
+]
+
+[project.urls]
+Repository = "https://github.com/stfc/SCD-Openstack-Utils"
+Documentation = "https://github.com/stfc/SCD-Openstack-Utils/OpenStack-accounting/README.md"
+Issues = "https://github.com/stfc/SCD-Openstack-Utils/issues"
+
+# Optional dependency groups
+[project.optional-dependencies]
+test = [
+    "black>=26.5.1",
+    "pylint>=4.0.6",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*.py"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.pylint.format]
+max-line-length=118
+disable=[
+    "C0114", # Missing module string - we don't need module strings for the small repo
+    "W1401", # Influxdb required backslashes
+    "R0801" # Duplicate code due to test case
+]

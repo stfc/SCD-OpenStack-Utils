@@ -6,7 +6,6 @@ import accountinglib
 import sys
 import time
 import datetime
-import logging
 
 
 def main():
