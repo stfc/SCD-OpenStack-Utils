@@ -1,5 +1,6 @@
 import configparser
 import logging
+import os
 from datetime import datetime
 from typing import Optional, Dict
 
@@ -26,15 +27,38 @@ class Source:
 
     def _load_config(self, config_fp: str) -> None:
         """
-        Helper function to read thecount config file and extract source-related config
-        constructs a connection string. Done in __init__ so issues with the config
-        path fails at startup rather than on the first window.
+        Helper function to read in thecount config file and pre-set environment variables
+        to setup a Source object.
+
+        Constructs a connection string to connect to source DB.
+
+        Done in __init__ so issues with the config path and environment variables fails at startup
+        rather than on the first window
+
         :param config_fp: path to config file
         """
+
+        def require_env(name: str) -> str:
+            """
+            helper to load in environment variables
+            :param name: environment variable name
+            :return: environment variable value
+            """
+            value = os.getenv(name)
+            if not value:
+                raise ValueError(f"{name}: openstack db environment variable not set")
+            return value
+
         parser = configparser.ConfigParser()
         if not parser.read(config_fp, encoding="utf-8"):
             raise FileNotFoundError(f"config not found: {config_fp}")
-        self.conn_string = parser.get("source", "connection")
+        port = parser.getint("source", "port")
+
+        username = require_env("THE_COUNT_SOURCE_USERNAME")
+        password = require_env("THE_COUNT_SOURCE_PASSWORD")
+        host = require_env("THE_COUNT_SOURCE_HOST")
+
+        self.conn_string = f"mysql+pymysql://{username}:{password}@{host}:{port}"
 
     def __enter__(self) -> "Source":
         """

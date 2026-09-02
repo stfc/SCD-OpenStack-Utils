@@ -9,18 +9,19 @@ from thecount.sink import Sink, TIMEOUT
 DATASTRING = "cpu,host=a value=1 1700000000\ncpu,host=b value=2 1700000000"
 PARSED_DATASTRING = ["cpu,host=a value=1 1700000000", "cpu,host=b value=2 1700000000"]
 
+MOCK_SINK_ENV_VARS = {
+    "THE_COUNT_SINK_HOST": "localhost",
+    "THE_COUNT_SINK_USERNAME": "admin",
+    "THE_COUNT_SINK_PASSWORD": "pass",
+}
+
 
 @pytest.fixture(name="valid_config_file")
-def valid_config_file_fn(tmp_path):
-    """ creates a mock valid thecount.conf config file """
+def valid_config_fn(tmp_path):
+    """creates a mock valid thecount.conf config file"""
     path = tmp_path / "t3.conf"
     path.write_text(
-        "[sink]\n"
-        "host = influx.example.com\n"
-        "database = accounting\n"
-        "instance = preprod\n"
-        "username = user\n"
-        "password = pass\n",
+        "[sink]\ndatabase = accounting\ninstance = preprod\nport = 3306\n",
         encoding="utf-8",
     )
     return path
@@ -48,9 +49,25 @@ def test_read_missing_key_raises(tmp_path):
         Sink(str(path))
 
 
+@pytest.mark.parametrize("omitted_env_var", MOCK_SINK_ENV_VARS.keys())
+def test_env_var_missing_raises(monkeypatch, omitted_env_var, valid_config_file):
+    """tests that omitting an required environment variable raises error"""
+    for env_var, val in MOCK_SINK_ENV_VARS.items():
+        monkeypatch.setenv(env_var, val)
+
+    # test that omitting env_var raises
+    monkeypatch.setenv(omitted_env_var, "")
+
+    with pytest.raises(ValueError, match=omitted_env_var):
+        Sink(str(valid_config_file))
+
+
 @patch("thecount.sink.InfluxDBClient")
-def test_write_success(mock_influxdb_client, valid_config_file):
+def test_write_success(mock_influxdb_client, monkeypatch, valid_config_file):
     """test write sets up proper influxdb client and writes correct data"""
+
+    for env_var, val in MOCK_SINK_ENV_VARS.items():
+        monkeypatch.setenv(env_var, val)
 
     mock_client = mock_influxdb_client.return_value
 
@@ -62,9 +79,9 @@ def test_write_success(mock_influxdb_client, valid_config_file):
     )
 
     mock_influxdb_client.assert_called_once_with(
-        host="influx.example.com",
-        port=8086,
-        username="user",
+        host="localhost",
+        port="3306",
+        username="admin",
         password="pass",
         database="accounting",
         ssl=True,
@@ -74,8 +91,12 @@ def test_write_success(mock_influxdb_client, valid_config_file):
 
 
 @patch("thecount.sink.InfluxDBClient")
-def test_write_fail(mock_influxdb_client, valid_config_file):
+def test_write_fail(mock_influxdb_client, monkeypatch, valid_config_file):
     """raises runtime error if influxdbclient write_points raises influxdbclient error"""
+
+    for env_var, val in MOCK_SINK_ENV_VARS.items():
+        monkeypatch.setenv(env_var, val)
+
     mock_session = mock_influxdb_client.return_value
     mock_session.write_points.side_effect = InfluxDBClientError("foo")
 
@@ -92,8 +113,14 @@ def test_write_fail(mock_influxdb_client, valid_config_file):
 
 
 @patch("thecount.sink.InfluxDBClient")
-def test_write_empty_datastring_does_nothing(mock_influxdb_client, valid_config_file):
+def test_write_empty_datastring_does_nothing(
+    mock_influxdb_client, monkeypatch, valid_config_file
+):
     """tests that write doesn't post anything if provided an empty datastring"""
+
+    for env_var, val in MOCK_SINK_ENV_VARS.items():
+        monkeypatch.setenv(env_var, val)
+
     mock_session = mock_influxdb_client.return_value
 
     with Sink(str(valid_config_file)) as sink:

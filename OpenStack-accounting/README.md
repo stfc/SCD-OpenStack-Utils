@@ -50,6 +50,26 @@ GRANT SELECT, EXECUTE ON `nova_cell0`.* TO `accounting-db`@`host.example.com`;
 
 We deploy this with kayobe in our kayobe config repo, but if you want to setup manually you can in two ways
 
+### Provide a env file
+
+Setup a .env file that looks like this: 
+
+```commandline
+# ~/.env
+
+# --- MySQL source ---
+THE_COUNT_SOURCE_USERNAME=
+THE_COUNT_SOURCE_PASSWORD=
+THE_COUNT_SOURCE_HOST=
+
+# --- InfluxDB sink ---
+THE_COUNT_SINK_USERNAME=admin
+THE_COUNT_SINK_PASSWORD=
+THE_COUNT_SINK_HOST=
+```
+
+and populate with creds
+
 ### As a container 
 
 ```commandline
@@ -64,6 +84,7 @@ on kayobe to get previous data
 ```
 docker run \ 
    --rm \
+   --env-file ~/opt/kayobe/accounting-service/.env \
    -v /opt/kayobe/accounting-service/:/etc/thecount/ \
    --network host harbor.stfc.ac.uk/stfc-cloud/thecount:v1.0.0 \
    --config-path /etc/thecount/thecount.conf \
@@ -86,6 +107,12 @@ pip install .
 
 then run it as a module
 
+FIRST export your env vars first
+```
+export $(grep -v '^#' .env | xargs)
+```
+
+Then run python module
 ```
 python3 -m thecount --help
 

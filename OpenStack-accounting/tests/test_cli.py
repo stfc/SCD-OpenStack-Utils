@@ -97,7 +97,7 @@ def test_single_job():
 
 
 def test_job_values_split():
-    """tests that providing multiple jobs works properly """
+    """tests that providing multiple jobs works properly"""
     cfg = build_config(make_args(jobs=["cinder", "nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
@@ -105,7 +105,7 @@ def test_job_values_split():
 
 
 def test_job_values_no_whitespace_tolerated():
-    """ test that --job comma-spaced values with no whitespace is parsed correctly """
+    """test that --job comma-spaced values with no whitespace is parsed correctly"""
     cfg = build_config(make_args(jobs=["cinder,nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
@@ -113,7 +113,7 @@ def test_job_values_no_whitespace_tolerated():
 
 
 def test_job_values_whitespace_tolerated():
-    """ test that --job comma-spaced values with whitespace is parsed properly """
+    """test that --job comma-spaced values with whitespace is parsed properly"""
     cfg = build_config(make_args(jobs=["cinder,nova", "glance"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"], ALL_JOBS["glance"]]
@@ -121,7 +121,7 @@ def test_job_values_whitespace_tolerated():
 
 
 def test_job_values_empty_vals_ignored():
-    """ test that multiple commas are handled correctly """
+    """test that multiple commas are handled correctly"""
     cfg = build_config(make_args(jobs=["cinder,,nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
@@ -129,7 +129,7 @@ def test_job_values_empty_vals_ignored():
 
 
 def test_duplicates_run_once():
-    """ test that duplicate jobs are removed and only set to run once"""
+    """test that duplicate jobs are removed and only set to run once"""
     cfg = build_config(make_args(jobs=["cinder", "nova,cinder"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
@@ -137,7 +137,7 @@ def test_duplicates_run_once():
 
 
 def test_unknown_job_named_in_error():
-    """ test that unknown job names raise an error """
+    """test that unknown job names raise an error"""
     with pytest.raises(ValueError, match="foo"):
         build_config(make_args(jobs=["cinder,foo"]))
 

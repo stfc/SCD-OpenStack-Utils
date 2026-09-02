@@ -24,7 +24,9 @@ logger.addHandler(stream_handler)
 
 # Log to file
 if not os.path.exists(LOG_FP):
-    logger.warning("log filepath %s does not exist, logs aren't being stored...", LOG_FP)
+    logger.warning(
+        "log filepath %s does not exist, logs aren't being stored...", LOG_FP
+    )
 else:
     file_handler = logging.FileHandler(LOG_FP)
     file_handler.setLevel(log_level)

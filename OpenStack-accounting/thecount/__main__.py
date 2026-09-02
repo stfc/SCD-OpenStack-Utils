@@ -31,7 +31,7 @@ def run_jobs(details: RunDetails) -> None:
                 "Starting Loop: %s: interval_start_time: %s, interval_end_time: %s",
                 step_counter,
                 current_time,
-                interval_end
+                interval_end,
             )
 
             # Don't start the process until end of the current interval - so all data is available
@@ -56,7 +56,7 @@ def run_jobs(details: RunDetails) -> None:
 
 
 def main() -> int:
-    """ main function - sets up parser, parses args and calls run_jobs() """
+    """main function - sets up parser, parses args and calls run_jobs()"""
     parser = setup_parser()
     args = parser.parse_args()
 

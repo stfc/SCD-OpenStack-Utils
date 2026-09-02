@@ -1,4 +1,5 @@
 import logging
+import os
 from configparser import ConfigParser
 from typing import Optional
 
@@ -22,17 +23,30 @@ class Sink:
         helper function to load in thecount config file and extract sink-related config info
         :param config_fp: path to thecount config file
         """
+
+        def require_env(name: str) -> str:
+            """
+            helper to load in environment variables
+            :param name: environment variable name
+            :return: environment variable value
+            """
+            value = os.getenv(name)
+            if not value:
+                raise ValueError(f"{name}: influxdb environment variable not set")
+            return value
+
         parser = ConfigParser(interpolation=None)
         if not parser.read(config_fp, encoding="utf-8"):
             raise FileNotFoundError(f"config not found: {config_fp}")
 
-        host = parser.get("sink", "host")
-        self._host, _, port = host.partition(":")
-        self._port = int(port) if port else DEFAULT_PORT
-        self._database = parser.get("sink", "database")
         self.instance = parser.get("sink", "instance")
-        self._username = parser.get("sink", "username")
-        self._password = parser.get("sink", "password")
+
+        self._port = parser.get("sink", "port")
+        self._database = parser.get("sink", "database")
+
+        self._host = require_env("THE_COUNT_SINK_HOST")
+        self._username = require_env("THE_COUNT_SINK_USERNAME")
+        self._password = require_env("THE_COUNT_SINK_PASSWORD")
 
     def __enter__(self) -> "Sink":
         """

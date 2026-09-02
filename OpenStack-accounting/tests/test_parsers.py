@@ -31,7 +31,7 @@ def test_job_output(dirname, mock_source, mock_sink):
     mocks source.fetch() returning contexts of input.txt, compares parsed output from _transform to exp.txt
     and ensures sink.write() is run correctly.
 
-     """
+    """
     job_cls = JOBS[dirname]
     fixture_dir = ROOT_TEST_DATA_FP / dirname
     rows = load_example_data(fixture_dir / "input.txt")

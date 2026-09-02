@@ -28,6 +28,15 @@ RUN useradd --shell /bin/bash monitoring
 RUN chown -R monitoring:monitoring /app
 USER monitoring
 
+ENV THE_COUNT_SOURCE_USERNAME=NOT_SET \
+    THE_COUNT_SOURCE_PASSWORD=NOT_SET \
+    THE_COUNT_SOURCE_HOST=NOT_SET \
+
+    THE_COUNT_SINK_USERNAME=NOT_SET \
+    THE_COUNT_SINK_PASSWORD=NOT_SET \
+    THE_COUNT_SINK_HOST=NOT_SET
+
+
 # Set the entrypoint to your package's main module
 ENTRYPOINT ["python", "-m", "thecount"]
 
