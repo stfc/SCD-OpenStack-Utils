@@ -24,10 +24,6 @@ ALL_JOBS: dict[str, type[BaseParser]] = {
     "manila": ManilaParser,
 }
 
-# set constant interval as 1440 seconds - 1 day
-INTERVAL = 1440
-
-
 def setup_parser() -> argparse.ArgumentParser:
     """
     setup parser rules, to read in and validate command line arguments
@@ -121,15 +117,15 @@ def build_config(args: argparse.Namespace) -> RunDetails:
     :returns: a RunDetails struct containing parameters on what accounting jobs to run and how to run them
     """
 
-    if args.all and args.jobs:
+    if args.all and args.job:
         raise ValueError("--all cannot be used with --job")
 
     # defaults to --all if neither given - i.e. run all jobs in list
     names = list(ALL_JOBS)
 
-    # if --jobs specified, parse input and validate
-    if args.jobs:
-        names = _split_jobs(args.jobs)
+    # if --job specified, parse input and validate
+    if args.job:
+        names = _split_jobs(args.job)
         unknown = [name for name in names if name not in ALL_JOBS]
         if unknown:
             raise ValueError(
@@ -168,7 +164,7 @@ def build_config(args: argparse.Namespace) -> RunDetails:
         sink=Sink(args.config_path),
         source=Source(args.config_path),
         dry_run=args.dry_run,
-        interval=timedelta(seconds=INTERVAL),
+        interval=timedelta(hours=24),
         start_time=start,
         end_time=end,
     )

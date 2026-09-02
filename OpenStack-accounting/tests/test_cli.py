@@ -15,7 +15,7 @@ def make_args(**overrides) -> argparse.Namespace:
 
     # set config-path env variable
     defaults = {
-        "jobs": None,
+        "job": None,
         "all": False,
         "start_time": None,
         "end_time": None,
@@ -92,13 +92,13 @@ def test_all_selects_every_job():
 
 def test_single_job():
     """tests that single job object is created for valid job identifier"""
-    cfg = build_config(make_args(jobs=["cinder"]))
+    cfg = build_config(make_args(job=["cinder"]))
     assert isinstance(cfg.jobs[0], ALL_JOBS["cinder"])
 
 
 def test_job_values_split():
     """tests that providing multiple jobs works properly"""
-    cfg = build_config(make_args(jobs=["cinder", "nova"]))
+    cfg = build_config(make_args(job=["cinder", "nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
     assert job_cls == set(expected_cls)
@@ -106,7 +106,7 @@ def test_job_values_split():
 
 def test_job_values_no_whitespace_tolerated():
     """test that --job comma-spaced values with no whitespace is parsed correctly"""
-    cfg = build_config(make_args(jobs=["cinder,nova"]))
+    cfg = build_config(make_args(job=["cinder,nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
     assert job_cls == set(expected_cls)
@@ -114,7 +114,7 @@ def test_job_values_no_whitespace_tolerated():
 
 def test_job_values_whitespace_tolerated():
     """test that --job comma-spaced values with whitespace is parsed properly"""
-    cfg = build_config(make_args(jobs=["cinder,nova", "glance"]))
+    cfg = build_config(make_args(job=["cinder,nova", "glance"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"], ALL_JOBS["glance"]]
     assert job_cls == set(expected_cls)
@@ -122,7 +122,7 @@ def test_job_values_whitespace_tolerated():
 
 def test_job_values_empty_vals_ignored():
     """test that multiple commas are handled correctly"""
-    cfg = build_config(make_args(jobs=["cinder,,nova"]))
+    cfg = build_config(make_args(job=["cinder,,nova"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
     assert job_cls == set(expected_cls)
@@ -130,7 +130,7 @@ def test_job_values_empty_vals_ignored():
 
 def test_duplicates_run_once():
     """test that duplicate jobs are removed and only set to run once"""
-    cfg = build_config(make_args(jobs=["cinder", "nova,cinder"]))
+    cfg = build_config(make_args(job=["cinder", "nova,cinder"]))
     job_cls = set(type(job) for job in cfg.jobs)
     expected_cls = [ALL_JOBS["cinder"], ALL_JOBS["nova"]]
     assert job_cls == set(expected_cls)
@@ -139,7 +139,7 @@ def test_duplicates_run_once():
 def test_unknown_job_named_in_error():
     """test that unknown job names raise an error"""
     with pytest.raises(ValueError, match="foo"):
-        build_config(make_args(jobs=["cinder,foo"]))
+        build_config(make_args(job=["cinder,foo"]))
 
 
 def test_start_defaults_to_current_date_midnight():
