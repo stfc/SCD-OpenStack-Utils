@@ -52,7 +52,18 @@ include = '\.pyi?$'
 [tool.pylint.format]
 max-line-length=118
 disable=[
-    "C0114", # Missing module string - we don't need module strings for the small repo
-    "W1401", # Influxdb required backslashes
-    "R0801" # Duplicate code due to test case
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-symbolic-message-instead",
+    "line-too-long",
+    "too-many-locals",
+    "fixme",
+    "R0801",
 ]

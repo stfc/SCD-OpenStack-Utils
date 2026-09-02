@@ -1,5 +1,8 @@
 # Thecount - fetch, calculate and store cloud accounting data  
 
+This python package runs fetches various accounting data from our openstack db, parses it and stores it in influxdb
+- interval is hardcoded to run every day. 
+
 ## Prerequisites
 
 A VM/system/device with docker installed
@@ -64,7 +67,7 @@ docker run \
    -v /opt/kayobe/accounting-service/:/etc/thecount/ \
    --network host harbor.stfc.ac.uk/stfc-cloud/thecount:v1.0.0 \
    --config-path /etc/thecount/thecount.conf \
-   --start-time <YYYY-mm-dd> --end-time <YYYY-mm-dd> --all
+   --start-time <YYYY-mm-dd> --end-time <YYYY-mm-dd>
 ```
 
 
@@ -91,28 +94,25 @@ python -m thecount --config-path /etc/thecount/thecount.conf \
    --start-time 2026-08-27 \
    --end-time 2026-08-28 \
    --interval 1440 \
-   --all 
 
-# run using bash date to generate ISO timestamp
+# run using bash date to generate timestamp
 python -m thecount --config-path /etc/thecount/thecount.conf \
-   --start-time $(date +"%Y-%m-%dT%H:%M:%S" -d "yesterday") \
-   --end-time $(date +"%Y-%m-%dT%H:%M:%S") \ 
+   --start-time $(date +"%Y-%m-%d" -d "yesterday") \
+   --end-time $(date +"%Y-%m-%d") \ 
    --jobs cinder \
    --jobs glance \
-   --interval 360 \
-   --dry-run \
-   --all 
+   --dry-run
 
 # run continuously starting from older start time (midnight)
-python -m thecount --config-path /etc/thecount/thecount.conf --start-time 2026-08-27 --interval 1440 --all 
+python -m thecount --config-path /etc/thecount/thecount.conf --start-time 2026-08-27  
 
-# run continuously from current time
-python -m thecount --config-path /etc/thecount/thecount.conf --interval 1440 --all 
+# run continuously from current time - interval is every day
+python -m thecount --config-path /etc/thecount/thecount.conf 
 
 # run only cinder job
-python -m thecount --config-path /etc/thecount/thecount.conf --interval 1440 --jobs cinder
+python -m thecount --config-path /etc/thecount/thecount.conf --jobs cinder
 
 # run cinder and manila job
-python -m thecount --config-path /etc/thecount/thecount.conf --interval 1440 --jobs cinder --jobs manila
+python -m thecount --config-path /etc/thecount/thecount.conf --jobs cinder --jobs manila
 
 ```

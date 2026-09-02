@@ -4,16 +4,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from thecount.jobs import Job
-from thecount.main import run_jobs
+from thecount.parsers.base_parser import BaseParser
+from thecount.__main__ import run_jobs
 from thecount.source import Source
 from thecount.sink import Sink
 from thecount.structs import RunDetails
 
+
 class StopLoop(Exception):
     """Sentinel to break out of the unbounded `while True`."""
 
-class TestJob(Job):
+
+class TestJob(BaseParser):
     """Base for fake jobs; subclasses get their own `calls` list."""
 
     def __init__(self, limit: int | None = None, name: str = "jobA"):
@@ -23,16 +25,21 @@ class TestJob(Job):
         self.calls = []
 
     def run(
-            self,
-            source: Source,
-            sink: Sink,
-            start_time: datetime,
-            end_time: datetime,
-            dry_run=False
+        self,
+        source: Source,
+        sink: Sink,
+        start_time: datetime,
+        end_time: datetime,
+        dry_run=False,
     ):
         self.calls.append(
-            dict(start=start_time, end=end_time, dry_run=dry_run,
-                 sink=sink, source=source)
+            {
+                "start": start_time,
+                "end": end_time,
+                "dry_run": dry_run,
+                "sink": sink,
+                "source": source,
+            }
         )
         # a way to stop an endless loop
         if self.limit is not None and len(self.calls) >= self.limit:
@@ -44,7 +51,7 @@ class TestJob(Job):
 
 
 def make_job(name: str, limit: int | None = None) -> TestJob:
-    """ helper to create a TestJob class and set the name/looping limit """
+    """helper to create a TestJob class and set the name/looping limit"""
     test_job = TestJob()
     test_job.name = name
     test_job.limit = limit
@@ -52,13 +59,13 @@ def make_job(name: str, limit: int | None = None) -> TestJob:
 
 
 def setup_run_details(
-        jobs: List[Job],
-        interval: timedelta,
-        start_time: datetime,
-        end_time: datetime | None,
-        dry_run: bool = False
+    jobs: List[BaseParser],
+    interval: timedelta,
+    start_time: datetime,
+    end_time: datetime | None,
+    dry_run: bool = False,
 ) -> RunDetails:
-    """ helper to construct a RunDetails dataclass for tests """
+    """helper to construct a RunDetails dataclass for tests"""
     return RunDetails(
         source=MagicMock(),
         sink=MagicMock(),
@@ -69,15 +76,16 @@ def setup_run_details(
         end_time=end_time,
     )
 
-@pytest.fixture(autouse=True)
-def stub_sleep():
-    """ stubs out sleep for testing """
+
+@pytest.fixture(name="stub_sleep", autouse=True)
+def stub_sleep_fn():
+    """stubs out sleep for testing"""
     with patch("thecount.__main__.time.sleep") as sleep:
         yield sleep
 
 
 def test_run_jobs_one_interval():
-    """ tests run loop runs once when one interval between start and end time """
+    """tests run loop runs once when one interval between start and end time"""
     job = make_job("foo")
     interval = timedelta(hours=1)
     start_time = datetime(2026, 1, 1, 0, tzinfo=timezone.utc)
@@ -86,6 +94,7 @@ def test_run_jobs_one_interval():
     assert len(job.calls) == 1
     assert job.calls[0]["start"] == start_time
     assert job.calls[0]["end"] == end_time
+
 
 def test_run_jobs_multiple_contiguous_intervals():
     """
@@ -106,8 +115,9 @@ def test_run_jobs_multiple_contiguous_intervals():
         (start_time + 2 * interval, start_time + 3 * interval),
     ]
 
+
 def test_run_jobs_partial_interval_ignored():
-    """ tests that trailing time window too small for a full interval before end-time is ignored """
+    """tests that trailing time window too small for a full interval before end-time is ignored"""
     job = make_job("foo")
     interval = timedelta(hours=1)
     start_time = datetime(2026, 1, 1, 0, tzinfo=timezone.utc)
@@ -120,7 +130,7 @@ def test_run_jobs_partial_interval_ignored():
 
 
 def test_run_jobs_ignores_large_interval():
-    """ tests if the interval is too big between start and end time, should return nothing """
+    """tests if the interval is too big between start and end time, should return nothing"""
 
     job = make_job("foo")
     interval = timedelta(hours=1)
@@ -130,8 +140,9 @@ def test_run_jobs_ignores_large_interval():
     run_jobs(setup_run_details([job], interval, start_time, end_time))
     assert len(job.calls) == 0
 
+
 def test_run_jobs_multiple_jobs_one_interval():
-    """ tests that multiple jobs run per interval """
+    """tests that multiple jobs run per interval"""
     a, b = make_job("a"), make_job("b")
     interval = timedelta(hours=1)
     start_time = datetime(2026, 1, 1, 0, tzinfo=timezone.utc)
@@ -141,11 +152,12 @@ def test_run_jobs_multiple_jobs_one_interval():
     assert len(a.calls) == 2 and len(b.calls) == 2
     assert [c["start"] for c in a.calls] == [c["start"] for c in b.calls]
 
+
 def test_run_job_sleeps_when_interval_end_in_future(stub_sleep):
     """
     tests that run_jobs() sleeps when interval end is calculated as in the future
     and then calls jobs.run() after sleeping
-     """
+    """
     job = make_job("foo")
     interval = timedelta(hours=1)
     start_time = datetime.now(timezone.utc)
@@ -164,10 +176,11 @@ def test_run_job_sleeps_when_interval_end_in_future(stub_sleep):
     # ensure sleep call was run before run() call
     assert job.calls[0] == "sleep"
 
-def test_runs_indefinitely_without_end_time():
-    """ tests that continuous looping works """
 
-    job = make_job("foo", limit=5) # break continuous loop at 5 loops
+def test_runs_indefinitely_without_end_time():
+    """tests that continuous looping works"""
+
+    job = make_job("foo", limit=5)  # break continuous loop at 5 loops
     interval = timedelta(hours=1)
     start_time = datetime.now(timezone.utc)
     with pytest.raises(StopLoop):

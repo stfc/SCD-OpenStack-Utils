@@ -1,6 +1,5 @@
 import os
 import argparse
-import re
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
@@ -8,17 +7,26 @@ from typing import Optional, List
 from thecount.sink import Sink
 from thecount.source import Source
 from thecount.structs import RunDetails
-from thecount.jobs import Job, CinderAccounting, GlanceAccounting, NovaAccounting, ManilaAccounting
+
+from thecount.parsers.base_parser import BaseParser
+from thecount.parsers.glance_parser import GlanceParser
+from thecount.parsers.cinder_parser import CinderParser
+from thecount.parsers.manila_parser import ManilaParser
+from thecount.parsers.nova_parser import NovaParser
 
 logger = logging.getLogger(__name__)
 
 # parse jobs
-ALL_JOBS: dict[str, type[Job]] = {
-    "cinder": CinderAccounting,
-    "glance": GlanceAccounting,
-    "nova": NovaAccounting,
-    "manila": ManilaAccounting
+ALL_JOBS: dict[str, type[BaseParser]] = {
+    "cinder": CinderParser,
+    "glance": GlanceParser,
+    "nova": NovaParser,
+    "manila": ManilaParser,
 }
+
+# set constant interval as 1440 seconds - 1 day
+INTERVAL = 1440
+
 
 def setup_parser() -> argparse.ArgumentParser:
     """
@@ -28,45 +36,51 @@ def setup_parser() -> argparse.ArgumentParser:
         prog="thecount",
         description="Extract accounting records from openstack db and send them to the influx.",
         epilog=(
-            "Only ISO 8601 time formats are accepted (2024-01-01, 2024-01-01T09:00) "
-            "values without timezone are treated as UTC."
+            "Only yyyy-mm-dd time formats are accepted (e.g. 2024-01-01) "
+            "timezone is always treated as UTC."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-
-    selection = parser.add_mutually_exclusive_group()
-    selection.add_argument(
-        "--job", action="append", metavar="NAME", default=None,
+    parser.add_argument(
+        "--job",
+        action="append",
+        metavar="NAME",
+        default=None,
         help="accounting job to run; repeatable, or comma-separated - see --list-jobs for full list",
     )
-    selection.add_argument("--all", action="store_true", help="run every accounting job")
+    parser.add_argument(
+        "--all", action="store_true", default=False, help="run every accounting job"
+    )
 
     # default is None as current time calculated at runtime
     parser.add_argument(
-        "--start-time", metavar="TIME", default=None,
-        help="(optional) start of the range ISO 8601 format( yyyy-mm-ddTHH:MM:SS ), "
-             "if not given, --start-time will be set as the current time",
+        "--start-time",
+        metavar="TIME",
+        default=None,
+        help="(optional) start of the range in format: yyyy-mm-dd"
+        "if not given, --start-time will be set as the current date",
     )
     parser.add_argument(
-        "--end-time", metavar="TIME", default=None,
+        "--end-time",
+        metavar="TIME",
+        default=None,
         help="end of the range, if in the future, script will complete once that range is reached"
-             " if not given, will run from given --start-time and keep running forever until killed (default: None)"
-             " ISO 8601 format( yyyy-mm-ddTHH:MM:SS )",
+        " if not given, will run from given --start-time and keep running forever until killed (default: None)"
+        " format yyyy-mm-dd",
     )
     parser.add_argument(
-        "--interval", metavar="DURATION", default="1440",
-        help="size of window (in minutes) for each accounting extraction period - USAGE: 1440, 60, 15 "
-             "value must be >=15, default is 1440 (1 day)",
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="print the records to be sent instead of sending to influxdb",
     )
     parser.add_argument(
-        "--config-path", metavar="THE_COUNT_CONFIG_FILE", default=os.environ.get("$THE_COUNT_CONFIG_FILE"),
+        "--config-path",
+        metavar="THE_COUNT_CONFIG_FILE",
+        default=os.environ.get("THE_COUNT_CONFIG_FILE"),
         help="config file with source and sink credentials (default: $THE_COUNT_CONFIG_FILE)",
     )
     return parser
+
 
 def _split_jobs(values: Optional[List[str]]) -> list[str]:
     """
@@ -87,13 +101,17 @@ def _split_jobs(values: Optional[List[str]]) -> list[str]:
     return list(dict.fromkeys(names))
 
 
-def _as_utc(dt: datetime) -> datetime:
+def _parse_date(value: str) -> datetime:
     """
-    Helper string to convert datetime to UTC if timezone given
-    dt: python datetime object
-    :returns: equivalent python datetime object converted to the equivalent UTC timezone time
+    Helper string to convert yyyy-mm-dd string into UTC datetime
+    value: string to represent date in format yyyy-mm-dd
+    :returns: equivalent python datetime object with UTC timezone info
     """
-    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError as e:
+        raise ValueError(f"unable to parse {value}, accepted format YYYY-MM-DD") from e
+
 
 def build_config(args: argparse.Namespace) -> RunDetails:
     """
@@ -103,46 +121,42 @@ def build_config(args: argparse.Namespace) -> RunDetails:
     :returns: a RunDetails struct containing parameters on what accounting jobs to run and how to run them
     """
 
+    if args.all and args.jobs:
+        raise ValueError("--all cannot be used with --job")
+
+    # defaults to --all if neither given - i.e. run all jobs in list
     names = list(ALL_JOBS)
-    if not args.all:
+
+    # if --jobs specified, parse input and validate
+    if args.jobs:
         names = _split_jobs(args.jobs)
-        if not names:
-            raise ValueError("specify --job NAME (repeatable) or --all")
         unknown = [name for name in names if name not in ALL_JOBS]
         if unknown:
-            raise ValueError(f"unknown job(s): {', '.join(unknown)}. Available: {ALL_JOBS}")
+            raise ValueError(
+                f"unknown job(s): {', '.join(unknown)}. Available: {ALL_JOBS}"
+            )
+
     requested_jobs = [ALL_JOBS[name]() for name in names]
 
-    # times and durations
+    # parse times
     try:
-        interval = timedelta(minutes=int(args.interval))
+        end = _parse_date(args.end_time) if args.end_time else None
     except ValueError as e:
-        raise ValueError(f"malformed interval {args.interval}") from e
-    if interval < timedelta(minutes=15):
-        raise ValueError(f"interval {args.interval} set at < 15 which is likely to cause DB slowdowns")
-
-    if args.end_time:
-        try:
-            end = _as_utc(datetime.fromisoformat(args.end_time))
-        except ValueError:
-            raise ValueError(
-                f"unable to parse --end-time {args.end_time}, accepted format ISO 8601'"
-            )
-    else:
-        end = None
+        raise ValueError(f"unable to parse --end-time: {e}") from e
+    if end is None:
         logger.info("--end-time not set, running continuously...")
 
     if args.start_time:
         try:
-            start = _as_utc(datetime.fromisoformat(args.start_time))
-        except ValueError:
-            raise ValueError(
-                f"unable to parse --start-time {args.start_time}, accepted format ISO 8601'"
-            )
+            start = _parse_date(args.start_time)
+        except ValueError as e:
+            raise ValueError(f"unable to parse --start-time: {e}") from e
     else:
-        start = datetime.now(timezone.utc)
-        logger.info(f"--start-time set to {start}")
+        today = datetime.now(timezone.utc).date()
+        start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        logger.info("--start-time set to %s", start)
 
+    # if --end-time given, make sure it is after --start-time (or current date if not given)
     if end and start >= end:
         raise ValueError(
             f"--start-time ({start.isoformat()}) must be before "
@@ -154,7 +168,7 @@ def build_config(args: argparse.Namespace) -> RunDetails:
         sink=Sink(args.config_path),
         source=Source(args.config_path),
         dry_run=args.dry_run,
-        interval=interval,
+        interval=timedelta(seconds=INTERVAL),
         start_time=start,
         end_time=end,
     )

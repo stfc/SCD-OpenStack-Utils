@@ -20,7 +20,7 @@ class Source:
     """
 
     def __init__(self, config_fp: str):
-        """ constructor class """
+        """constructor class"""
         self._engines: Optional[Dict[str, sqlalchemy.Engine]] = None
         self._load_config(config_fp)
 
@@ -79,7 +79,7 @@ class Source:
         return self._engines[database]
 
     def fetch(
-            self, database: str, start_time: datetime, end_time: datetime
+        self, database: str, start_time: datetime, end_time: datetime
     ) -> list[dict]:
         """
         Call the accounting sql procedure for a single interval.

@@ -4,7 +4,8 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from thecount.sink import Sink
 from thecount.source import Source
-from thecount.jobs import Job
+from thecount.parsers.base_parser import BaseParser
+
 
 @dataclass
 class RunDetails:
@@ -16,7 +17,8 @@ class RunDetails:
     :interval: timedelta object - size of window to collate accounting info between
     :dry_run: bool - if True, will not write to Sink, output to console instead - for testing
     """
-    jobs: List[Job]
+
+    jobs: List[BaseParser]
     sink: Sink
     source: Source
     interval: timedelta

@@ -46,15 +46,20 @@ def load_expected_data(path: Path) -> str:
     return "\n".join(lines)
 
 
-
 @pytest.fixture
 def mock_source():
+    """
+    mock source object
+    """
     source = MagicMock()
     return source
 
 
 @pytest.fixture
 def mock_sink():
+    """
+    mock sink object
+    """
     sink = MagicMock()
     sink.instance = INSTANCE
     return sink
