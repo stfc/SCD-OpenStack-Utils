@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from thecount.parsers.base_parser import BaseParser
-from thecount.__main__ import run_jobs
+from thecount.run_jobs import run_jobs
 from thecount.source import Source
 from thecount.sink import Sink
 from thecount.structs import RunDetails
@@ -80,7 +80,7 @@ def setup_run_details(
 @pytest.fixture(name="stub_sleep", autouse=True)
 def stub_sleep_fn():
     """stubs out sleep for testing"""
-    with patch("thecount.__main__.time.sleep") as sleep:
+    with patch("thecount.run_jobs.time.sleep") as sleep:
         yield sleep
 
 

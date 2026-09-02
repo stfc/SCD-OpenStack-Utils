@@ -73,7 +73,7 @@ and populate with creds
 ### As a container 
 
 ```commandline
-docker build . -t harbor.stfc.ac.uk/stfc-cloud/thecount:v1.0.0 -t harbor.stfc.ac.uk/stfc-cloud/thecount:latest
+docker build . -t harbor.stfc.ac.uk/stfc-cloud/thecount:v1.1.1 -t harbor.stfc.ac.uk/stfc-cloud/thecount:latest
 docker run \
     -v thecount.conf:/etc/thecount/thecount.conf \
     -v var/log/thecount/:/var/log/thecount/ \
