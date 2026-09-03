@@ -16,6 +16,9 @@ from thecount.parsers.nova_parser import NovaParser
 
 logger = logging.getLogger(__name__)
 
+# hardcoded interval
+INTERVAL_HOURS = timedelta(hours=24)
+
 # parse jobs
 ALL_JOBS: dict[str, type[BaseParser]] = {
     "cinder": CinderParser,
@@ -54,7 +57,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar="TIME",
         default=None,
         help="(optional) start of the range in format: yyyy-mm-dd"
-        "if not given, --start-time will be set as the current date",
+        "if not given, --start-time will be set as midnight the day before current date",
     )
     parser.add_argument(
         "--end-time",
@@ -149,8 +152,9 @@ def build_config(args: argparse.Namespace) -> RunDetails:
             raise ValueError(f"unable to parse --start-time: {e}") from e
     else:
         today = datetime.now(timezone.utc).date()
-        start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
-        logger.info("--start-time set to %s", start)
+        curr = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        start = curr - timedelta(days=1)
+        logger.info("--start-time set to %s (yesterday)", start)
 
     # if --end-time given, make sure it is after --start-time (or current date if not given)
     if end and start >= end:
@@ -164,7 +168,7 @@ def build_config(args: argparse.Namespace) -> RunDetails:
         sink=Sink(args.config_path),
         source=Source(args.config_path),
         dry_run=args.dry_run,
-        interval=timedelta(hours=24),
+        interval=INTERVAL_HOURS,
         start_time=start,
         end_time=end,
     )

@@ -1,6 +1,6 @@
 import argparse
 from unittest.mock import patch
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pytest
 from conftest import ROOT_TEST_DATA_FP
@@ -142,11 +142,13 @@ def test_unknown_job_named_in_error():
         build_config(make_args(job=["cinder,foo"]))
 
 
-def test_start_defaults_to_current_date_midnight():
+def test_start_defaults_to_yesterday_date_midnight():
     """test that start time sets now() time properly"""
     curr = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday = curr - timedelta(days=1)
     cfg = build_config(make_args(all=True))
-    assert cfg.start_time == curr
+    assert cfg.start_time < curr
+    assert cfg.start_time == yesterday
 
 
 def test_end_defaults_to_none():

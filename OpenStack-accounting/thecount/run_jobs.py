@@ -17,6 +17,7 @@ def run_jobs(details: RunDetails) -> None:
     with details.source, details.sink:
         step_counter = 0
         current_time = details.start_time
+
         while True:
             step_counter += 1
             interval_end = current_time + details.interval

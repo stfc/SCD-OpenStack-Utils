@@ -73,11 +73,17 @@ and populate with creds
 ### As a container 
 
 ```commandline
+<<<<<<< Updated upstream
 docker build . -t harbor.stfc.ac.uk/stfc-cloud/thecount:v1.1.1 -t harbor.stfc.ac.uk/stfc-cloud/thecount:latest
+=======
+export VERSION=$(cat version.txt)
+docker build . -t harbor.stfc.ac.uk/stfc-cloud/thecount:${VERSION} -t harbor.stfc.ac.uk/stfc-cloud/thecount:latest
+
+>>>>>>> Stashed changes
 docker run \
     -v thecount.conf:/etc/thecount/thecount.conf \
     -v var/log/thecount/:/var/log/thecount/ \
-    harbor.stfc.ac.uk/stfc-cloud/thecount:latest --help
+    harbor.stfc.ac.uk/stfc-cloud/thecount:${VERSION} --help
 ```
 
 on kayobe to get previous data
@@ -86,7 +92,7 @@ docker run \
    --rm \
    --env-file ~/opt/kayobe/accounting-service/.env \
    -v /opt/kayobe/accounting-service/:/etc/thecount/ \
-   --network host harbor.stfc.ac.uk/stfc-cloud/thecount:v1.0.0 \
+   --network host harbor.stfc.ac.uk/stfc-cloud/thecount:${VERSION} \
    --config-path /etc/thecount/thecount.conf \
    --start-time <YYYY-mm-dd> --end-time <YYYY-mm-dd>
 ```
