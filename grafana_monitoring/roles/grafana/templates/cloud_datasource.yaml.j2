@@ -2,67 +2,37 @@ apiVersion: 1
 prune: true
 datasources:
 # These are our datasources safe for public query
-  - name: RemoteWritePrometheus
+  - name: PowerMetricsPrometheus
     type: prometheus
-    uid: "remote_write_prometheus"
+    uid: "power_metrics_prometheus"
     access: proxy
     url: http://130.246.83.213:9090
     isDefault: false
     basicAuth: true
-    basicAuthUser: {{ remote_write_prometheus_username }}
+    basicAuthUser: {{ power_metrics_prometheus_username }}
     jsonData:
       timeout: 120
     secureJsonData:
-      basicAuthPassword: {{ remote_write_prometheus_password }}
+      basicAuthPassword: {{ power_metrics_prometheus_password }}
   
-  - name: DevCloudInfluxDB
+  - name: CloudInfluxDB
     type: influxdb
     access: proxy
-    uid: "dev_openstack_grafana"
-    user: {{ dev_influx_username }}
-    url: "http://172.16.110.169:8086"
+    uid: "prod_cloud_influx"
+    user: {{ prod_cloud_influx_username }}
+    url: "https://influx2.nubes.rl.ac.uk:8086"
     jsonData:
+      tlsSkipVerify: true
       dbName : "cloud"
       httpMode: POST
       timeInterval: "60"
       maxSeries: 200
     secureJsonData:
-      password: {{ dev_influx_password }}
+      password: {{ prod_cloud_influx_password }}
 
 # These datasources should not be queried by the public.
 # That's why they are only on the dev instance
 {% if inventory_hostname.startswith("dev") %}
-  - name: CloudInfluxDB
-    type: influxdb
-    access: proxy
-    uid: "openstack_grafana"
-    user: {{ prod_influx_username }}
-    url: "http://influx1.nubes.rl.ac.uk:8086"
-    jsonData:
-      dbName : "cloud"
-      httpMode: POST
-      timeInterval: "60"
-      maxSeries: 200
-    secureJsonData:
-      password: {{ prod_influx_password }}
-
-  - name: grafana-power-metrics
-    type: grafana-opensearch-datasource
-    access: proxy
-    uid: "opensearch-grafana"
-    url: https://172.16.114.193:9200
-    basicAuth: true
-    basicAuthUser: admin
-    jsonData:
-      tlsSkipVerify: true
-      database: "[cloud-ipmi-power-]YYYY.MM.DD"
-      interval: Daily
-      timeField: "@timestamp"
-      version: "2.3.0"
-      flavor: "opensearch"
-    secureJsonData:
-      basicAuthPassword: {{ prod_opensearch_password }}
-
   - name: WeeklyReportsInfluxDB
     type: influxdb
     access: proxy
@@ -77,17 +47,6 @@ datasources:
       version: Flux
     secureJsonData:
       token: {{ weekly_reports_token }}
-
-  - name: Meerkat DB
-    type: prometheus
-    uid: "meerkat-db"
-    access: proxy
-    url: https://meerkatdb.nubes.rl.ac.uk:8247
-    isDefault: false
-    basicAuth: true
-    basicAuthUser: {{ meerkat_db_username }}
-    secureJsonData:
-      basicAuthPassword: {{ meerkat_db_password }}
 
   - name: DevChatOps
     type: prometheus
@@ -110,13 +69,4 @@ datasources:
     basicAuthUser: {{ prod_chatops_prometheus_username }}
     secureJsonData:
       basicAuthPassword: {{ prod_chatops_prometheus_password }}
-
-  - name: HarborPrometheus
-    type: prometheus
-    uid: "harbor-prometheus"
-    access: proxy
-    url: http://130.246.83.216:9090
-    isDefault: false
-    basicAuth: false
-
 {% endif %}
