@@ -85,7 +85,7 @@ def test_write_success(mock_influxdb_client, monkeypatch, valid_config_file):
         password="pass",
         database="accounting",
         ssl=True,
-        verify_ssl=False,
+        verify_ssl=True,
         timeout=TIMEOUT,
     )
 

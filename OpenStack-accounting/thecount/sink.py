@@ -61,7 +61,7 @@ class Sink:
             password=self._password,
             database=self._database,
             ssl=True,
-            verify_ssl=False,
+            verify_ssl=True,
             timeout=TIMEOUT,
         )
         logger.debug(
