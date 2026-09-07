@@ -1,0 +1,7 @@
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=A-Scratch-Space,Department=A-Scratch-Space,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=1,Share_Seconds=86400,ManilaGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=admin,Department=admin,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=144,Share_Seconds=12441600,ManilaGBs=1791590400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=rally-xyz,Department=STFC\ Cloud,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=1,Share_Seconds=86400,ManilaGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=DSG,Department=SCD\ Systems\ Division,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=2,Share_Seconds=172800,ManilaGBs=345600 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=C-Scratch-Space,Department=C-Scratch-Space,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=1,Share_Seconds=86400,ManilaGBs=864000 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=D-Scratch-Space,Department=D-Scratch-Space,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=1,Share_Seconds=86400,ManilaGBs=864000 1786449600
+Accounting,instance=PreProd,AvailabilityZone=nova,Project=Staging-K8s,Department=Staging-K8s,ManilaType=Share,ManilaShareType=cephfs,YYYY-MM=2026-08 Shares=6,Share_Seconds=518400,ManilaGBs=31104000 1786449600

@@ -1,0 +1,11 @@
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=A-Scratch-Space,Department=A-Scratch-Space,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=admin,Department=admin,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=azimuth-staging,Department=azimuth-staging,CinderType=Volume,YYYY-MM=2026-08 Volumes=3,Volume_Seconds=259200,CinderGBs=777600 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=rally-xyz,Department=STFC\ Cloud,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=C-Scratch-Space,Department=C-Scratch-Space,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=D-Scratch-Space,Department=D-Scratch-Space,CinderType=Volume,YYYY-MM=2026-08 Volumes=3,Volume_Seconds=259200,CinderGBs=777600 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=test-external-1,Department=test-external-1,CinderType=Volume,YYYY-MM=2026-08 Volumes=3,Volume_Seconds=259200,CinderGBs=777600 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=E-Scratch-Space,Department=E-Scratch-Space,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=F-Scratch-Space,Department=F-Scratch-Space,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=86400 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=admin,Department=admin,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=432000 1786449600
+Accounting,instance=PreProd,AvailabilityZone=ceph,Project=G-Scratch-Space,Department=SCD\ Systems\ Division,CinderType=Volume,YYYY-MM=2026-08 Volumes=1,Volume_Seconds=86400,CinderGBs=8640000 1786449600

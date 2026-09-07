@@ -1,0 +1,11 @@
+{'AvailabilityZone': 'ceph', 'Project': 'A-Scratch-Space', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'admin', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'azimuth-staging', 'Department': 'Default', 'Volumes': 3, 'CinderType': 'Volume', 'Volume_Seconds': 259200, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'rally-xyz', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'C-Scratch-Space', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'D-Scratch-Space', 'Department': 'Default', 'Volumes': 3, 'CinderType': 'Volume', 'Volume_Seconds': 259200, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'test-external-1', 'Department': 'Default', 'Volumes': 3, 'CinderType': 'Volume', 'Volume_Seconds': 259200, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'E-Scratch-Space', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'F-Scratch-Space', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 1}
+{'AvailabilityZone': 'ceph', 'Project': 'admin', 'Department': 'Default', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 5}
+{'AvailabilityZone': 'ceph', 'Project': 'G-Scratch-Space', 'Department': 'SCD Systems Division', 'Volumes': 1, 'CinderType': 'Volume', 'Volume_Seconds': 86400, 'Volume_GB': 100}
