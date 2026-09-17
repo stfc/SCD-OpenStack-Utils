@@ -1,0 +1,17 @@
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.0779}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 706, 'Glance_GB': 2.1227}
+{'Project': 'A-Scratch-Space', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.1301}
+{'Project': 'B-Scratch-Space', 'Department': 'SCD Systems Division', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.1330}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.1459}
+{'Project': 'C-Scratch-Space', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.1678}
+{'Project': 'A-Scratch-Space', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.3014}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.5281}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.5284}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.5312}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 7303, 'Glance_GB': 2.5687}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.6006}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'image', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 2.7571}
+{'Project': 'admin', 'Department': 'Default', 'Images': 8, 'GlanceType': 'snapshot', 'StorageBackend': 'OBJECT', 'Image_Seconds': 691200, 'Glance_GB': 13.7676}
+{'Project': 'admin', 'Department': 'Default', 'Images': 6, 'GlanceType': 'snapshot', 'StorageBackend': 'RBD', 'Image_Seconds': 518400, 'Glance_GB': 20.0000}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'snapshot', 'StorageBackend': 'RBD', 'Image_Seconds': 86400, 'Glance_GB': 40.0000}
+{'Project': 'admin', 'Department': 'Default', 'Images': 1, 'GlanceType': 'snapshot', 'StorageBackend': 'OBJECT', 'Image_Seconds': 86400, 'Glance_GB': 109.7440}

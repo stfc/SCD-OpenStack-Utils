@@ -1,0 +1,7 @@
+{'Project': 'A-Scratch-Space', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 1, 'ManilaType': 'Share', 'Share_Seconds': 86400, 'Share_GB': 1}
+{'Project': 'admin', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 144, 'ManilaType': 'Share', 'Share_Seconds': 12441600, 'Share_GB': 1}
+{'Project': 'rally-xyz', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 1, 'ManilaType': 'Share', 'Share_Seconds': 86400, 'Share_GB': 1}
+{'Project': 'DSG', 'Department': 'SCD Systems Division', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 2, 'ManilaType': 'Share', 'Share_Seconds': 172800, 'Share_GB': 1}
+{'Project': 'C-Scratch-Space', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 1, 'ManilaType': 'Share', 'Share_Seconds': 86400, 'Share_GB': 10}
+{'Project': 'D-Scratch-Space', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 1, 'ManilaType': 'Share', 'Share_Seconds': 86400, 'Share_GB': 10}
+{'Project': 'Staging-K8s', 'Department': 'Default', 'Availability_zone': 'nova', 'Share_type': 'cephfs', 'Shares': 6, 'ManilaType': 'Share', 'Share_Seconds': 518400, 'Share_GB': 10}
