@@ -21,7 +21,7 @@ username = parser.get("auth", "username")
 password = parser.get("auth", "password")
 instance = parser.get("cloud", "instance")
 
-url = "http://" + host + "/write?db=" + database
+url = "https://" + host + "/write?db=" + database
 
 nowtime = time.localtime()
 
